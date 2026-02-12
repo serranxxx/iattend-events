@@ -1,0 +1,310 @@
+.destination_card {
+    height: 280px;
+    width: 200px;
+    min-width: 200px;
+    border-radius: 16px;
+    background-color: var(--brand-color-500);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    /* box-shadow: 0 0 6px 0 rgba(0, 0, 0, 0.25), 0 0 8px 0 rgba(134, 134, 134, 0.45) inset; */
+}
+
+.destination_card::after {
+    content: "";
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    z-index: 1;
+    width: 110%;
+    height: 130%;
+    border-radius: 12px;
+    mask: linear-gradient(transparent, transparent, black, black);
+    backdrop-filter: blur(8px);
+
+}
+
+.dest_info_container {
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 12px;
+    gap: 12px;
+}
+
+.dest_card_title {
+    font-size: 20px;
+    font-weight: 500;
+    color: #FFF;
+    text-align: center;
+    line-height: 1.1;
+}
+
+
+.destbutton {
+    width: 100%;
+    height: 35px;
+    border: none;
+    font-size: 16px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-weight: 600;
+    color: #000;
+    border-radius: 12px;
+    box-shadow: 0 0 6px 0 rgba(0, 0, 0, 0.25), 0 0 8px 0 rgba(134, 134, 134, 0.45) inset;
+}
+
+.main_dest_card {
+    background-color: transparent;
+    width: 100%;
+    height: 100%;
+    position: relative;
+
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    flex-direction: column;
+    box-sizing: border-box;
+    padding: 4px;
+    /* padding-bottom: 0px; */
+    /* border-bottom: 4px solid; */
+    border-radius: 0px 8px 0px 0px;
+}
+
+.image_dest_cont {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    border-radius: 0px 8px 0px 0px;
+    position: relative;
+    /* position: absolute; */
+}
+
+.tag_label_container {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 6px;
+    position: absolute;
+    bottom: 4px;
+    right: 4px;
+}
+
+.card_label_class {
+    text-transform: uppercase;
+    font-size: 12px;
+    font-weight: 800;
+    opacity: 1;
+    line-height: 1;
+    color: #FFF;
+    text-shadow: 0px 0px 8px rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.card_icon_class {
+    padding: 8px 2px;
+    border-radius: 99px;
+    height: 20px;
+    width: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.dest_text_box {
+    position: absolute;
+    left: 8px;
+    top: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+
+.dest_label {
+    text-align: left;
+    width: 100%;
+    font-weight: 800;
+    line-height: 1.1;
+    text-transform: uppercase;
+    font-size: 18px;
+    color: #FFF;
+    text-shadow: 0px 0px 4px rgba(0, 0, 0, 0.5);
+}
+
+
+.card_texture {
+    position: absolute;
+    width: 120%;
+    height: 120%;
+    inset: 0;
+    z-index: 4;
+    pointer-events: none;
+    mix-blend-mode: multiply;
+
+}
+
+
+.flip_card {
+    width: 100%;
+    height: 100%;
+    perspective: 1000px;
+    position: relative;
+    background-color: rgba(0, 0, 0, 0);
+
+}
+
+.flip_inner {
+    width: 100%;
+    height: 100%;
+    transition: transform 0.35s;
+    transform-style: preserve-3d;
+    position: relative;
+
+}
+
+.flipped .flip_inner {
+    transform: rotateY(180deg);
+}
+
+.flip_front,
+.flip_back {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    overflow: hidden;
+    /* box-shadow: 6px 0px 12px 2px rgba(0, 0, 0, 0.5); */
+}
+
+.flip_front {
+    z-index: 2;
+    transform: rotateY(0deg);
+}
+
+.flip_back {
+    background: #03446A;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform: rotateY(180deg);
+}
+
+.hotel {
+    width: 170px;
+    height: 300px;
+    /* background-color: #06AEFF; */
+}
+
+.food {
+    width: 170px;
+    height: 170px;
+    /* background-color: #FDD00E; */
+}
+
+.activitie {
+    width: 170px;
+    height: 240px;
+    /* background-color: #35AE40; */
+}
+
+
+.hotel .card_icon_class {
+    background-color: #06AEFF;
+}
+
+.food .card_icon_class {
+    background-color: #FDD00E;
+    color: #000;
+}
+
+.activitie .card_icon_class {
+    background-color: #35AE40;
+}
+
+.hotel .main_dest_card {
+    border-color: #06AEFF;
+}
+
+.food .main_dest_card {
+    border-color: #FDD00E;
+}
+
+.activitie .main_dest_card {
+    border-color: #35AE40;
+}
+
+.hotel button {
+    background-color: #06AEFF60;
+}
+
+.food button {
+    background-color: #FDD00E60;
+    color: #000;
+}
+
+.activitie button {
+    background-color: #35AE4060;
+}
+
+
+/* Reduce la sombra global fuerte y deja que JS controle el drop-shadow 3D */
+.flip_front,
+.flip_back {
+    box-shadow: 4px 6px 8px rgba(0, 0, 0, .25);
+    border-radius: 0px 12px 0 0;
+    overflow: hidden;
+}
+
+/* Bisel/edge highlight (canto de la revista) */
+.main_dest_card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(90deg,
+            rgba(255, 255, 255, .18),
+            rgba(255, 255, 255, 0) 18% 82%,
+            rgba(0, 0, 0, .10));
+    mix-blend-mode: overlay;
+    z-index: 2;
+    border-radius: 10px 10px 0 0;
+}
+
+.image_dest_cont::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+        linear-gradient(to top, rgba(0, 0, 0, .40), rgba(0, 0, 0, 0) 40%),
+        linear-gradient(to bottom, rgba(0, 0, 0, .25), rgba(0, 0, 0, 0) 35%);
+    z-index: 1;
+}
+
+/* asegura que texto/etiquetas queden encima del vignette */
+.dest_text_box,
+.tag_label_container {
+    z-index: 2;
+}
+
+.reversed_card_title,
+.reversed_card_text {
+    width: 100%;
+    text-align: left;
+    font-weight: 800;
+}
+
+.reversed_card_text {
+    font-weight: 400;
+    font-size: 12px;
+}

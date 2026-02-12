@@ -1,0 +1,51 @@
+.wdiget_container {
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+    flex-direction: column;
+    gap: 16px;
+    aspect-ratio: 1;
+    box-sizing: border-box;
+    padding: 16px;
+    /* max-width: 120px; */
+    height: 180px;
+    width: 100%;
+    border-radius: 16px;
+    color: #FFF;
+    /* box-shadow: 0 0 6px 0 rgba(0, 0, 0, 0.25), 0 0 6px 0 rgba(134, 134, 134, 0.25) inset; */
+    border: 1px solid #A2DBFF;
+    background: linear-gradient(180deg, #004F88 0%, #689AC1 100%);
+    backdrop-filter: blur(10px) !important;
+}
+
+.weather_label {
+    line-height: 1;
+    font-size: 16px;
+    font-weight: 500;
+}
+
+.weather_sec_label {
+    line-height: 1;
+    font-size: 12px;
+}
+
+.weather_temperture {
+    line-height: 1;
+    font-size: 36px;
+    font-weight: 500;
+}
+
+.widget_row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    align-self: stretch;
+}
+
+.widget_col {
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+    flex-direction: column;
+    gap: 4px;
+}

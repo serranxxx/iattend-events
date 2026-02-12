@@ -1,0 +1,308 @@
+.side_event_main_cont {
+  width: 100%;
+  /* height: 100vh; */
+
+  position: relative;
+  background-image: linear-gradient(to bottom, #EEE, #CCC);
+}
+
+.hero {
+  position: sticky;
+  top: 0;
+  min-height: 100vmax;
+  width: 100%;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.hero_bg {
+  position: absolute;
+  top: 0;
+  /* inset: 0; */
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+
+  transform:
+    scale(var(--bg-scale, 1));
+
+  transition: transform 0.05s linear;
+  will-change: transform;
+}
+
+
+.blur_cover {
+  position: absolute;
+  inset: 0;
+  backdrop-filter: blur(6px);
+  mask-image: linear-gradient(to bottom,
+      transparent 0%,
+      transparent 40%,
+      black 80%);
+  z-index: 1;
+}
+
+
+.shadow {
+  content: "";
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  background-image: linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.3));
+  mix-blend-mode: multiply;
+}
+
+/*  */
+
+.info_cont {
+  position: relative;
+  width: 100%;
+  margin-top: -50vh;
+  height: auto;
+  overflow: hidden;
+  /* importante para que el mask no “salga” */
+  z-index: 2;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+
+  padding: 24px;
+  gap: 12px;
+  /* tu gradiente base (visual) */
+  background-image: linear-gradient(to bottom, transparent, var(--blur-color));
+}
+
+/* Capa 1: blur suave arriba (principalmente en el primer ~20%) */
+/* .info_cont::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
+
+    background-image: linear-gradient(to bottom, #FFFFFF05, #ff000015);
+
+    -webkit-mask-image: linear-gradient(to bottom, black 0%, transparent 35%);
+    mask-image: linear-gradient(to bottom, black 0%, transparent 35%);
+} */
+
+/* Capa 2: blur medio (entra desde ~15% hacia abajo) */
+/* .info_cont::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+
+    background-image: linear-gradient(to bottom, transparent, var(--blur-color));
+
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 25%, black 100%);
+    mask-image: linear-gradient(to bottom, transparent 0%, black 25%, black 100%);
+} */
+
+/* Si quieres aún MÁS denso al fondo, agrega una 3ra capa con un wrapper */
+
+.info_cont>* {
+  position: relative;
+  z-index: 2;
+}
+
+.col {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 0px;
+  text-shadow: 0px 0px 16px rgba(0, 0, 0, 0.12);
+  text-align: center;
+  color: #FFFFFF;
+  font-size: 16px;
+  /* mix-blend-mode: soft-light; */
+  /* opacity: 0.7; */
+
+}
+
+.buttons_cont {
+  width: 100%;
+  /* height: 60px; */
+  border-radius: 999px;
+  background-color: var(--blur-color--dark);
+  backdrop-filter: blur(20px);
+  border: 1px solid #FFFFFF40;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  /* padding: 18px 0px; */
+  max-width: 450px;
+}
+
+.side_buttons {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 2 !important;
+  color: #FFF;
+  border-right: 1px solid #FFFFFF40;
+  border-radius: 0;
+  font-size: 14px;
+}
+
+.side_buttons:last-of-type {
+  border: none;
+}
+
+.side_buttons:hover {
+  color: #FFFFFF !important;
+}
+
+.mapa_container {
+  border-radius: 24px;
+  overflow: hidden;
+  width: 100%;
+  background-color: var(--blur-color--dark);
+  backdrop-filter: blur(10px);
+  border: 1px solid #FFFFFF40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  padding-top: 12px;
+  max-width: 450px;
+}
+
+.get_there {
+  margin-bottom: 12px;
+  color: #FFFFFF90;
+  font-size: 16px;
+}
+
+.get_there:hover {
+  color: #FFFFFF !important;
+}
+
+.inv_locked_blured {
+  position: absolute;
+  height: 100%;
+  width: 100%;
+  top: 0px;
+  left: 0px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.inv_locked_blured {
+  backdrop-filter: blur(8px);
+  box-sizing: border-box;
+  padding: 44px;
+  flex-direction: column;
+  z-index: 99;
+  gap: 24px;
+  transition: all 0.5s ease;
+}
+
+.locked_icon {
+  height: 84px;
+  width: 84px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #FFFFFF80;
+  backdrop-filter: blur(10px);
+  border-radius: 99px;
+  box-shadow: 0px 0px 12px rgba(0, 0, 0, 0.15);
+}
+
+.locked_title {
+  font-size: 24px;
+  font-weight: 800;
+  text-shadow: 0px 0px 12px rgba(0, 0, 0, 0.2);
+  color: #FFF;
+  /* text-transform: uppercase; */
+  text-align: center;
+}
+
+.locked_text {
+  font-size: 16px;
+  max-width: 350px;
+  color: #FFF;
+  text-shadow: 0px 0px 8px rgba(0, 0, 0, 0.2);
+  text-align: center;
+}
+
+.locked_input::placeholder {
+  color: #FFFFFF80;
+  font-style: italic;
+}
+
+
+/* .locked_btn {
+    background-image: linear-gradient(to right, #ECE9E6 0%, #FFFFFF 51%, #ECE9E6 100%)
+  } */
+
+.locked_btn {
+  cursor: default !important;
+  position: relative;
+  overflow: hidden;
+  background: #FFF !important;
+  color: var(--blur-color--dark) !important;
+  /* usa el color dinámico si existe */
+  border: 2px solid #FFF !important;
+  transition: color 0.3s ease, border-color 0.3s ease !important;
+}
+
+.locked_btn::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background-color: var(--hover-color, #a0d97b);
+  /* usa el color dinámico */
+  z-index: 0;
+  transition: left 0.3s ease;
+}
+
+.locked_btn:hover::before {
+  left: 0;
+}
+
+.locked_btn span {
+  position: relative;
+  z-index: 1;
+}
+
+.locked_btn:hover {
+  color: #fff !important;
+  border-color: var(--hover-color, #a0d97b) !important;
+}
+
+@media (min-width: 768px) {
+  .info_cont {
+    margin-top: -50vh;
+
+    padding: 0px;
+    gap: 12px;
+
+  }
+
+  .hero {
+    min-height: 100vh;
+  }
+  
+}

@@ -1,0 +1,220 @@
+.cover_samples_container {
+    align-self: stretch;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    /* border: 1px solid red; */
+    min-height: 500px;
+    max-height: 500px;
+
+}
+
+.key_cont {
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+    flex-direction: column;
+    align-self: stretch;
+    padding: 36px 0px;
+    gap: 32px;
+    padding-bottom: 0px;
+    width: 100%;
+    /* z-index: -1; */
+}
+
+.key_title {
+    padding: 0px 24px;
+    font-size: 32px;
+    font-weight: 800;
+    color: #20212B;
+    font-family:  'Outfit', 'Poppins';
+    line-height: 110%;
+    z-index: 2;
+}
+
+.inv_device_main_container_ios {
+    /* overflow: hidden; */
+    padding: 5px;
+    border-radius: 62px;
+    background-color: #2C2C2C;
+    border: 2px solid #7F7E7E;
+    position: relative;
+    box-shadow: 0px 0px 12px rgba(0, 0, 0, 0.5);
+    cursor: grab;
+    /* margin-left: -40px; */
+}
+
+/* .central_card_cover {
+    transform: scale(0.65);
+    margin: 0px -50px;
+} */
+
+.regular_card_cover {
+    transform: scale(0.6);
+    margin: 0px -60px;
+}
+
+.device_buttons_container_ios {
+    position: absolute;
+    top: 120px;
+    /* left: -7px; */
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    flex-direction: column;
+    gap: 15px;
+    z-index: 10;
+    border: 1px solid;
+}
+
+.device_button_ios,
+.device_power_button_ios {
+    width: 6px;
+    height: 60px;
+    border-radius: 2px 0px 0px 2px;
+    background-color: #2C2C2C;
+    position: relative;
+}
+
+.device_button_ios::after,
+.device_power_button_ios::after {
+    content: "";
+    height: 2px;
+    width: 4px;
+    position: absolute;
+    top: 2px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #595858;
+}
+
+.device_power_button_ios {
+    position: absolute;
+    right: -7px;
+    top: 180px;
+    border-radius: 0px 2px 2px 0px;
+    height: 100px;
+}
+
+.device_button_ios:first-of-type {
+    margin-bottom: 10px;
+    height: 30px;
+}
+
+.inv_device_container_ios {
+    background-color: black;
+    padding: 8px;
+    overflow: hidden;
+    border-radius: 55px;
+    position: relative;
+}
+
+.inv_black_space_ios,
+.inv_light_space_ios {
+    height: 50px;
+    width: 100%;
+    background-color: black;
+}
+
+.inv_light_space_ios {
+    background-color: #F3EFEB;
+    height: 45px;
+    position: relative;
+    /* height: 40px; */
+    border-radius: 0px 0px 47px 47px;
+    box-shadow: 6px 0px 6px rgba(0, 0, 0, 0.1);
+}
+
+
+.inv_light_space_ios::before {
+    content: "iattend.mx";
+    position: absolute;
+    top: 7px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: var(--font-family);
+    font-size: 12px;
+    color: var(--text-color);
+}
+
+.inv_light_space_ios::after {
+    content: "";
+    position: absolute;
+    top: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 130px;
+    height: 5px;
+    border-radius: 8px;
+    z-index: 10;
+    background: linear-gradient(180deg, #4B4A4A 0%, #6C6B6A 100%);
+    box-shadow: 0px 0px 8px rgba(0, 0, 0, 0.2);
+}
+
+
+.inv_black_space_ios {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-direction: row;
+    padding: 0px 30px;
+    box-sizing: border-box;
+}
+
+.inv_black_space_ios span {
+    color: var(--ft-color);
+    font-weight: 500;
+    font-size: 16px;
+}
+
+.inv_black_space_ios div {
+    height: 12px;
+}
+
+.ios_invitation {
+    height: 679px;
+    width: 347px;
+    background-color: var(--text-color);
+    overflow: hidden;
+    overflow-y: scroll;
+    border: none;
+    border-radius: 0px;
+    box-shadow: 0px 0px 16px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s ease;
+    position: relative;
+    cursor: default;
+
+}
+
+.ios_invitation {
+    height: 668px;
+    width: 357px;
+    border-radius: 0px;
+}
+
+.inv_set_position {
+    /* position: relative; */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.cover_sample_img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.dph_examples_carrusell {
+    max-width: 100vw;
+    overflow: auto;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    box-sizing: border-box;
+}

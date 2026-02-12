@@ -1,0 +1,134 @@
+.gift_card_bank,
+.gift_card_page {
+    /* width: 300px;
+    min-width: 300px; */
+    aspect-ratio: 5/3;
+    height: 180px;
+    border-radius: 12px;
+    padding: 16px;
+    box-sizing: border-box;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    flex-direction: column;
+    box-shadow: 0 0 6px 0 rgba(0, 0, 0, 0.25);
+    background-color: #00000030;
+}
+
+.gift_card {
+    position: absolute;
+}
+
+/* .gift_card:first-of-type {
+    margin-top: 0;
+}  */
+
+.gifts_single_col {
+    width: 100%;
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+    flex-direction: column;
+    gap: 0px;
+}
+
+.gift_card_page {
+    /* align-items: center;
+    justify-content: center; */
+    font-size: 16px;
+    font-weight: 700;
+    /* padding: 0px; */
+}
+
+
+
+.bbva {
+    background: linear-gradient(262deg, #02326D 2.39%, #1D528E 43.11%, #02326D 98.21%);
+    color: #FFFFFF !important;
+}
+
+.liverpool {
+    background: linear-gradient(180deg, #EE0087 0%, #E60183 51.44%, #C90071 100%);
+    color: #FFFFFF !important;
+    font-weight: 200;
+    /* font-size: 44px; */
+    /* letter-spacing: -2px; */
+    /* text-transform: lowercase; */
+}
+
+.banamex {
+    background: linear-gradient(270deg, #1A4A7B 0%, #0099D5 25%, #155187 50%, #0192CB 75%, #28497C 100%);
+    color: #DADDE2 !important;
+}
+
+.palacio {
+    background: linear-gradient(100deg, #E5A730 0.59%, #D8AA35 97.08%);
+    color: #252525 !important;
+    font-family: cursive !important;
+    font-weight: 500;
+    /* font-size: 18px; */
+    font-style: italic;
+    position: relative;
+}
+
+.palacio::after {
+    content: "";
+    width: 100%;
+    height: 2px;
+    position: absolute;
+    top: 50px;
+    background-color: whitesmoke;
+}
+
+.palacio span {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+}
+
+.santander {
+    background: linear-gradient(270deg, #E60203 0%, #E70101 100%);
+    color: #DADDE2 !important;
+}
+
+.amazon {
+    background: #171D27;
+    color: #FFF !important;
+    font-weight: 800;
+    text-transform: lowercase;
+    /* font-size: 44px; */
+    letter-spacing: -1px;
+
+}
+
+.hsbc {
+    background: linear-gradient(270deg, #D8D8D8 0%, #D52C27 100%);
+    color: #FFFFFF !important;
+}
+
+.sears {
+    background: linear-gradient(90deg, #C21B1D 0%, #991010 100%);
+    color: #FFFFFF !important;
+    position: relative;
+}
+
+.sears span {
+    position: absolute;
+    top: 24px;
+    right: 24px;
+    text-transform: uppercase;
+    font-style: italic;
+    /* font-size: 24px; */
+}
+
+.nu {
+    background: linear-gradient(270deg, #B799F4 0%, #7C4DD6 100%);
+    color: #FFF !important;
+}
+
+.nu .bank_name {
+    text-transform: lowercase;
+    font-size: 32px !important;
+    line-height: 1;
+    font-weight: 200;
+}

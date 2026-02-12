@@ -1,0 +1,215 @@
+.wallet {
+  position: relative;
+  display: block;
+  width: 100vw;
+  /* max-width: 450px; */
+  min-width: 350px;
+  max-width: 450px;
+  min-height: 326px;
+  max-height: 320px;
+  border-radius: 24px;
+  margin: 0 auto;
+  overflow: visible;
+  box-shadow: 0 0 8px 0 rgba(0, 0, 0, .35);
+  background-image: url('/assets/textures/magzne.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-blend-mode: multiply;
+
+}
+
+.wallet_light {
+  position: relative;
+  display: block;
+  width: 100vw;
+  min-width: 350px;
+  min-height: 326px;
+  max-height: 320px;
+  border-radius: 24px;
+  margin: 0 auto;
+  overflow: visible;
+  border: 1px solid #00000010;
+  box-shadow: 0 0 8px 0 rgba(0, 0, 0, .35);
+}
+
+.department {
+  position: absolute;
+  display: block;
+  width: 95%;
+  left: 0;
+  right: 0;
+  margin: auto;
+  background-image: url('/assets/textures/magzne.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-blend-mode: multiply;
+  border: 1px dashed rgba(0, 0, 0, 0.2);
+  border-top: none;
+  border-radius: 0 0 16px 16px;
+  box-shadow: 0 0 8px 0 rgba(0, 0, 0, 0.25),
+    0 0 6px 0 rgba(0, 0, 0, 0.15) inset;
+
+}
+
+.department_light {
+  position: absolute;
+  display: block;
+  width: 95%;
+  left: 0;
+  right: 0;
+  margin: auto;
+  border: 1px dashed rgba(0, 0, 0, 0.2);
+  border-top: none;
+  border-radius: 0 0 16px 16px;
+}
+
+.one {
+  bottom: 12px;
+  height: 170px;
+  z-index: 4;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-start;
+  box-sizing: border-box;
+  padding: 24px;
+
+}
+
+
+
+.card {
+  position: absolute;
+  display: block;
+  width: 90%;
+  height: 210px;
+  left: 0;
+  right: 0;
+  margin: auto;
+  border-radius: 16px;
+  transition: bottom .3s ease;
+  cursor: pointer;
+  box-shadow: 0 0 8px 0 rgba(0, 0, 0, .15);
+  z-index: 10;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-direction: column;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  font-family: 'Poppins';
+  font-size: 14px;
+  /* base por encima de departments */
+}
+
+.card_logo_container {
+  margin-top: 4px;
+  height: 16px;
+  /* width: 200px; */
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  align-self: stretch;
+
+}
+
+
+.wallet_col {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.wallet_label {
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1;
+  opacity: 0.8;
+  /* opacity: 0.8;
+  mix-blend-mode: multiply; */
+}
+
+.wallet_sec_label {
+  font-weight: 400;
+  line-height: 1;
+  opacity: 0.4;
+  /* mix-blend-mode: multiply; */
+}
+
+.cta_button {
+  font-weight: 400;
+  font-size: 12px;
+}
+
+
+.bbva {
+  background: linear-gradient(262deg, #02326D 2.39%, #1D528E 43.11%, #02326D 98.21%);
+  color: #FFFFFF;
+}
+
+.liverpool {
+  background: linear-gradient(180deg, #EE0087 0%, #E60183 51.44%, #C90071 100%);
+  color: #FFFFFF;
+}
+
+.banamex {
+  background: linear-gradient(0deg, #1A4A7B 0%, #0099D5 100%);
+  color: #DADDE2;
+}
+
+.palacio {
+  background: linear-gradient(100deg, #E5A730 0.59%, #D8AA35 97.08%);
+  color: #252525;
+}
+
+
+.santander {
+  background: linear-gradient(270deg, #E60203 0%, #E70101 100%);
+  color: #DADDE2;
+}
+
+.amazon {
+  background: #171D27;
+  color: #FFF;
+}
+
+.hsbc {
+  background: linear-gradient(270deg, #D8D8D8 0%, #b8b6b6 100%);
+  color: #000000;
+}
+
+.sears {
+  background: linear-gradient(90deg, #C21B1D 0%, #991010 100%);
+  color: #FFF;
+}
+
+.nu {
+  background: linear-gradient(270deg, #9F2DEB 0%, #710BB4 100%);
+  color: #FFF;
+}
+
+.scotiabank {
+  background: linear-gradient(270deg, #AD1E0D 0%, #C1250F 100%);
+  color: #FFF;
+}
+
+.banorte {
+  background: radial-gradient(50% 50% at 50% 50%, #484649 0%, #3F3D40 100%);
+  color: #FFFFFF;
+}
+
+.crelan {
+  background: linear-gradient(278deg, #68AD06 1.34%, #81BE19 50.29%, #7DBB1D 99.24%);
+  color: #FFFFFF;
+}
+
+.bank_name {
+  text-transform: uppercase;
+  font-size: 14px;
+  font-weight: 200;
+  opacity: 0.9;
+  font-family: 'Poppins';
+}

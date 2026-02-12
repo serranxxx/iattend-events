@@ -1,0 +1,17 @@
+.fan_stack {
+    width: 100%;
+    height: auto;
+    max-width: 600px;
+    margin: 24px auto 0;
+    /* separación del título */
+    position: relative;
+
+    /* Aislar el stack para que sus sombras/transform no afecten al título */
+    isolation: isolate;
+    contain: layout paint;
+}
+
+.fan_card {
+    transition: transform .25s ease, box-shadow .25s ease;
+    will-change: transform;
+}

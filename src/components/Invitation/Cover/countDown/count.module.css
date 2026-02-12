@@ -1,0 +1,76 @@
+.date_container {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-evenly;
+    flex-direction: column;
+}
+
+
+
+.date_date,
+.date_divider_dev {
+    align-self: stretch;
+    text-align: center;
+    font-size: 16px;
+    font-weight: 400;
+    letter-spacing: 2px;
+}
+
+.date_divider,
+.date_divider_dev {
+    width: 100%;
+    /* max-width: 85%; */
+    margin: 12px 0px
+}
+
+.date_row,
+.date_row_dev {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+}
+
+.date_col {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.date_time {
+    font-size: 24px;
+    font-weight: 600;
+}
+
+.date_unit {
+    font-weight: 200;
+    letter-spacing: 2px;
+    font-size: 12px;
+    line-height: 1;
+}
+
+@media (min-width: 768px) {
+    .date_date {
+        font-size: 24px;
+    }
+
+    .date_container {
+        gap: 8px;
+    }
+
+    .date_time {
+        font-size: 36px;
+    }
+    
+    .date_unit {
+        font-size: 18px;
+    }
+
+    .date_col {
+        gap: 16px;
+    }
+  }

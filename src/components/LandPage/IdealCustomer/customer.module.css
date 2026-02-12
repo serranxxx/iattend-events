@@ -1,0 +1,113 @@
+
+
+.key_cont {
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+    flex-direction: column;
+    align-self: stretch;
+    padding: 36px 0px;
+    gap: 32px;
+    padding-bottom: 0px;
+    /* z-index: -1; */
+}
+
+.key_title {
+    padding: 0px 24px;
+    font-size: 32px;
+    font-weight: 800;
+    color: #20212B;
+    font-family:  'Outfit', 'Poppins';
+    line-height: 110%;
+    z-index: 2;
+}
+
+.ideal_cont {
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+    flex-direction: column;
+    gap: 12px;
+    padding: 0px 24px;
+    align-self: stretch;
+}
+
+.ideal_card {
+    height: 60px;
+    align-self: stretch;
+    border-radius: 12px;
+    background-image: linear-gradient(to top, #F5F3F260, #CFBEE620);
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+    box-sizing: border-box;
+    padding: 22px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+    flex-direction: column;
+    overflow: hidden;
+    gap: 8px;
+}
+
+.card_row {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px;
+    color: #20212B;
+    font-family:  'Outfit', 'Poppins';
+    line-height: 110%;
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.card_row svg {
+    color: #CFBEE6;
+}
+
+.card_desc {
+    color: #20212B80;
+    font-family:  'Outfit', 'Poppins';
+    line-height: 150%;
+    font-weight: 400;
+    font-size: 16px;
+    margin-top: 8px;
+}
+
+.main_cont {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+}
+
+@media (min-width: 768px) {
+
+    .key_cont {
+        max-width: 1320px;
+        display: flex;
+        /* z-index: -1; */
+    }
+
+    .flow_card {
+        flex: 1;
+    }
+
+    .key_title {
+        font-size: 38px;
+
+    }
+
+    .ideal_card {
+        height: auto !important;
+        flex: 1;
+    }
+
+    .ideal_cont {
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        align-self: stretch;
+        flex-direction: row;
+    }
+}

@@ -1,0 +1,9 @@
+.cards_container {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    flex-direction: column-reverse;
+    position: relative;
+    margin-top: -24px;
+    max-width: 480px;
+}

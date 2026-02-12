@@ -1,0 +1,33 @@
+.animate
+{
+	transition: all 0.1s;
+	-webkit-transition: all 0.1s;
+}
+
+.action_button
+{
+	position: relative;
+	padding: 10px 40px;
+    min-height: 60px;
+	border-radius: 12px;
+	font-size: 24px;
+	color: #FFF;
+	text-decoration: none;	
+    transition: all 0.3s ease;
+    margin-top: 24px;
+    font-weight: 400;
+}
+
+
+.action_button:active
+{
+	transform: translate(0px,5px);
+  -webkit-transform: translate(0px,5px);
+	border-bottom: 1px solid;
+}
+
+.action_button:hover
+{
+	background-color: #FFF !important;
+    border-bottom: 5px solid #CCC !important;
+}

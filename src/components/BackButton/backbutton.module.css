@@ -1,0 +1,22 @@
+.action_button {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 6px;
+    position: relative;
+    z-index: 1;
+    background-color: #6E3DFA;
+    color: #FFF;
+    padding: 12px 16px;
+    height: 44px;
+    border-radius: 12px;
+    box-shadow: 0px 0px 8px rgba(0, 0, 0, 0.2);
+    border: none;
+    font-weight: 600;
+    font-family: 'Outfit', 'Poppins';
+}
+
+.action_button:hover {
+    background-color: #7c4ff7 !important;
+    color: #FFF !important;
+}
