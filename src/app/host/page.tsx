@@ -11,6 +11,7 @@ const ALLOWED_ORIGINS = [
   "http://localhost:3001",
   "http://localhost:3000",
   "https://www.iattend.mx",
+  "https://www.iattend.site",
 ];
 
 export default function Page() {
