@@ -124,6 +124,44 @@ export interface CoverSection {
   };
 }
 
+export type XYPosition = {
+  x: number;
+  y: number;
+};
+
+
+export type DynamicSeparatorType = "single" | "image";
+export type DynamicSeparatorSingle = {
+  value: number;   // generals.separator
+  color: string;   // generals.colors.accent
+};
+export type DynamicSeparatorImage = {
+  value: string | null; // default null
+  zoom: number;         // default 1
+  position: XYPosition; // default {x:0,y:0}
+  height: number;
+  width: number;
+};
+
+export type DynamicSeparator = {
+  active: boolean;                 // same as module.separator
+  type: DynamicSeparatorType;      // default "single"
+  single: DynamicSeparatorSingle;
+  image: DynamicSeparatorImage;
+};
+
+export type DynamicBackgroundShape = "square" | string;
+
+export type DynamicBackground = {
+  active: boolean;         // same as module.background
+  color: string;           // generals.colors.secondary
+  shape?: DynamicBackgroundShape; // default "square"
+  shadow?: boolean;        // default false
+  texture?: number | null; // default null
+  border_radius?: number;  // default 0
+  width: number;          // default "100%"
+};
+
 export interface GreetingSection {
   active: boolean;
   inverted: boolean;
@@ -131,6 +169,8 @@ export interface GreetingSection {
   separator: boolean;
   title: string;
   description: string;
+  dynamic_separator: DynamicSeparator;
+  dynamic_background: DynamicBackground;
 }
 
 export interface PeopleSection {
@@ -140,6 +180,8 @@ export interface PeopleSection {
   separator: boolean;
   title: string;
   personas: Person[];
+  dynamic_separator: DynamicSeparator;
+  dynamic_background: DynamicBackground;
 }
 
 export interface QuoteSection {
@@ -159,6 +201,8 @@ export interface QuoteSection {
     width: number | null;
     shadow: boolean;
   };
+  dynamic_separator: DynamicSeparator;
+  dynamic_background: DynamicBackground;
 }
 
 export interface ItinerarySection {
@@ -169,6 +213,8 @@ export interface ItinerarySection {
   title: string | null;
   type: 'cards' | 'time-line'
   object: ItineraryItem[];
+  dynamic_separator: DynamicSeparator;
+  dynamic_background: DynamicBackground;
 }
 
 // export interface DressCodeLink {
@@ -189,6 +235,8 @@ export interface DresscodeSection {
   dev: string[];
   images_active: boolean;
   links_active: boolean;
+  dynamic_separator: DynamicSeparator;
+  dynamic_background: DynamicBackground;
 }
 
 export interface GiftsSection {
@@ -199,6 +247,8 @@ export interface GiftsSection {
   title: string | null;
   description: string | null;
   cards: GiftCard[];
+  dynamic_separator: DynamicSeparator;
+  dynamic_background: DynamicBackground;
 }
 
 export interface DestinationsSection {
@@ -209,6 +259,8 @@ export interface DestinationsSection {
   title: string | null;
   description: string | null;
   cards: DestinationCard[];
+  dynamic_separator: DynamicSeparator;
+  dynamic_background: DynamicBackground;
 }
 
 export interface NoticesSection {
@@ -218,6 +270,8 @@ export interface NoticesSection {
   separator: boolean;
   title: string | null;
   notices: string[];
+  dynamic_separator: DynamicSeparator;
+  dynamic_background: DynamicBackground;
 }
 
 export interface GallerySection {
@@ -228,6 +282,8 @@ export interface GallerySection {
   prod: string[];
   dev: string[];
   title: string | null;
+  dynamic_separator: DynamicSeparator;
+  dynamic_background: DynamicBackground;
 }
 
 export interface Generals {

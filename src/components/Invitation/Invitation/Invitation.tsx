@@ -16,21 +16,16 @@ import { Gallery } from "../Gallery/Gallery";
 import Image from "next/image";
 import { textures } from "@/helpers/textures";
 import { TextureOverlay } from "./TexturesOverlay";
-import { Button, Drawer, Input, Layout, message, QRCode } from "antd";
+import { Button, Drawer, Input, message, QRCode } from "antd";
 import Confirm from "../Confirm/Confirm";
 import { FaLock } from "react-icons/fa";
-import axios from "axios";
-import { GuestAccessPayload, GuestSubabasePayload } from "@/types/guests";
-import GoogleTranslate from "@/components/GoogleTranslate/GoogleTranslate";
+import { GuestSubabasePayload } from "@/types/guests";
 import { useScreenWidth } from "@/hooks/useScreenWidth";
 import { createClient } from "@/lib/supabase/client";
 import { PiTicketDuotone } from "react-icons/pi";
-import { BsPass } from "react-icons/bs";
 import { FaArrowsRotate } from "react-icons/fa6";
 import AnimatedPath from "@/components/Motion/AnimatedPath";
-import { Footer } from "antd/es/layout/layout";
 import { FooterLand } from "@/components/LandPage/Footer/Footer";
-import { darker } from "@/helpers/functions";
 import Link from "next/link";
 
 type invProps = {

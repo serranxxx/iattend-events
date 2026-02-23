@@ -25,7 +25,7 @@ export const FooterLand = ({ invitation, color }: Props) => {
     }}>
       <div className={styles.footer_cont}>
         <div className={styles.footer_main_col}>
-          <Link href="/about">
+          <Link href="www.iattend.mx/about">
             <div className={styles.footer_row}>
               <img className={styles.footer_logo} src="/assets/images/blanco.png" alt="" />
               <div className={styles.footer_col}>

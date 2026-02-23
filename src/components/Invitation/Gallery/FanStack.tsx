@@ -39,7 +39,8 @@ export default function FanStack({ images, radius = 24, invitation }: FanStackPr
         // minHeight: onScroll ? "500px" : "",
         minWidth: "100vw",
         padding: "0px 24px",
-        marginTop: "-30px",
+        marginTop: "-36px",
+        marginBottom:'-36px',
         overflow: onScroll ? "auto" : "hidden",
         // display:'flex',alignItems:'center',justifyContent:'center'
       }}

@@ -6,6 +6,7 @@ import Card from "./Card/Card";
 import OpenCard from "./OpenCard/OpenCard";
 import { Button } from "antd";
 import { FaDiamondTurnRight } from "react-icons/fa6";
+import Image from "next/image";
 
 type quoteProps = {
   dev: boolean;
@@ -27,7 +28,7 @@ export const Itinerary = forwardRef<HTMLDivElement, quoteProps>(function Greetin
     weight: invitation?.generals.fonts.titles?.weight === 0 ? 600 : (invitation?.generals.fonts.titles?.weight ?? 600),
     size: invitation?.generals.fonts.titles?.size === 0 ? 22 : (invitation?.generals.fonts.titles?.size ?? 22),
     opacity: invitation?.generals.fonts.titles?.opacity ?? 1,
-    color: invitation?.generals.fonts.titles?.color === '#000000' ? accent : (invitation?.generals.fonts.titles?.color ?? accent )
+    color: invitation?.generals.fonts.titles?.color === '#000000' ? accent : (invitation?.generals.fonts.titles?.color ?? accent)
   }
 
   const body = {
@@ -51,64 +52,81 @@ export const Itinerary = forwardRef<HTMLDivElement, quoteProps>(function Greetin
   return (
     <>
       {content.active && generals ? (
-        <div className="main_container" style={{ position: "relative", width: "100%" }}>
-          <div className="textures_background" style={{ backgroundColor: content.background ? secondary : "transparent" }} />
-          <div
-            ref={ref}
-            className="gm_container"
-            // {...(dev ? { 'data-aos': 'fade-left' } : {})}
-            style={{
-              padding: content.background ? "24px" : "0px 24px",
-              position: "relative",
-            }}
-          >
-            <div className="g_module_info_container">
-              <span
-                // data-aos={!dev && generals.texture == null ? "fade-right" : undefined}
-                className="g_module_title"
+        <div ref={ref} className="main_container"
+          style={{
+            position: "relative",
+            backgroundColor: content.dynamic_background.active ? content.dynamic_background.color : "transparent",
+            borderRadius: content.dynamic_background.border_radius,
+            width: content.dynamic_background.active ? `${content.dynamic_background.width}%` : '100%',
+            boxShadow: content.dynamic_background.active ? content.dynamic_background.shadow ? '0px 0px 12px rgba(0,0,0,0.4)' : '0px 0px 0px rgba(0,0,0,0)' : '0px 0px 0px rgba(0,0,0,0)',
+            minWidth:'85%'
+          }}>
+
+          <div className="g_module_info_container">
+            <span
+              // data-aos={!dev && generals.texture == null ? "fade-right" : undefined}
+              className="g_module_title"
+              style={{
+                color: content.dynamic_background.active ? (content.inverted ? primary : title.color) : title.color,
+                display: "inline-block", whiteSpace: "pre-line",
+                fontFamily: title.font ?? "Poppins",
+                fontSize: title.size, fontWeight: title.weight, opacity: title.opacity
+              }}
+            >
+              {content.title}
+            </span>
+            <div
+              // data-aos={!dev && generals.texture == null ? "fade-right" : undefined}
+              className={styles.itinerary_cards_container}
+            >
+              {
+                invitationID === "80d0c716-86e4-4c90-9e6d-9133d970d769"
+                  ? <div className={styles.extra_card} style={{ backgroundColor: secondary }}>
+                    <OpenCard dev={dev} invitation={invitation} item={invitation.itinerary.object[0]} />
+                    <Button
+                      href={invitation.itinerary.object[0].address?.url ?? ""}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      icon={<FaDiamondTurnRight size={14} />}
+                      style={{
+                        background: '#FFFFFF80',
+                        backdropFilter: 'blur(10px)',
+                        color: primary,
+                        position: 'absolute', top: '24px', right: '24px'
+                      }}
+                    >
+                      {ui?.buttons.directions}
+                    </Button>
+                  </div>
+                  : <Card ui={ui} invitation={invitation} dev={dev} />
+              }
+
+            </div>
+          </div>
+          {content?.dynamic_separator.active && (
+            content.dynamic_separator.type === 'single' ?
+              <Separador inverted={content.inverted} generals={generals} value={content?.dynamic_separator.single.value ?? 1} />
+              :
+              <div className="dyn_separator_cont"
                 style={{
-                  color: content.background ? (content.inverted ? primary : title.color) : title.color,
-                  display: "inline-block", whiteSpace: "pre-line",
-                  fontFamily: title.font ?? "Poppins",
-                  fontSize: title.size, fontWeight: title.weight, opacity: title.opacity
+                  width: `${content?.dynamic_separator.image.width}%`,
+                  minHeight: `${content?.dynamic_separator.image.height}px`,
+                  zIndex: 99
                 }}
               >
-                {content.title}
-              </span>
-              <div
-                // data-aos={!dev && generals.texture == null ? "fade-right" : undefined}
-                className={styles.itinerary_cards_container}
-              >
                 {
-                  invitationID === "80d0c716-86e4-4c90-9e6d-9133d970d769"
-                    ? <div className={styles.extra_card} style={{ backgroundColor: secondary }}>
-                      <OpenCard dev={dev} invitation={invitation} item={invitation.itinerary.object[0]} />
-                      <Button
-                        href={invitation.itinerary.object[0].address?.url ?? ""}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        icon={<FaDiamondTurnRight size={14} />}
-                        style={{
-                          background: '#FFFFFF80',
-                          backdropFilter: 'blur(10px)',
-                          color: primary,
-                          position: 'absolute', top: '24px', right: '24px'
-                        }}
-                      >
-                        {ui?.buttons.directions}
-                      </Button>
-                    </div>
-                    : <Card ui={ui} invitation={invitation} dev={dev} />
+                  content?.dynamic_separator?.image?.value &&
+                  <Image fill src={content?.dynamic_separator?.image?.value ?? ""} alt="" style={{ objectFit: 'cover' }} />
                 }
 
               </div>
-            </div>
-          </div>
+          )
+
+          }
         </div>
       ) : (
         <></>
       )}
-      {content?.separator && <Separador generals={generals} value={generals?.separator ?? 1} />}
     </>
   );
 });

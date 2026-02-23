@@ -22,7 +22,7 @@ export const Quote = forwardRef<HTMLDivElement, quoteProps>(function Greeting({ 
 
   const renderTextWithStrong = (text: string) => {
     const parts = text.split(/(\*[^*]+\*)/g);
-  
+
     return parts.map((part, index) => {
       if (part.startsWith("*") && part.endsWith("*")) {
         return <strong key={index}>{part.slice(1, -1)}</strong>;
@@ -31,112 +31,122 @@ export const Quote = forwardRef<HTMLDivElement, quoteProps>(function Greeting({ 
     });
   };
 
-  // useEffect(() => {
-  //   AOS.init({
-  //     duration: 900, // duración de las animaciones (en ms)
-  //     once: true, // si se anima solo la primera vez
-  //     easing: "ease-out", // tipo de easing
-  //   });
-  // }, []);
 
   return (
     <>
       {content.active ? (
-        <div className="main_container" style={{ position: "relative", width: "100%" }}>
-          <div className="textures_background" style={{ backgroundColor: content.background ? secondary : "transparent" }} />
-          <div
-            // data-aos={!dev && generals.texture == null ? "fade-left" : undefined}
-            ref={ref}
-            className="gm_container"
-            style={{
-              position: "relative",
-              zIndex: 2,
-              maxWidth:'1250px !important',
-            }}
-          >
-            {content.image.active ? (
-              <FadeIn>
-                <div className="background_image_quote_container">
-                  <div style={{ backgroundColor: primary, height: "100%", width: "100%" }}>
-                    {image_src && <Image fill style={{ objectFit: "cover" }} loading="lazy" decoding="async" alt="" src={image_src} />}
-                  </div>
+        <div ref={ref} className="main_container"
+          style={{
+            position: "relative",
+            backgroundColor: content.dynamic_background.active ? content.dynamic_background.color : "transparent",
+            borderRadius: content.dynamic_background.border_radius,
+            width: content.dynamic_background.active ? `${content.dynamic_background.width}%` : '100%',
+            boxShadow: content.dynamic_background.active ? content.dynamic_background.shadow ? '0px 0px 12px rgba(0,0,0,0.4)' : '0px 0px 0px rgba(0,0,0,0)' : '0px 0px 0px rgba(0,0,0,0)',
+            padding: content.image.active ? 0 : '24px',
+           
+          }}>
 
-                  {content.text.shadow && (
-                    <div
-                      style={{
-                        position: "absolute",
-                        width: "100%",
-                        height: "400px",
-                        top: "0px",
-                        left: "50%",
-                        transform: "translate(-50%)",
-                        background: `linear-gradient(to top, ${darker(accent, 0.7)}80, rgba(0,0,0,0))`,
-                        mixBlendMode:'multiply'
-                      }}
-                    ></div>
-                  )}
+          {content.image.active ? (
+            <FadeIn>
+              <div className="background_image_quote_container" style={{
+                borderRadius: content.dynamic_background.border_radius,
+              }}>
+                <div style={{ backgroundColor: primary, height: "100%", width: "100%" }}>
+                  {image_src && <Image fill style={{ objectFit: "cover" }} loading="lazy" decoding="async" alt="" src={image_src} />}
+                </div>
 
+                {content.text.shadow && (
                   <div
-                    className={!dev ? "qt_image_cnt" : undefined}
                     style={{
-                      height: "400px",
-                      display: "flex",
-                      alignItems: content.text.align,
                       position: "absolute",
                       width: "100%",
+                      height: "400px",
                       top: "0px",
                       left: "50%",
                       transform: "translate(-50%)",
-                      padding: "24px",
-                      justifyContent: "center",
-                      lineHeight:'1.4'
+                      background: `linear-gradient(to top, ${darker(accent, 0.7)}80, rgba(0,0,0,0))`,
+                      mixBlendMode: 'multiply'
+                    }}
+                  ></div>
+                )}
+
+                <div
+                  className={!dev ? "qt_image_cnt" : undefined}
+                  style={{
+                    height: "400px",
+                    display: "flex",
+                    alignItems: content.text.align,
+                    position: "absolute",
+                    width: "100%",
+                    top: "0px",
+                    left: "50%",
+                    transform: "translate(-50%)",
+                    padding: "24px",
+                    justifyContent: "center",
+                    lineHeight: '1.4'
+                  }}
+                >
+                  <span
+                    className="g_mdoule_regular_text"
+                    style={{
+                      whiteSpace: "pre-line",
+                      color: content.text.font.color,
+                      fontFamily: content.text.font.typeFace ?? "Poppins",
+                      fontSize: `${content.text.font.size}px`,
+                      opacity: content.text.font.opacity,
+                      fontWeight: content.text.font.weight,
+                      textAlign: content.text.justify,
+                      width: `${content.text.width}%`,
                     }}
                   >
-                    <span
-                      className="g_mdoule_regular_text"
-                      style={{
-                        whiteSpace: "pre-line",
-                        color: content.text.font.color,
-                        fontFamily: content.text.font.typeFace ?? "Poppins",
-                        fontSize: `${content.text.font.size}px`,
-                        opacity: content.text.font.opacity,
-                        fontWeight: content.text.font.weight,
-                        textAlign: content.text.justify,
-                        width: `${content.text.width}%`,
-                      }}
-                    >
-                      {renderTextWithStrong(content.text.font.value ?? "")}
-                    </span>
-                  </div>
+                    {renderTextWithStrong(content.text.font.value ?? "")}
+                  </span>
                 </div>
-              </FadeIn>
-            ) : (
-              <span
-                className="g_mdoule_regular_text"
+              </div>
+            </FadeIn>
+          ) : (
+            <span
+              className="g_mdoule_regular_text"
+              style={{
+                color: content.inverted ? primary : accent,
+                fontFamily: content.text.font.typeFace,
+                fontSize: `16px`,
+                textAlign: "center",
+                width: "60%",
+                fontStyle: "italic",
+                padding: "64px 0px",
+                whiteSpace: "pre-line",
+                lineHeight: '1.4'
+              }}
+            >
+              {renderTextWithStrong(content.text.font.value ?? "")}
+            </span>
+          )}
+
+          {content?.dynamic_separator.active && (
+            content.dynamic_separator.type === 'single' ?
+              <Separador inverted={content.inverted} generals={generals} value={content?.dynamic_separator.single.value ?? 1} />
+              :
+              <div className="dyn_separator_cont"
                 style={{
-                  color: content.background && content.inverted ? primary : accent,
-                  fontFamily: content.text.font.typeFace,
-                  fontSize: `16px`,
-                  textAlign: "center",
-                  width: "60%",
-                  fontStyle: "italic",
-                  padding: "64px 0px",
-                  whiteSpace: "pre-line",
-                  lineHeight:'1.4'
+                  width: `${content?.dynamic_separator.image.width}%`,
+                  minHeight: `${content?.dynamic_separator.image.height}px`,
+                  zIndex: 99
                 }}
               >
-                {renderTextWithStrong(content.text.font.value ?? "")}
-              </span>
-            )}
-          </div>
+                {
+                  content?.dynamic_separator?.image?.value &&
+                  <Image fill src={content?.dynamic_separator?.image?.value ?? ""} alt="" style={{ objectFit: 'cover' }} />
+                }
 
-          
+              </div>
+          )
+
+          }
         </div>
       ) : (
         <></>
       )}
-
-      {content?.separator && <Separador generals={generals} value={generals?.separator ?? 1} />}
     </>
   );
 });

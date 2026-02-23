@@ -2,9 +2,10 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 100%;
     max-width: 850px;
-    border-radius: 16px;
+    flex-direction: column;
+    gap: 24px;
+    padding: 24px;
 }
 
 .gm_container {
@@ -131,6 +132,12 @@
     box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
 }
 
+.dyn_separator_cont {
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
 
 
 @media (min-width: 768px) {
@@ -151,12 +158,6 @@
         border: 1px solid red;
         width: 100%;
     } */
-
-
-    .gm_container {
-        /* max-width: 550px; */
-        /* border: 1px solid; */
-    }
 
 
 

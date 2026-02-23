@@ -4,10 +4,11 @@ import { Generals } from "@/types/new_invitation";
 type separatorProps = {
   value: number;
   generals?: Generals;
+  inverted?: boolean;
 };
 
-export const Separador = ({ value, generals }: separatorProps) => {
-  const color = generals?.colors.accent ?? "#000000";
+export const Separador = ({ value, generals, inverted }: separatorProps) => {
+  const color = (inverted ? generals?.colors.primary : generals?.colors.accent) ?? "#000000";
   // useEffect(() => {
   //     AOS.init({
   //         duration: 800,       // duración de las animaciones (en ms)
