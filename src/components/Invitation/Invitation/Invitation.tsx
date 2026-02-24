@@ -726,8 +726,8 @@ export default function Invitation({ password, invitationID, ui, invitation, loa
           },
         }}
       >
-        {(guestInfo || type === "open") && mongoID && (
-          <Confirm invitationID={invitationID} ui={ui} invitation={invitation} type={type} guestInfo={guestInfo} mongoID={mongoID} refreshGuest={refreshGuest} />
+        {(guestInfo || type === "open") && (
+          <Confirm invitationID={invitationID} ui={ui} invitation={invitation} guestInfo={guestInfo} refreshGuest={refreshGuest} />
         )}
       </Drawer>
     </>

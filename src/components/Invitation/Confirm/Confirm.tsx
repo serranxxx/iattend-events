@@ -23,15 +23,13 @@ dayjs.extend(timezone);
 
 type ConfirmProps = {
   invitation: NewInvitation;
-  type: InvitationType;
   guestInfo: GuestSubabasePayload | null;
-  mongoID: string;
   ui: InvitationUIBundle;
   invitationID?: string;
   refreshGuest: () => Promise<void>;
 };
 
-export default function Confirm({ invitationID, ui, invitation, type, guestInfo, mongoID, refreshGuest }: ConfirmProps) {
+export default function Confirm({ invitationID, ui, invitation, guestInfo, refreshGuest }: ConfirmProps) {
   const [messageApi, contextHolder] = message.useMessage();
 
   const generals = invitation?.generals;
