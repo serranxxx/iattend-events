@@ -62,7 +62,7 @@ export const Destinations = forwardRef<HTMLDivElement, DresscodeProps>(function 
         <div ref={ref} className="main_container"
           style={{
             position: "relative",
-            backgroundColor: content.dynamic_background.active ? content.dynamic_background.color : "transparent",
+            backgroundColor: content.dynamic_background.active ? secondary : "transparent",
             borderRadius: content.dynamic_background.border_radius,
             width: content.dynamic_background.active ? `${content.dynamic_background.width}%` : '100%',
             boxShadow: content.dynamic_background.active ? content.dynamic_background.shadow ? '0px 0px 12px rgba(0,0,0,0.4)' : '0px 0px 0px rgba(0,0,0,0)' : '0px 0px 0px rgba(0,0,0,0)'
