@@ -38,18 +38,18 @@ export const Quote = forwardRef<HTMLDivElement, quoteProps>(function Greeting({ 
         <div ref={ref} className="main_container"
           style={{
             position: "relative",
-            backgroundColor: content.dynamic_background.active ? secondary : "transparent",
-            borderRadius: content.dynamic_background.border_radius,
-            width: content.dynamic_background.active ? `${content.dynamic_background.width}%` : '100%',
-            boxShadow: content.dynamic_background.active ? content.dynamic_background.shadow ? '0px 0px 12px rgba(0,0,0,0.4)' : '0px 0px 0px rgba(0,0,0,0)' : '0px 0px 0px rgba(0,0,0,0)',
-            padding: content.image.active ? 0 : '24px',
+            backgroundColor: content?.dynamic_background?.active ? secondary : "transparent",
+            borderRadius: content?.dynamic_background?.border_radius,
+            width: content?.dynamic_background?.active ? `${content.dynamic_background.width}%` : '100%',
+            boxShadow: content?.dynamic_background?.active ? content.dynamic_background.shadow ? '0px 0px 12px rgba(0,0,0,0.4)' : '0px 0px 0px rgba(0,0,0,0)' : '0px 0px 0px rgba(0,0,0,0)',
+            padding: content?.image?.active ? 0 : '24px',
            
           }}>
 
           {content.image.active ? (
             <FadeIn>
               <div className="background_image_quote_container" style={{
-                borderRadius: content.dynamic_background.border_radius,
+                borderRadius: content?.dynamic_background?.border_radius,
               }}>
                 <div style={{ backgroundColor: primary, height: "100%", width: "100%" }}>
                   {image_src && <Image fill style={{ objectFit: "cover" }} loading="lazy" decoding="async" alt="" src={image_src} />}
@@ -123,8 +123,8 @@ export const Quote = forwardRef<HTMLDivElement, quoteProps>(function Greeting({ 
             </span>
           )}
 
-          {content?.dynamic_separator.active && (
-            content.dynamic_separator.type === 'single' ?
+          {content?.dynamic_separator?.active && (
+            content?.dynamic_separator?.type === 'single' ?
               <Separador inverted={content.inverted} generals={generals} value={content?.dynamic_separator.single.value ?? 1} />
               :
               <div className="dyn_separator_cont"

@@ -69,10 +69,10 @@ export const Gifts = forwardRef<HTMLDivElement, DresscodeProps>(function Greetin
         <div ref={ref} className="main_container"
           style={{
             position: "relative",
-            backgroundColor: content.dynamic_background.active ? secondary : "transparent",
-            borderRadius: content.dynamic_background.border_radius,
-            width: content.dynamic_background.active ? `${content.dynamic_background.width}%` : '100%',
-            boxShadow: content.dynamic_background.active ? content.dynamic_background.shadow ? '0px 0px 12px rgba(0,0,0,0.4)' : '0px 0px 0px rgba(0,0,0,0)' : '0px 0px 0px rgba(0,0,0,0)',
+            backgroundColor: content?.dynamic_background?.active ? secondary : "transparent",
+            borderRadius: content?.dynamic_background?.border_radius,
+            width: content?.dynamic_background?.active ? `${content.dynamic_background.width}%` : '100%',
+            boxShadow: content?.dynamic_background?.active ? content.dynamic_background.shadow ? '0px 0px 12px rgba(0,0,0,0.4)' : '0px 0px 0px rgba(0,0,0,0)' : '0px 0px 0px rgba(0,0,0,0)',
             minWidth: '85%'
           }}>
 
@@ -82,7 +82,7 @@ export const Gifts = forwardRef<HTMLDivElement, DresscodeProps>(function Greetin
                 className="g_module_title"
                 style={{
                   display: "inline-block", whiteSpace: "pre-line",
-                  color: content.dynamic_background.active && content.inverted ? primary : title.color,
+                  color: content?.dynamic_background?.active && content?.inverted ? primary : title.color,
                   fontFamily: title.font ?? "Poppins",
                   fontSize: title.size, fontWeight: title.weight, opacity: title.opacity
                 }}
@@ -95,7 +95,7 @@ export const Gifts = forwardRef<HTMLDivElement, DresscodeProps>(function Greetin
                 className="g_mdoule_regular_text"
                 style={{
                   display: "inline-block", whiteSpace: "pre-line",
-                  color: content.dynamic_background.active && content.inverted ? primary : accent,
+                  color: content?.dynamic_background?.active && content?.inverted ? primary : accent,
                   fontFamily: body.font ?? "Poppins",
                   fontWeight: body.weight, opacity: body.opacity
                 }}
@@ -113,8 +113,8 @@ export const Gifts = forwardRef<HTMLDivElement, DresscodeProps>(function Greetin
 
             </div>
           </div>
-          {content?.dynamic_separator.active && (
-            content.dynamic_separator.type === 'single' ?
+          {content?.dynamic_separator?.active && (
+            content?.dynamic_separator?.type === 'single' ?
               <Separador inverted={content.inverted} generals={generals} value={content?.dynamic_separator.single.value ?? 1} />
               :
               <div className="dyn_separator_cont"

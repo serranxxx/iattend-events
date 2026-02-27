@@ -138,7 +138,7 @@ export default function Card({ ui, invitation, dev }: CardProps) {
                       padding: "0px 6px",
                       fontFamily: body.font,
                       fontSize: "14px",
-                      color: content.dynamic_background.active ? (content.inverted ? primary : accent) : content.inverted ? accent : accent,
+                      color: content?.dynamic_background?.active ? (content.inverted ? primary : accent) : content.inverted ? accent : accent,
                     }}
                   >
                     <span style={{ opacity: body.opacity, fontWeight: body.weight + 100, fontSize: "16px" }}>{item.name}</span>
@@ -148,8 +148,8 @@ export default function Card({ ui, invitation, dev }: CardProps) {
                       <Button
                         onClick={() => setOpen(item)}
                         style={{
-                          backgroundColor: content.dynamic_background.active ? (content.inverted ? primary : secondary) : secondary,
-                          color: content.dynamic_background.active ? (content.inverted ? accent : accent) : content.inverted ? primary : accent,
+                          backgroundColor: content?.dynamic_background?.active ? (content.inverted ? primary : secondary) : secondary,
+                          color: content?.dynamic_background?.active ? (content.inverted ? accent : accent) : content.inverted ? primary : accent,
                           boxShadow: generals.texture !== null ? "0 0 6px 0 rgba(0, 0, 0, 0.25)" : undefined,
                         }}
                         // onClick={() => setActiveSteps([...(activeSteps ?? []), item])}
@@ -171,7 +171,7 @@ export default function Card({ ui, invitation, dev }: CardProps) {
                   width: 16,
                   height: 16,
                   borderRadius: "50%",
-                  background: content.dynamic_background.active ? (content.inverted ? primary : accent) : content.inverted ? accent : accent,
+                  background: content?.dynamic_background?.active ? (content.inverted ? primary : accent) : content.inverted ? accent : accent,
                   transform: "translate(-50%, -50%)",
                   zIndex: 2,
                 }}

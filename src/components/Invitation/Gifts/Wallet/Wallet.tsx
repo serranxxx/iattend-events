@@ -199,7 +199,7 @@ export default function Wallet({ ui, invitation, dev = false }: CardProps) {
           className={invitation.generals.texture !== null ? styles.wallet : styles.wallet_light}
           style={{
             backgroundColor:
-              darker(content.dynamic_background.active ? (content.inverted ? primary : secondary) : content.inverted ? secondary : primary, 0.95) ??
+              darker(content?.dynamic_background?.active ? (content.inverted ? primary : secondary) : content.inverted ? secondary : primary, 0.95) ??
               "#FFF",
             transform: `scale(${!isLargeScreen ? "0.7" : "0.9"})`,
             marginTop: isLargeScreen ? "28px" : '-24px',
@@ -279,7 +279,7 @@ export default function Wallet({ ui, invitation, dev = false }: CardProps) {
             onClick={handleReset}
             style={{
               backgroundColor:
-                darker(content.dynamic_background.active ? (content.inverted ? primary : secondary) : content.inverted ? secondary : primary, 0.95) ??
+                darker(content?.dynamic_background?.active ? (content.inverted ? primary : secondary) : content.inverted ? secondary : primary, 0.95) ??
                 "#FFF",
               borderColor: content.inverted ? `${accent}60` : `${primary}60`,
             }}
@@ -287,13 +287,13 @@ export default function Wallet({ ui, invitation, dev = false }: CardProps) {
           >
             <div className={styles.wallet_col} style={{ fontFamily: fontFamily }}>
               <span
-                style={{ color: content.dynamic_background.active ? (content.inverted ? accent : primary) : content.inverted ? primary : accent }}
+                style={{ color: content?.dynamic_background?.active ? (content.inverted ? accent : primary) : content.inverted ? primary : accent }}
                 className={styles.wallet_label}
               >
                 {title}
               </span>
               <span
-                style={{ color: content.dynamic_background.active ? (content.inverted ? accent : primary) : content.inverted ? primary : accent }}
+                style={{ color: content?.dynamic_background?.active ? (content.inverted ? accent : primary) : content.inverted ? primary : accent }}
                 className={styles.wallet_sec_label}
               >
                 {ui.labels.cards}

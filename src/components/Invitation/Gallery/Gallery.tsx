@@ -47,10 +47,10 @@ export const Gallery = forwardRef<HTMLDivElement, DresscodeProps>(function galle
         <div ref={ref} className="main_container"
           style={{
             position: "relative",
-            backgroundColor: content.dynamic_background.active ? secondary : "transparent",
-            borderRadius: content.dynamic_background.border_radius,
-            width: content.dynamic_background.active ? `${content.dynamic_background.width}%` : '100%',
-            boxShadow: content.dynamic_background.active ? content.dynamic_background.shadow ? '0px 0px 12px rgba(0,0,0,0.4)' : '0px 0px 0px rgba(0,0,0,0)' : '0px 0px 0px rgba(0,0,0,0)'
+            backgroundColor: content?.dynamic_background?.active ? secondary : "transparent",
+            borderRadius: content?.dynamic_background?.border_radius,
+            width: content?.dynamic_background?.active ? `${content.dynamic_background.width}%` : '100%',
+            boxShadow: content?.dynamic_background?.active ? content?.dynamic_background?.shadow ? '0px 0px 12px rgba(0,0,0,0.4)' : '0px 0px 0px rgba(0,0,0,0)' : '0px 0px 0px rgba(0,0,0,0)'
           }}>
           <div className="g_module_info_container" style={{
             // width:'auto'
@@ -79,9 +79,9 @@ export const Gallery = forwardRef<HTMLDivElement, DresscodeProps>(function galle
               </FadeIn>
             }
           </div>
-          {content?.dynamic_separator.active && (
-            content.dynamic_separator.type === 'single' ?
-              <Separador inverted={content.inverted} generals={generals} value={content?.dynamic_separator.single.value ?? 1} />
+          {content?.dynamic_separator?.active && (
+            content?.dynamic_separator?.type === 'single' ?
+              <Separador inverted={content.inverted} generals={generals} value={content?.dynamic_separator?.single?.value ?? 1} />
               :
               <div className="dyn_separator_cont"
                 style={{
