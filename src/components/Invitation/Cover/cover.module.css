@@ -31,8 +31,12 @@
 }
 
 .cover_image_container {
-    width: 100vw;
+    min-width: 100vw;
     height: 100dvh;
+}
+
+.cover_image_container img {
+    width: auto !important;
 }
 
 .blur_cover {
@@ -58,6 +62,7 @@
     padding: 30px;
     box-sizing: border-box;
     opacity: 0.8;
+    z-index: 3;
 }
 
 .cover_title_container {

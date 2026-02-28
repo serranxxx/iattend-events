@@ -7,7 +7,6 @@ import { forwardRef } from "react";
 import styles from "./cover.module.css";
 import { InvitationUIBundle, NewInvitation } from "@/types/new_invitation";
 import Countdown from "./countDown/CountDown";
-import ConfettiButton from "./Confetti/Confetti";
 import { useScreenWidth } from "@/hooks/useScreenWidth";
 
 type CoverProps = {
@@ -18,7 +17,7 @@ type CoverProps = {
   ui?: InvitationUIBundle | null
 };
 
-export const Cover = forwardRef<HTMLDivElement, CoverProps>(function Cover({ui, dev, invitation, height, validated = true }, ref) {
+export const Cover = forwardRef<HTMLDivElement, CoverProps>(function Cover({ ui, dev, invitation, height, validated = true }, ref) {
   const cover = invitation?.cover;
   const generals = invitation?.generals;
   const image_src = dev ? cover?.image.dev : cover?.image.prod;
@@ -35,6 +34,7 @@ export const Cover = forwardRef<HTMLDivElement, CoverProps>(function Cover({ui, 
         style={{
           padding: "0",
           background: generals?.colors.primary ?? "#FFFFFF",
+          position:'relative'
         }}
       >
         {cover?.image.dev || cover?.image.prod ? (
@@ -48,28 +48,30 @@ export const Cover = forwardRef<HTMLDivElement, CoverProps>(function Cover({ui, 
             }}
           >
             {image_src && (
-              <Image fill style={{ objectFit: "cover"}} loading="lazy" decoding="async" alt="" src={image_src} />
+              <Image fill style={{ objectFit: "cover" }} loading="lazy" decoding="async" alt="" src={image_src} />
             )}
 
-            {cover.image.background ? (
-              <div
-                style={{
-                  position: "absolute",
-                  width: "100%",
-                  height: "100%",
-                  top: "0px",
-                  left: "0px",
-                  background: `linear-gradient(to top, ${darker(generals?.colors.primary ?? "#FFFFFF", 0.2)}, transparent)`,
-                  pointerEvents: "none",
-                  mixBlendMode:'multiply'
-                }}
-              />
-            ) : (
-              cover.image.blur && <div className={styles.blur_cover} />
-            )}
+
           </div>
         ) : (
           <></>
+        )}
+
+        {cover?.image.background ? (
+          <div
+            style={{
+              position: "absolute",
+              width: "100%",
+              height: "100%",
+              top: "0px",
+              right: "0px",
+              background: `linear-gradient(to top, ${darker(generals?.colors.primary ?? "#FFFFFF", 0.2)}, transparent)`,
+              pointerEvents: "none",
+              mixBlendMode: 'multiply'
+            }}
+          />
+        ) : (
+          cover?.image.blur && <div className={styles.blur_cover} />
         )}
 
         <div
