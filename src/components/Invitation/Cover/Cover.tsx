@@ -41,8 +41,8 @@ export const Cover = forwardRef<HTMLDivElement, CoverProps>(function Cover({ ui,
           <div
             className={styles.cover_image_container}
             style={{
-              top: `${cover.image.position.y ?? 0}px`,
-              left: `${cover.image.position.x ?? 0}px`,
+              top: `0px`,
+              left: `0px`,
               transform: `scale(${cover.image.zoom ?? 1})`,
               position: "relative",
             }}
