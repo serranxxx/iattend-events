@@ -300,7 +300,7 @@ export default function Invitation({ password, invitationID, ui, invitation, loa
         const coverHeightPx = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
         setHeightSize(coverHeightPx);
       }, 1800);
-    } 
+    }
   }, [validated])
 
   useEffect(() => {
@@ -572,14 +572,14 @@ export default function Invitation({ password, invitationID, ui, invitation, loa
               color: accent,
               borderColor: accent
             }}>
-              <div className={styles.ticket_head} style={{ fontFamily: invitation.generals.fonts.body?.value ?? 'Poppins', color: primary }}>
+              {/* <div className={styles.ticket_head} style={{ fontFamily: invitation.generals.fonts.body?.value ?? 'Poppins', color: primary }}>
                 <span style={{ fontSize: '16px', fontWeight: 600 }}>{invitation.cover.title.text.value}</span>
                 <div className={styles.ticket_col}>
                   <span style={{ fontWeight: 600, fontSize: '14px' }}>{formatShortDate(invitation.cover.date.value)}</span>
                   <span>{invitation.itinerary.object[0].time ?? ""}</span>
                 </div>
 
-              </div>
+              </div> */}
 
               <div className={styles.ticket_image}>
                 <Image fill src={invitation.cover.image.prod!} alt="" style={{ objectFit: 'cover' }} />
@@ -594,19 +594,31 @@ export default function Invitation({ password, invitationID, ui, invitation, loa
 
 
 
-              <div className={styles.ticket_row} style={{ fontFamily: invitation.generals.fonts.body?.value ?? 'Poppins', color: primary }}>
-                <div className={styles.ticket_col} style={{ gap: '12px' }}>
+              <div className={styles.ticket_row} style={{ fontFamily: invitation.generals.fonts.body?.value ?? 'Poppins', color: primary, }}>
+                <div className={styles.ticket_col} style={{ gap: '12px', marginBottom: '12px' }}>
                   <div className={styles.ticket_col}>
-                    <span style={{ opacity: '0.4' }}>{ui.confirm.digital_name}</span>
+                    <span style={{ fontSize: '16px', fontWeight: 600 }}>{invitation.cover.title.text.value}</span>
+                    {/* <span style={{ opacity: '0.4' }}>{ui.confirm.digital_name}</span>
+                    <span>{guestInfo?.name ?? "Sin nombre"}</span> */}
+                  </div>
+                  <div className={styles.ticket_col}>
+                    <span style={{ fontWeight: 600, fontSize: '14px' }}>{formatShortDate(invitation.cover.date.value)}</span>
+                    <span>{invitation.itinerary.object[0].time ?? ""}</span>
+                  </div>
+                </div>
+
+                <div className={styles.ticket_col} style={{ gap: '12px' }}>
+                  <div className={styles.ticket_col} style={{gap:'0'}}>
+                    <span style={{ opacity: '0.4', fontSize:'12px', lineHeight:1 }}>{ui.confirm.digital_name}</span>
                     <span>{guestInfo?.name ?? "Sin nombre"}</span>
                   </div>
                   <div className={styles.ticket_col}>
-                    <span style={{ opacity: '0.4' }}>{ui.confirm.digital_table}</span>
+                    <span style={{ opacity: '0.4', fontSize:'12px', lineHeight:1 }}>{ui.confirm.digital_table}</span>
                     <span>{tables.find(t => t.id === guestInfo?.table)?.number ?? 'Sin asignar'}</span>
                   </div>
                 </div>
 
-                <QRCode size={140} color={primary} value="www.iattend.mx" />
+                {/* <QRCode size={140} color={primary} value="www.iattend.mx" /> */}
               </div>
 
 
