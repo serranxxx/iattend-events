@@ -182,6 +182,9 @@ export default function Card({ ui, invitation, dev }: CardProps) {
                 placement={isLargeScreen ? 'left' : 'bottom'}
                 onClose={() => setOpen(null)}
                 open={open ? true : false}
+                classNames={{
+                  body: "scroll-invitation"
+                }}
                 title={
                   <div
                     style={{
@@ -205,6 +208,7 @@ export default function Card({ ui, invitation, dev }: CardProps) {
                 style={{
                   maxHeight: isLargeScreen ? "100vh" : "75vh",
                   borderRadius: isLargeScreen ? '0px 32px 32px 0px' : "32px 32px 0px 0px",
+                  
                 }}
                 styles={{
                   header: {

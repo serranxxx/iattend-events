@@ -59,7 +59,7 @@ export const Itinerary = forwardRef<HTMLDivElement, quoteProps>(function Greetin
             borderRadius: content?.dynamic_background?.border_radius,
             width: content?.dynamic_background?.active ? `${content.dynamic_background.width}%` : '100%',
             boxShadow: content?.dynamic_background?.active ? content.dynamic_background.shadow ? '0px 0px 12px rgba(0,0,0,0.4)' : '0px 0px 0px rgba(0,0,0,0)' : '0px 0px 0px rgba(0,0,0,0)',
-            minWidth:'85%'
+            minWidth: '85%'
           }}>
 
           <div className="g_module_info_container">

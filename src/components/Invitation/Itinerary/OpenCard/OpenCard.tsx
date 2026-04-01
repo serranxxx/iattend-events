@@ -1,13 +1,6 @@
 import { ItineraryItem, NewInvitation } from "@/types/new_invitation";
 import styles from "./open.module.css";
-import { Button } from "antd";
-import { buttonsColorText, darker, getMexicoHour } from "@/helpers/functions";
 import Image from "next/image";
-import { IoMdClose } from "react-icons/io";
-import { IoCloseSharp } from "react-icons/io5";
-import { BsFillPinAngleFill } from "react-icons/bs";
-import { RiMapPin2Fill } from "react-icons/ri";
-import { FaDiamondTurnRight } from "react-icons/fa6";
 import { useEffect } from "react";
 import WeatherWidget from "../WeatherApi/WeatherWidget";
 
@@ -19,14 +12,13 @@ type CardProps = {
   activeSteps?: ItineraryItem[];
 };
 
-export default function OpenCard({ invitation, dev, item, activeSteps, setActiveSteps }: CardProps) {
+export default function OpenCard({ invitation, dev, item,  }: CardProps) {
   const content = invitation.itinerary;
   const generals = invitation.generals;
 
   const primary = generals?.colors.primary ?? "#FFFFFF";
   const secondary = generals?.colors.secondary ?? "#FFFFFF";
   const accent = generals?.colors.accent ?? "#FFFFFF";
-  const actions = generals.colors.actions ?? "#FFFFFF";
 
   const extractSpotifyPath = (url: string | undefined) => {
     if (!url) return "";
@@ -47,77 +39,12 @@ export default function OpenCard({ invitation, dev, item, activeSteps, setActive
 
   return (
     <div
-      className={styles.open_card_container}
+      className={ `${styles.open_card_container}`}
       style={{
         fontFamily: generals.fonts.body?.typeFace,
         color: content.inverted ? primary : accent,
-        // position:'absolute',
-        // width:'100%',
-        // backgroundColor: primary,
-        // zIndex:10,
-        // padding:'16px',
-        // borderRadius:'16px',
-        // boxShadow:'0px 0px 12px rgba(0,0,0,0.5)'
       }}
     >
-      {/* {
-                generals.texture !== null &&
-                <div className="image-texture-container">
-                    <div className="image-texture-container">
-                        {Array.from({ length: 100 }).map((_, index) => (
-                            <img alt='' key={index} src={textures[generals.texture].image} className="texture-img"
-                                style={{
-                                    opacity: textures[generals.texture].opacity,
-                                    filter: textures[generals.texture].filter,
-                                    mixBlendMode: textures[generals.texture].blend
-                                }}
-                            />
-                        ))}
-                    </div>
-                </div>
-            } */}
-
-      {/* <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "flex-start",
-          gap: "8px",
-          position: "absolute",
-          top: "0px",
-          right: "0px",
-          zIndex: 999
-        }}
-      >
-        {item?.address?.url && (
-          <div className={styles.how_to_button}>
-            <Button
-              href={item.address.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              icon={<FaDiamondTurnRight size={14} />}
-              style={{
-                margin: "16px 0",
-                background: content.inverted ? primary : actions,
-                color: content.inverted ? accent : buttonsColorText(actions),
-                boxShadow: "0 0 6px 0 rgba(0, 0, 0, 0.25), 0 0 6px 0 rgba(134, 134, 134, 0.25) inset",
-              }}
-            >
-              ¿Cómo llegar?
-            </Button>
-          </div>
-        )}
-
-        <Button
-          onClick={() => setActiveSteps(activeSteps?.filter((step) => step !== item) ?? [])}
-          className={styles.open_card_button}
-          icon={<IoMdClose size={18} />}
-          style={{
-            background: content.background ? secondary : content.inverted ? primary : secondary ?? "#FFF",
-            color: content.inverted ? accent : buttonsColorText(primary),
-          }}
-        />
-      </div> */}
 
       {item.image && (
         <div className={styles.image_header_container}>
@@ -184,17 +111,6 @@ export default function OpenCard({ invitation, dev, item, activeSteps, setActive
         </>
       )}
 
-      {/* {item.music && (
-                <iframe
-                    style={{ borderRadius: "12px", boxShadow: '0 0 6px 0 rgba(0, 0, 0, 0.25), 0 0 6px 0 rgba(134, 134, 134, 0.25) inset' }}
-                    src={`https://open.spotify.com/embed/${extractSpotifyPath(item.music)}?utm_source=generator&theme=2`}
-                    width="100%"
-                    height="152"
-                    frameBorder="0"
-                    allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                    loading="lazy"
-                />
-            )} */}
     </div>
   );
 }

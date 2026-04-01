@@ -214,6 +214,7 @@ export default function Card({ ui, invitation, invitationID }: CardProps) {
         perspective: `${PERSPECTIVE}px`,
         touchAction: "pan-x",
         overflow: "hidden",
+        zIndex:99
       }}
     >
       {visibleCards.map((card, i) => {
@@ -325,19 +326,7 @@ export default function Card({ ui, invitation, invitationID }: CardProps) {
                         )}
                       </div>
 
-                      {invitation.generals.texture !== null && (
-                        <div className={styles.card_texture}>
-                          <Image
-                            src={"/assets/textures/magzne.jpg"}
-                            alt=""
-                            fill
-                            style={{
-                              objectFit: "cover",
-                              opacity: 0.6,
-                            }}
-                          />
-                        </div>
-                      )}
+                     
                     </div>
                   </div>
 
@@ -407,7 +396,7 @@ export default function Card({ ui, invitation, invitationID }: CardProps) {
                       {invitation.generals.texture !== null && (
                         <div className={styles.card_texture}>
                           <Image
-                            src={"/assets/textures/magzne.jpg"}
+                            src={"/assets/textures/magazine.jpg"}
                             alt=""
                             fill
                             style={{
