@@ -98,9 +98,7 @@ export const Destinations = forwardRef<HTMLDivElement, DresscodeProps>(function 
             <div
               style={{
                 overflow: "hidden", maxWidth: '450px',
-                // display:'flex',alignItems:'center',justifyContent:'flex-start'
               }}
-            // className="scroll_invitation"
             >
               {
                 invitation?.destinations?.cards?.length > 0 &&
