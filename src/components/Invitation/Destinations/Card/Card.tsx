@@ -28,12 +28,10 @@ export default function Card({ ui, invitation, invitationID }: CardProps) {
   const [frontCard, setFrontCard] = useState<number>(0);
   const [flipped, setFlipped] = useState<boolean>(false);
 
-  // orden visual real del stack
   const [order, setOrder] = useState<number[]>(() => visibleCards.map((_, i) => i));
 
-  // refs para gesto touch / wheel
-  const touchStartY = useRef<number | null>(null);
-  const touchDeltaY = useRef<number>(0);
+  const touchStartX = useRef<number | null>(null);
+  const touchDeltaX = useRef<number>(0);
   const movedTouch = useRef<boolean>(false);
   const isAnimating = useRef<boolean>(false);
   const wheelAccumulator = useRef<number>(0);
@@ -121,33 +119,35 @@ export default function Card({ ui, invitation, invitationID }: CardProps) {
   };
 
   const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
-    touchStartY.current = e.touches[0].clientY;
-    touchDeltaY.current = 0;
+    touchStartX.current = e.touches[0].clientX;
+    touchDeltaX.current = 0;
     movedTouch.current = false;
   };
 
   const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
-    if (touchStartY.current === null) return;
+    if (touchStartX.current === null) return;
 
-    const currentY = e.touches[0].clientY;
-    touchDeltaY.current = currentY - touchStartY.current;
+    const currentX = e.touches[0].clientX;
+    touchDeltaX.current = currentX - touchStartX.current;
 
-    if (Math.abs(touchDeltaY.current) > 10) {
+    if (Math.abs(touchDeltaX.current) > 10) {
       movedTouch.current = true;
     }
   };
 
   const handleTouchEnd = () => {
-    if (touchStartY.current === null) return;
+    if (touchStartX.current === null) return;
 
-    if (touchDeltaY.current <= -SWIPE_THRESHOLD) {
+    if (touchDeltaX.current <= -SWIPE_THRESHOLD) {
+      // swipe hacia la izquierda
       rotateForward();
-    } else if (touchDeltaY.current >= SWIPE_THRESHOLD) {
+    } else if (touchDeltaX.current >= SWIPE_THRESHOLD) {
+      // swipe hacia la derecha
       rotateBackward();
     }
 
-    touchStartY.current = null;
-    touchDeltaY.current = 0;
+    touchStartX.current = null;
+    touchDeltaX.current = 0;
 
     setTimeout(() => {
       movedTouch.current = false;
@@ -157,7 +157,10 @@ export default function Card({ ui, invitation, invitationID }: CardProps) {
   const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
     if (total <= 1) return;
 
-    wheelAccumulator.current += e.deltaY;
+    // prioridad al desplazamiento horizontal real del trackpad/mouse
+    const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+
+    wheelAccumulator.current += delta;
 
     if (Math.abs(wheelAccumulator.current) < WHEEL_THRESHOLD) return;
 
@@ -178,7 +181,7 @@ export default function Card({ ui, invitation, invitationID }: CardProps) {
 
   const getPos = (rank: number, totalCards: number) => {
     if (totalCards <= 1) {
-      return { dx: 0, dy: 0, rot: 0, scale: 1, z: 10, shadow: 1 };
+      return { dx: 0, dy: 0, rot: 0, scale: 1, z: 10 };
     }
 
     const center = (totalCards - 1) / 2;
@@ -190,9 +193,8 @@ export default function Card({ ui, invitation, invitationID }: CardProps) {
     const scale = 1 - dist * SCALE_STEP;
     const dy = dist * DY_STEP;
     const z = totalCards - rank + 5;
-    const shadow = 1 - dist * 0.18;
 
-    return { dx, dy, rot, scale, z, shadow };
+    return { dx, dy, rot, scale, z };
   };
 
   return (
@@ -210,7 +212,7 @@ export default function Card({ ui, invitation, invitationID }: CardProps) {
         padding: "24px",
         boxSizing: "border-box",
         perspective: `${PERSPECTIVE}px`,
-        touchAction: "pan-y",
+        touchAction: "pan-x",
         overflow: "hidden",
       }}
     >
@@ -251,8 +253,9 @@ export default function Card({ ui, invitation, invitationID }: CardProps) {
               }}
             >
               <div
-                className={`${styles.flip_card} ${i === frontCard && flipped ? styles.flipped : ""
-                  }`}
+                className={`${styles.flip_card} ${
+                  i === frontCard && flipped ? styles.flipped : ""
+                }`}
               >
                 <div className={styles.flip_inner}>
                   <div className={styles.flip_front}>
