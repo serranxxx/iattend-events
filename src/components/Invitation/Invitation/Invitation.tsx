@@ -382,7 +382,7 @@ export default function Invitation({ password, invitationID, ui, invitation, loa
                 />
               </div>
             )}
-            {!dev && (plan !== 'paperless') ?
+            {(plan !== 'paperless') ?
               <div style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px',
                 position: "fixed",
@@ -390,22 +390,18 @@ export default function Invitation({ password, invitationID, ui, invitation, loa
                 transform: "translateX(-50%)",
                 bottom: "20px",
                 zIndex: 3,
-                // flexDirection:'column'
               }}>
                 <Button
-                  onClick={() => setOpen(true)}
+                  onClick={!dev ? () => setOpen(true) : () => { }}
                   style={{
 
-                    // height: '44px',
                     letterSpacing: "2px",
                     fontSize: "16px",
                     height: "44px",
                     width: guestInfo?.state === 'confirmado' ? "auto" : '200px',
-                    backgroundColor: `${actions}80`,
-                    backdropFilter: "blur(10px)",
-                    border: `1px solid ${actions}40`,
-                    color: accent,
-                    boxShadow: "0 0 6px 0 rgba(0, 0, 0, 0.25)",
+                    backgroundColor: actions,
+                    color: primary,
+                    boxShadow: "0 0 12px rgba(0, 0, 0, 0.26)",
                   }}
                 >
                   {
@@ -449,24 +445,19 @@ export default function Invitation({ password, invitationID, ui, invitation, loa
                 transform: "translateX(-50%)",
                 bottom: "20px",
                 zIndex: 3,
-                // flexDirection:'column'
               }}>
                 <Link href={`https://wa.me/${phone_number}?text=${messagePaperless}`}
                   rel="noreferrer"
                   target="_blank">
                   <Button
                     style={{
-
-                      // height: '44px',
                       letterSpacing: "2px",
                       fontSize: "16px",
                       height: "44px",
-                      width: '200px',
-                      backgroundColor: `${actions}80`,
-                      backdropFilter: "blur(10px)",
-                      border: `1px solid ${actions}40`,
-                      color: accent,
-                      boxShadow: "0 0 6px 0 rgba(0, 0, 0, 0.25)",
+                      width: guestInfo?.state === 'confirmado' ? "auto" : '200px',
+                      backgroundColor: actions,
+                      color: primary,
+                      boxShadow: "0 0 12px rgba(0, 0, 0, 0.26)",
                     }}
                   >
                     {
@@ -608,12 +599,12 @@ export default function Invitation({ password, invitationID, ui, invitation, loa
                 </div>
 
                 <div className={styles.ticket_col} style={{ gap: '12px' }}>
-                  <div className={styles.ticket_col} style={{gap:'0'}}>
-                    <span style={{ opacity: '0.4', fontSize:'12px', lineHeight:1 }}>{ui.confirm.digital_name}</span>
+                  <div className={styles.ticket_col} style={{ gap: '0' }}>
+                    <span style={{ opacity: '0.4', fontSize: '12px', lineHeight: 1 }}>{ui.confirm.digital_name}</span>
                     <span>{guestInfo?.name ?? "Sin nombre"}</span>
                   </div>
                   <div className={styles.ticket_col}>
-                    <span style={{ opacity: '0.4', fontSize:'12px', lineHeight:1 }}>{ui.confirm.digital_table}</span>
+                    <span style={{ opacity: '0.4', fontSize: '12px', lineHeight: 1 }}>{ui.confirm.digital_table}</span>
                     <span>{tables.find(t => t.id === guestInfo?.table)?.number ?? 'Sin asignar'}</span>
                   </div>
                 </div>
