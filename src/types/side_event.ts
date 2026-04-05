@@ -16,6 +16,7 @@ export type SideEventBody = {
 
 export type SideEvent = {
   id: number;
+  url_image: string | null;
   created_at: string;
   invitation_id: string;
   date: string;

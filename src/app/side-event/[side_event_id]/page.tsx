@@ -47,8 +47,8 @@ export async function generateMetadata({ params }: { params: Promise<RouteParams
   }
 
   const sideEvent = data as SideEvent;
-
   const title = sideEvent.name;
+  const url_image = sideEvent.url_image;
   //   const description = inv.greeting?.title ?? "Invitación digital";
 
   return {
@@ -57,21 +57,21 @@ export async function generateMetadata({ params }: { params: Promise<RouteParams
     openGraph: {
       title,
       //   description,
-      images: sideEvent.body.image
+      images: (url_image ?? sideEvent.body.image)
         ? [
-            {
-              url: sideEvent.body.image,
-              width: 1200,
-              height: 630,
-              alt: title,
-            },
-          ]
+          {
+            url: url_image ?? sideEvent.body.image,
+            width: 1200,
+            height: 630,
+            alt: title,
+          },
+        ]
         : undefined,
     },
     twitter: {
       card: "summary_large_image",
       title,
-      images: sideEvent.body.image ? [sideEvent.body.image] : undefined,
+      images: url_image ? [url_image] : undefined,
     },
     icons: {
       icon: [
@@ -96,7 +96,6 @@ export default async function InvitationDynamicPage({ params, searchParams }: Pa
 
   const { data, error } = await supabase.from("side_events").select("*").eq("id", sideID).maybeSingle();
 
-  console.log("data: ", data);
 
   if (error) {
     console.error("[Supabase error]", error);
@@ -112,5 +111,5 @@ export default async function InvitationDynamicPage({ params, searchParams }: Pa
 
   console.log(password);
 
-  return <SideEvents info={sideEvent} password={password}/>;
+  return <SideEvents info={sideEvent} password={password} />;
 }

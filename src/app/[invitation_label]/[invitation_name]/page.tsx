@@ -38,7 +38,7 @@ export async function generateMetadata({ params }: { params: Promise<RouteParams
   const label = decodeURIComponent(invitation_label);
   const name = decodeURIComponent(invitation_name);
 
-  const { data } = await supabase.from("invitations").select("data").eq("label", label).eq("name", name).maybeSingle();
+  const { data } = await supabase.from("invitations").select("data, url_image").eq("label", label).eq("name", name).maybeSingle();
 
   if (!data?.data) {
     return {
@@ -48,6 +48,7 @@ export async function generateMetadata({ params }: { params: Promise<RouteParams
   }
 
   const inv = data.data as NewInvitation;
+  const url_image = data.url_image as string
 
   const title = inv?.cover?.title?.text?.value ?? "Invitación";
   const description = inv.greeting?.title ?? "Invitación digital";
@@ -58,22 +59,22 @@ export async function generateMetadata({ params }: { params: Promise<RouteParams
     openGraph: {
       title,
       description,
-      images: inv?.cover?.image?.prod
+      images: (url_image ?? inv?.cover?.image?.prod)
         ? [
-            {
-              url: inv.cover.image.prod,
-              width: 1200,
-              height: 630,
-              alt: title,
-            },
-          ]
+          {
+            url: url_image ?? inv?.cover?.image?.prod,
+            width: 1200,
+            height: 630,
+            alt: title,
+          },
+        ]
         : undefined,
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
-      images: inv?.cover?.image?.prod ? [inv.cover.image.prod] : undefined,
+      images: url_image ? [url_image] : undefined,
     },
     icons: {
       icon: [
@@ -124,11 +125,11 @@ export default async function InvitationDynamicPage({ params, searchParams }: Pa
 
   const invitationForRender = lang
     ? await getTranslatedInvitationFromCache({
-        invitationId: invitationID,
-        invitation,
-        lang,
-        sourceLang: "es",
-      })
+      invitationId: invitationID,
+      invitation,
+      lang,
+      sourceLang: "es",
+    })
     : invitation;
 
   const ui = await getTranslatedCopy("invitation_ui_v1", lang ?? "es", "es");
