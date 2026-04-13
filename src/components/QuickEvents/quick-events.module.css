@@ -308,7 +308,7 @@
   font-family: 'Poppins';
   font-weight: 800;
   color: #FFF;
- 
+
 }
 
 .guest_card {
@@ -327,7 +327,8 @@
   font-family: 'Poppins';
   font-weight: 800;
   color: #FFF;
-  box-shadow: inset 0px 0px 8px rgba(0, 0, 0, 0.2), 0px 0px 12px rgba(0, 0, 0, 0.2);;
+  box-shadow: inset 0px 0px 8px rgba(0, 0, 0, 0.2), 0px 0px 12px rgba(0, 0, 0, 0.2);
+  ;
 }
 
 .card_port_view {
@@ -348,6 +349,103 @@
 
 .confirm_card {
   pointer-events: auto;
+}
+
+.col_cont {
+  border-radius: 24px;
+  /* overflow: hidden; */
+  width: 100%;
+  background-color: var(--blur-color--dark);
+  backdrop-filter: blur(10px);
+  border: 1px solid #FFFFFF40;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  flex-direction: column;
+  color: #FFF;
+  font-family: 'Poppins';
+  padding: 12px 18px;
+  box-sizing: border-box;
+  transition: all 0.5s ease;
+  overflow: hidden;
+  /* max-height: 600px;
+  overflow-y: auto; */
+}
+
+.participants_toggle {
+  font-weight: 800;
+  color: #FFF;
+  text-decoration: underline;
+  transition: all 0.3s ease;
+}
+
+.participants_toggle:hover,
+.participants_toggle:active,
+.participants_toggle:focus {
+  color: #FFF !important;
+}
+
+.paticipants_cont {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+
+
+}
+
+.participant_item {
+  height: 44px;
+  width: 44px;
+  min-width: 44px;
+  border-radius: 99px;
+  font-size: 26px;
+  padding: 6px;
+  margin-left: -8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0px 0px 12px rgba(0, 0, 0, 0.2);
+  border: 1px solid #FFFFFF40;
+
+}
+
+.participant_item:first-of-type {
+  margin: 0;
+}
+
+.paticipants_cont_open {
+  position: relative;
+  width: 100%;
+  height: 480px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+.participant_item_open {
+  position: absolute;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transform: scale(0.6);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  aspect-ratio: 1;
+}
+
+
+.participant_item_open:hover {
+  transform: scale(1.08);
+}
+
+.participants_row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  align-self: stretch;
 }
 
 @keyframes profileGradientFlow {

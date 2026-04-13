@@ -89,8 +89,6 @@ export default function SideEvents({ info, password, preview }: invProps) {
         return
       }
 
-      // messageApi.success(`Bienvenido ${data.name}`);
-      console.log('valid user: ', data)
       setValidated(true);
       setGuestInfo(data)
 
@@ -130,8 +128,6 @@ export default function SideEvents({ info, password, preview }: invProps) {
   }
 
   const updateGuestStatus = async (state: string) => {
-    console.log(guestInfo?.password)
-    console.log(info?.id)
     try {
       const { data, error } = await supabase
         .from("side_events_guests")

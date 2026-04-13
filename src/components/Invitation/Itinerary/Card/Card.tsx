@@ -21,6 +21,7 @@ type CardProps = {
   ui: InvitationUIBundle;
 };
 
+
 export default function Card({ ui, invitation, dev }: CardProps) {
   const content = invitation.itinerary;
   const generals = invitation.generals;

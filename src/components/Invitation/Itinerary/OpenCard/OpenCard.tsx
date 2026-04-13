@@ -120,7 +120,5 @@ export function simpleaddress(direccion: string | null, numero: string | null, c
   const direccionCodificada = encodeURIComponent(direccionCompleta);
   const key = "AIzaSyBZ8NLpvAl4DiTeE2gYekBqhmSZFx43R0M";
   const urlMapaGenerado = `https://www.google.com/maps/embed/v1/place?key=${key}&q=${direccionCodificada}`;
-
-  console.log(urlMapaGenerado);
   return urlMapaGenerado;
 }

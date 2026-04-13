@@ -44,7 +44,6 @@ export async function getTranslatedCopy(
   }
 
   // 3️⃣ Traducir con DeepL (traducción libre, sin filtros)
-  console.log(`🌍 Traduciendo UI bundle '${slug}' a ${lang}...`);
   const translated = await translateInvitationObject(source, lang);
 
   // 4️⃣ Guardar o actualizar en cache

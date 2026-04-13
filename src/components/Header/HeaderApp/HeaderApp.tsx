@@ -130,8 +130,6 @@ export const HeaderApp = ({ position, isVisible }: Props) => {
       "state_changed",
       (snapshot) => {
         const progress = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
-        console.log(progress);
-        // setProgress(progress); ← descomenta si usas un estado
       },
       (error) => {
         console.error("Upload error:", error);

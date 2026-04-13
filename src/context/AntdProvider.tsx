@@ -127,8 +127,8 @@ export const AntdProvider = ({ children }: { children: React.ReactNode }) => {
               borderRadiusSM: 99,
               colorPrimary: "var(--brand-color-500)",
               hoverBorderColor: "var(--brand-color-500)",
-              activeOutlineColor: "var(--brand-color-50)",
-              controlItemBgActive: "var(--brand-color-50)",
+              activeOutlineColor: "#FFF",
+              controlItemBgActive: "#FFF",
               colorBorder: "var(--border-color)",
             },
             Calendar: {

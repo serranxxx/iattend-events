@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getPublicServerClient } from "@/lib/supabase/public-server";
 import { SideEvent } from "@/types/side_event";
 import SideEvents from "@/components/SideEvent/SideEvent";
+import QuickEvents from "@/components/QuickEvents/QuickEvents";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +12,7 @@ export const dynamic = "force-dynamic";
 // Types
 // --------------------
 type RouteParams = {
-  side_event_id: string;
+    quick_event_id: string;
 };
 
 type SearchParams = {
@@ -29,11 +30,11 @@ type PageProps = {
 // Metadata dinámica
 // --------------------
 export async function generateMetadata({ params }: { params: Promise<RouteParams> }): Promise<Metadata> {
-  const { side_event_id } = await params;
+  const { quick_event_id } = await params;
 
   const supabase = await createClient();
 
-  const sideID = decodeURIComponent(side_event_id);
+  const sideID = decodeURIComponent(quick_event_id);
 
   const { data } = await supabase.from("side_events").select("*").eq("id", sideID).maybeSingle();
 
@@ -46,7 +47,7 @@ export async function generateMetadata({ params }: { params: Promise<RouteParams
 
   const sideEvent = data as SideEvent;
   const title = sideEvent.name;
-  const url_image = sideEvent.url_image ?? sideEvent.body.image as string
+  const url_image = sideEvent.url_image;
   //   const description = inv.greeting?.title ?? "Invitación digital";
 
   return {
@@ -85,12 +86,12 @@ export async function generateMetadata({ params }: { params: Promise<RouteParams
 // Página
 // --------------------
 export default async function InvitationDynamicPage({ params, searchParams }: PageProps) {
-  const { side_event_id } = await params;
+  const { quick_event_id } = await params;
   const resolvedSearchParams = await searchParams;
 
   const supabase = await getPublicServerClient();
 
-  const sideID = decodeURIComponent(side_event_id);
+  const sideID = decodeURIComponent(quick_event_id);
 
   const { data, error } = await supabase.from("side_events").select("*").eq("id", sideID).maybeSingle();
 
@@ -107,5 +108,5 @@ export default async function InvitationDynamicPage({ params, searchParams }: Pa
   const sideEvent = data as SideEvent;
   const password = typeof resolvedSearchParams?.password === "string" ? resolvedSearchParams.password : undefined;
 
-  return <SideEvents info={sideEvent} password={password} />;
+  return <QuickEvents info={sideEvent} password={password} />;
 }

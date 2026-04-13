@@ -114,4 +114,38 @@ export interface SideGuestSubabasePayload {
   tag: string | null;
   ticket: boolean;
   tier: string | null;
+  type:  string | null;
+  emoji:  string | null;
+  profile:  number | null;
+}
+
+
+export interface QuickEventUser {
+  name: string;
+  phone_number: string | null;
+  type: string | null;
+  profile: number;
+  emoji: string;
+  id: string | null;
+}
+
+export interface QuickEventGuest {
+  id: number | null;
+  quick_event_id: number | null;
+  quick_event_user_id: string;
+  password: string;
+  state: string;
+  last_action: string;
+  anonymous: boolean
+}
+
+export interface ParticipansType {
+  name: string;
+  phone_number: string | null;
+  type: string | null;
+  profile: number;
+  emoji: string;
+  id: string | null;
+  anonymous: boolean,
+  state: string,
 }

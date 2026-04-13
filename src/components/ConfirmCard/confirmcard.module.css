@@ -1,0 +1,509 @@
+.confirm_modal {
+    background-color: transparent;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+    transition: all 0.3s ease;
+}
+
+.confirm_card_cont {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    flex-direction: column;
+    align-self: stretch;
+    /* padding: 36px; */
+    box-sizing: border-box;
+    gap: 0px;
+    position: relative;
+    height: 100%;
+}
+
+.bottom_button {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: -6px;
+    width: 120px !important;
+    height: 6px !important;
+    background-color: #FFFFFF80;
+    border-radius: 99px;
+}
+
+.user_image_cont {
+    width: 180px;
+    height: 180px;
+    border-radius: 99px;
+    box-shadow: 0px 0px 12px rgba(0, 0, 0, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 92px;
+    font-family: 'Poppins';
+    border: 4px solid #FFF;
+}
+
+@keyframes profileGradientFlow {
+    0% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+.card_inputs_col {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 16px;
+    width: 100%;
+    padding: 36px;
+    padding-top: 6px;
+    box-sizing: border-box;
+}
+
+.inputs_viewport {
+    width: 100%;
+    overflow: hidden;
+}
+
+.inputs_slider {
+    display: flex;
+    width: 100%;
+    overflow-x: hidden;
+    overflow-y: hidden;
+    scroll-behavior: smooth;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    touch-action: none;
+}
+
+.inputs_slider::-webkit-scrollbar {
+    display: none;
+}
+
+.input_slide {
+    min-width: 100%;
+    width: 100%;
+    flex: 0 0 100%;
+}
+
+.input_card {
+    height: 64px;
+    border-radius: 16px;
+    font-size: 24px;
+    width: 100%;
+    border: 3px solid #FFFFFF40;
+    background-color: transparent;
+    color: #FFF;
+    letter-spacing: 1px;
+    font-weight: 600;
+    text-align: center;
+    font-family: 'Poppins';
+    min-width: 100%;
+}
+
+.input_card:disabled {
+    color: #FFFFFF99;
+    border: 3px solid #FFFFFF40;
+}
+
+.input_card::placeholder {
+    color: #FFFFFF40;
+}
+
+.input_card {
+    width: 100%;
+}
+
+/* Contenedor real del select */
+.input_card :global(.ant-select-selector) {
+    height: 64px !important;
+    min-height: 64px !important;
+    border-radius: 16px !important;
+    border: 0px solid #FFFFFF40 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    outline: none !important;
+
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    padding: 0 20px !important;
+}
+
+/* Estado hover / focus / open */
+.input_card:hover :global(.ant-select-selector),
+.input_card:global(.ant-select-focused) :global(.ant-select-selector),
+.input_card:global(.ant-select-open) :global(.ant-select-selector) {
+    border: 0px solid #FFFFFF40 !important;
+    box-shadow: none !important;
+    outline: none !important;
+}
+
+/* Texto seleccionado */
+.input_card :global(.ant-select-selection-item) {
+    color: #FFF !important;
+    font-size: 24px !important;
+    font-weight: 600 !important;
+    font-family: 'Poppins', sans-serif !important;
+    letter-spacing: 1px !important;
+    line-height: 58px !important;
+    text-align: center !important;
+}
+
+/* Placeholder */
+.input_card :global(.ant-select-selection-placeholder) {
+    color: #FFFFFF60 !important;
+    font-size: 24px !important;
+    font-weight: 600 !important;
+    font-family: 'Poppins', sans-serif !important;
+    letter-spacing: 1px !important;
+    line-height: 58px !important;
+    text-align: center !important;
+}
+
+/* Flecha */
+.input_card :global(.ant-select-arrow) {
+    color: #FFF !important;
+    font-size: 18px !important;
+}
+
+/* Quita pseudo-elementos que a veces desalinean visualmente */
+.input_card :global(.ant-select-selector)::after,
+.input_card :global(.ant-select-selection-search)::after {
+    display: none !important;
+}
+
+.input_card:hover,
+.input_card:active,
+.input_card:focus {
+    background-color: transparent;
+    border-color: #FFF;
+}
+
+.step_buttons_row {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    gap: 12px;
+}
+
+.button_card {
+    min-height: 64px;
+    border-radius: 16px;
+    font-size: 20px;
+    width: 100%;
+    /* text-transform: uppercase; */
+    letter-spacing: 1px;
+    font-family: 'Poppins';
+    /* flex: 1; */
+}
+
+.secondary_button_card {
+    height: 64px;
+    border-radius: 16px;
+    font-size: 20px;
+    width: 100%;
+    letter-spacing: 1px;
+    font-family: 'Poppins';
+    max-width: 64px;
+}
+
+.anon_button_card {
+    font-size: 14px;
+    margin-top: -6px;
+    font-family: 'Poppins';
+    font-weight: 400;
+    color: #FFF !important;
+    opacity: 0.7;
+}
+
+.custom_button {
+    margin-top: -12px;
+    background-color: #00000040;
+    border-radius: 99px;
+    border: 1px solid #FFFFFF60;
+    backdrop-filter: blur(16px);
+    color: #FFF;
+    font-weight: 400;
+    transition: all 0.3s ease;
+}
+
+.buttons_custom_cont {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    position: absolute;
+    padding: 0px 20px;
+    top: 0px;
+    left: 50%;
+    transform: translate(-50%);
+    transition: all 0.3s ease;
+    z-index: 999;
+}
+
+.buttons_custom_cont .custom_button {
+    margin-top: 0px;
+    background-color: #FFFFFF60;
+    border-radius: 99px;
+    border: 1px solid #FFFFFF40;
+    color: #000;
+    font-weight: 400;
+}
+
+.edit_buttons_cont {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.custom_cont {
+    background-color: #FFFFFF99;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    font-family: 'Poppins';
+    font-weight: 600;
+    gap: 12px;
+    padding: 36px 18px;
+    padding-top: 18px;
+    box-sizing: border-box;
+    flex: 1;
+    border-radius: 24px;
+    position: absolute;
+    left: 50%;
+    transform: translate(-50%);
+    width: 80%;
+    transition: all 0.3s ease;
+}
+
+.colors_grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    width: 100%;
+    /* opcional */
+}
+
+.color_item {
+    height: 44px;
+    width: 44px;
+    border-radius: 99px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    box-shadow: 0px 0px 12px rgba(0, 0, 0, 0.15);
+}
+
+.emoji_cont {
+    margin-top: 6%;
+}
+
+@keyframes shake {
+    0% {
+        transform: translateX(0);
+    }
+
+    20% {
+        transform: translateX(-2px);
+    }
+
+    40% {
+        transform: translateX(2px);
+    }
+
+    60% {
+        transform: translateX(-2px);
+    }
+
+    80% {
+        transform: translateX(2px);
+    }
+
+    100% {
+        transform: translateX(0);
+    }
+}
+
+.shake {
+    animation: shake 0.4s ease infinite;
+}
+
+.info_col {
+    align-self: stretch;
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+    flex-direction: column;
+    font-size: 30px;
+    font-weight: 800;
+    color: #FFF;
+    font-family: 'Poppins';
+    max-width: 100%;
+    gap: 12px;
+}
+
+.image_cont_bg {
+    position: relative;
+    width: 100%;
+    padding: 36px;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    min-height: 310px;
+}
+
+.image_cont_bg .user_image_cont {
+    z-index: 999;
+}
+
+.act_buttons_cont {
+    position: absolute;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.guest_name {
+    font-size: 38px;
+    font-weight: 800;
+    font-family: 'Poppins';
+    color: #FFF;
+    text-align: center;
+    margin-bottom: 0px;
+    line-height: 1;
+    letter-spacing: 1px;
+}
+
+.guest_name_cont {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    align-self: stretch;
+    flex-direction: column;
+    flex: 1;
+    padding: 0px 24px;
+    gap: 12px;
+    
+}
+
+
+
+.flipInner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transition: transform 0.6s ease;
+    transform-style: preserve-3d;
+}
+
+.flipped .flipInner {
+    transform: rotateY(180deg);
+}
+
+.front,
+.back {
+    position: absolute;
+    inset: 0;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+}
+
+.card_cont {
+    min-width: 330px;
+    max-width: 350px;
+    border-radius: 24px;
+    transition: all 0.4s ease;
+    overflow: hidden;
+    background: var(--gradient);
+    background-size: 200% 200%;
+    animation: profileGradientFlow 3s ease-in-out infinite;
+    position: relative;
+    padding: 24px 0px;
+    box-shadow: 0px 0px 16px rgba(0, 0, 0, 0.25), inset 0px 0px 6px rgba(0, 0, 0, 0.15);
+    border: 1px solid #FFFFFF40;
+}
+
+.back {
+    transform: rotateY(180deg)
+}
+
+.button_anonymous {
+    position: absolute;
+    right: 16px;
+    top: 16px;
+    font-weight: 500;
+    background-color: #FFFFFF20;
+    backdrop-filter: blur(10px);
+    color: #FFFFFF;
+    opacity: 0.7;
+}
+
+.button_anonymous:hover,
+.button_anonymous:active,
+.button_anonymous:focus {
+    background-color: #FFFFFF40 !important;
+    color: #FFFFFF !important;
+    border: none !important;
+}
+
+.assitence_label {
+    font-size: 14px;
+    font-family: 'Poppins';
+    font-weight: 400;
+    letter-spacing: 1px;
+    color: #FFF;
+}
+
+.status_col {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #FFF;
+    gap: 8px;
+}
+
+.edit_button {
+    height: 32px;
+    width: 20px;
+    background-color: #FFFFFF40 !important;
+    color: #FFF !important;
+    /* position: absolute;
+    left: -42px; */
+}
+
+.change_state_button {
+    font-size: 12px;
+    max-height: 28px;
+    background-color: #FFFFFF80;
+    backdrop-filter: blur(10px);
+    border: 0px solid #FFFFFF60;
+    transform: scale(0.8);
+    opacity: 0.6;
+}

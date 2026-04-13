@@ -48,7 +48,7 @@ export async function generateMetadata({ params }: { params: Promise<RouteParams
   }
 
   const inv = data.data as NewInvitation;
-  const url_image = data.url_image as string
+  const url_image = data.url_image ?? inv?.cover?.image?.prod as string
 
   const title = inv?.cover?.title?.text?.value ?? "Invitación";
   const description = inv.greeting?.title ?? "Invitación digital";
