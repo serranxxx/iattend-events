@@ -459,7 +459,7 @@
 .card_cont {
     min-width: 330px;
     max-width: 350px;
-    border-radius: 24px;
+    border-radius: 36px;
     transition: all 0.4s ease;
     overflow: hidden;
     background: var(--gradient);

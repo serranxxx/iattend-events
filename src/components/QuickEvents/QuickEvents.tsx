@@ -20,6 +20,7 @@ import { ParticipansType, QuickEventGuest, QuickEventUser, } from "@/types/guest
 import { darker, generateSimpleId } from "@/helpers/functions";
 import { ConfirmCard } from "../ConfirmCard/ConfirmCard";
 import { profilesMap } from "../ConfirmCard/profiles";
+import { ChevronDown, ChevronUp, CircleCheck, MapPin } from "lucide-react";
 
 type invProps = {
   info: SideEvent | null;
@@ -597,6 +598,7 @@ export default function QuickEvents({ info, preview }: invProps) {
               {
                 "--blur-color": `${info?.body.color ?? "#000000"}`,
                 "--blur-color--dark": `${darker(info?.body.color!, 0.8) ?? "#000000"}80`,
+                "--blur-color--darker": `${darker(info?.body.color!, 0.2) ?? "#000000"}80`,
               } as React.CSSProperties
             }
           >
@@ -633,24 +635,14 @@ export default function QuickEvents({ info, preview }: invProps) {
 
 
             {
+              event.state !== 'confirmado' &&
               <div style={{
-                // display: guestInfo?.state === 'confirmado' ? 'none' : 'flex'
               }} className={styles.buttons_cont}>
-                {
-                  guestInfo?.state !== 'rechazado' &&
-                  <Button onClick={() => setOpenModal(true)} style={{ height: '64px', borderRadius: guestInfo?.state === 'confirmado' ? '99px' : '99px 0px 0px 99px' }} icon={guestInfo?.state !== 'confirmado' && <LuCircleCheck size={18} style={{ opacity: "0.5" }} />} type="text" className={styles.side_buttons}>
-                    {
-                      guestInfo?.state === 'confirmado' ? 'Asistencia confirmada' : 'Asistiré'
-                    }
-                  </Button>
-                }
-                {
-                  guestInfo?.state !== 'confirmado' &&
-                  <Button onClick={() => setOpenModal(true)} style={{ height: '64px', borderRadius: guestInfo?.state === 'rechazado' ? '99px' : '0px 99px 99px 0px' }} icon={guestInfo?.state !== 'rechazado' && <LuCircleX size={18} style={{ opacity: "0.5" }} />} type="text" className={styles.side_buttons}>
-                    {guestInfo?.state === 'rechazado' ? 'Asistencia declinada' : 'No asistiré'}
-                  </Button>
-                }
-
+                <Button 
+                icon={<CircleCheck size={16} />}
+                onClick={() => setOpenModal(true)} style={{ height: '56px', textTransform:'uppercase', letterSpacing:'1px' }} type="text" className={styles.side_buttons}>
+                  Confirmar asistencia
+                </Button>
               </div>
             }
 
@@ -683,8 +675,8 @@ export default function QuickEvents({ info, preview }: invProps) {
               info?.body.address.state &&
               info?.body.address.country && (
                 <div className={styles.mapa_container}>
-                  <Button className={styles.get_there} type="text">
-                    Como llegar
+                  <Button icon={<MapPin size={16} />} className={styles.get_there} type="text">
+                    Cómo llegar
                   </Button>
                   <iframe
                     title="Mapa"
@@ -716,11 +708,11 @@ export default function QuickEvents({ info, preview }: invProps) {
               height: seAll ? '550px' : (participants?.length ?? 0) > 0 ? '150px' : '50px'
             }}>
               <div className={styles.participants_row} >
-                <span>{(participants?.length ?? 0) > 0 ? `${participants?.length} Asistentes` : '¡Se el primero en confirmar!'} </span>
+                <span>{(participants?.length ?? 0) > 0 ?  `${participants?.length} Asistentes` : '¡Se el primero en confirmar!'} </span>
                 {
                   (participants?.length ?? 0) > 0 &&
-                  <Button className={styles.participants_toggle} type="text" onClick={handleToggle}>
-                    {seAll || closing ? 'Ver menos' : 'Ver todos'}
+                  <Button icon={seAll || closing ? <ChevronUp size={16} /> : <ChevronDown size={16}/>} className={styles.participants_toggle} type="text" onClick={handleToggle}>
+                    {seAll || closing ? 'Ver menos' : 'Ver más'}
                   </Button>
                 }
 
@@ -745,7 +737,7 @@ export default function QuickEvents({ info, preview }: invProps) {
 
                     <div className={styles.paticipants_cont} style={{ gap: '6px' }}>
                       {(() => {
-                        const MAX_CHARS = 50;
+                        const MAX_CHARS = 40;
                         let total = 0;
                         const visible: QuickEventUser[] = [];
 
