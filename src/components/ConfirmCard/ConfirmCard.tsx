@@ -343,6 +343,13 @@ export const ConfirmCard: React.FC<ConfirmCardProps> = ({
         }
     }
 
+    const segmenter = new Intl.Segmenter("en", { granularity: "grapheme" });
+
+    const getFirstGrapheme = (text: string) => {
+        const segments = [...segmenter.segment(text)];
+        return segments.length > 0 ? segments[0].segment : "";
+    };
+
 
     useEffect(() => {
         if (openModal) {
@@ -568,18 +575,30 @@ export const ConfirmCard: React.FC<ConfirmCardProps> = ({
                                                     }
 
                                                     <Input
-                                                    maxLength={1}
-                                                    value={customEmoji ?? ""}
-                                                    onClick={(e) => { e.stopPropagation(); setCustomData((prev) => ({
-                                                        ...prev, emoji: customEmoji
-                                                    }))}}
-                                                    onChange={(e) => { setCustomEmoji(e.target.value); e.stopPropagation(); setCustomData((prev) => ({
-                                                        ...prev, emoji: e.target.value
-                                                    }))}}
-                                                    style={{
-                                                        background: profilesMap[user.profile].gradient,
-                                                        outline: customEmoji === customData.emoji ? '2px solid #FFFFFF80' : 'none'
-                                                    }} placeholder='A' className={styles.input_emoji} />
+                                                        value={customEmoji ?? ""}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setCustomData((prev) => ({
+                                                                ...prev,
+                                                                emoji: customEmoji
+                                                            }));
+                                                        }}
+                                                        onChange={(e) => {
+                                                            const value = getFirstGrapheme(e.target.value); // 👈 aquí está la magia
+                                                            setCustomEmoji(value);
+                                                            e.stopPropagation();
+                                                            setCustomData((prev) => ({
+                                                                ...prev,
+                                                                emoji: value
+                                                            }));
+                                                        }}
+                                                        style={{
+                                                            background: profilesMap[user.profile].gradient,
+                                                            outline: customEmoji === customData.emoji ? '2px solid #FFFFFF80' : 'none'
+                                                        }}
+                                                        placeholder='A'
+                                                        className={styles.input_emoji}
+                                                    />
                                                 </>
                                         }
                                     </div>
