@@ -48,7 +48,9 @@ export async function generateMetadata({ params }: { params: Promise<RouteParams
   }
 
   const inv = data.data as NewInvitation;
-  const url_image = data.url_image ?? inv?.cover?.image?.prod as string
+
+  const rawImage = data.url_image ?? inv?.cover?.image?.prod
+  const url_image = typeof rawImage === "string" ? rawImage : undefined;
 
   const title = inv?.cover?.title?.text?.value ?? "Invitación";
   const description = inv.greeting?.title ?? "Invitación digital";
@@ -59,15 +61,8 @@ export async function generateMetadata({ params }: { params: Promise<RouteParams
     openGraph: {
       title,
       description,
-      images: (url_image ?? inv?.cover?.image?.prod)
-        ? [
-          {
-            url: url_image ?? inv?.cover?.image?.prod,
-            width: 1200,
-            height: 630,
-            alt: title,
-          },
-        ]
+      images: url_image
+        ? [{ url: url_image, width: 1200, height: 630, alt: title }]
         : undefined,
     },
     twitter: {

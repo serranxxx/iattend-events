@@ -46,24 +46,15 @@ export async function generateMetadata({ params }: { params: Promise<RouteParams
 
   const sideEvent = data as SideEvent;
   const title = sideEvent.name;
-  const url_image = sideEvent.url_image ?? sideEvent.body.image as string
-  //   const description = inv.greeting?.title ?? "Invitación digital";
+  const rawImage = sideEvent.url_image ?? sideEvent.body?.image;
+  const url_image = typeof rawImage === "string" ? rawImage : undefined;
 
   return {
     title,
-    // description,
     openGraph: {
       title,
-      //   description,
-      images: (url_image ?? sideEvent.body.image)
-        ? [
-          {
-            url: url_image ?? sideEvent.body.image,
-            width: 1200,
-            height: 630,
-            alt: title,
-          },
-        ]
+      images: url_image
+        ? [{ url: url_image, width: 1200, height: 630, alt: title }]
         : undefined,
     },
     twitter: {
