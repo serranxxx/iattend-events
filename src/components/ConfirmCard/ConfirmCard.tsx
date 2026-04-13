@@ -68,6 +68,7 @@ export const ConfirmCard: React.FC<ConfirmCardProps> = ({
     const [isAnonymous, setIsAnonymous] = useState(false)
     const [onIssue, setOnIssue] = useState(false)
     const [onUpdate, setOnUpdate] = useState(false)
+    const [customEmoji, setCustomEmoji] = useState<string>("null")
 
     const [onBackToPublic, setOnBackToPublic] = useState(false)
 
@@ -430,7 +431,7 @@ export const ConfirmCard: React.FC<ConfirmCardProps> = ({
     return (
         <div
             style={{
-                top: displayCard ? '30px' : user.id ? (!event || event.state !== 'confirmado')  ? HIDE_NOT_CONFIRMED : HIDE_CONFIRMED : HIDE_FULL_CARD,
+                top: displayCard ? '30px' : user.id ? (!event || event.state !== 'confirmado') ? HIDE_NOT_CONFIRMED : HIDE_CONFIRMED : HIDE_FULL_CARD,
             }}
             className={styles.confirm_modal}
             onClick={(e) => e.stopPropagation()}
@@ -546,21 +547,40 @@ export const ConfirmCard: React.FC<ConfirmCardProps> = ({
 
                                                     </div>
                                                 ))
-                                                : EMOJIS.map((p, index) => (
-                                                    <div
-                                                        onClick={(e) => {
-                                                            e.stopPropagation(); setCustomData((prev) => ({
-                                                                ...prev, emoji: p
-                                                            }))
-                                                        }}
-                                                        key={index} style={{
-                                                            background: profilesMap[user.profile].gradient,
-                                                            outline: p === customData.emoji ? '2px solid #FFFFFF80' : 'none'
-                                                        }} className={styles.color_item}>
-                                                        <span className={styles.emoji_cont}>{p}</span>
+                                                : <>
+                                                    {
+                                                        EMOJIS.map((p, index) => (
+                                                            <div
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation(); setCustomData((prev) => ({
+                                                                        ...prev, emoji: p
+                                                                    }))
+                                                                }}
+                                                                key={index} style={{
+                                                                    background: profilesMap[user.profile].gradient,
+                                                                    outline: p === customData.emoji ? '2px solid #FFFFFF80' : 'none'
+                                                                }} className={styles.color_item}>
+                                                                <span className={styles.emoji_cont}>{p}</span>
 
-                                                    </div>
-                                                ))
+
+                                                            </div>
+                                                        ))
+                                                    }
+
+                                                    <Input
+                                                    maxLength={1}
+                                                    value={customEmoji ?? ""}
+                                                    onClick={(e) => { e.stopPropagation(); setCustomData((prev) => ({
+                                                        ...prev, emoji: customEmoji
+                                                    }))}}
+                                                    onChange={(e) => { setCustomEmoji(e.target.value); e.stopPropagation(); setCustomData((prev) => ({
+                                                        ...prev, emoji: e.target.value
+                                                    }))}}
+                                                    style={{
+                                                        background: profilesMap[user.profile].gradient,
+                                                        outline: customEmoji === customData.emoji ? '2px solid #FFFFFF80' : 'none'
+                                                    }} placeholder='A' className={styles.input_emoji} />
+                                                </>
                                         }
                                     </div>
                                 </div>
@@ -573,7 +593,7 @@ export const ConfirmCard: React.FC<ConfirmCardProps> = ({
                             </div>
 
                             {
-                                (!onBackToPublic && user.id && !onEdit && (event && event?.state === 'confirmado') ) &&
+                                (!onBackToPublic && user.id && !onEdit && (event && event?.state === 'confirmado')) &&
                                 <Button
                                     icon={event?.anonymous ? <ScanFace size={14} /> : <HatGlasses size={14} />}
                                     onClick={(e) => { e.stopPropagation(); hadleAnonymous() }} className={styles.button_anonymous}>

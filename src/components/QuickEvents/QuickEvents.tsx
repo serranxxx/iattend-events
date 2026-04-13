@@ -379,7 +379,7 @@ export default function QuickEvents({ info, preview }: invProps) {
 
   const getParticipants = async () => {
     const { data, error } = await supabase.rpc("get_quick_event_users_by_event", {
-      p_quick_event_id: 5,
+      p_quick_event_id: info?.id,
     });
 
     if (error) return
@@ -709,17 +709,21 @@ export default function QuickEvents({ info, preview }: invProps) {
 
 
 
-           
+
 
             <div className={styles.col_cont} style={{
               gap: seAll ? '16px' : '12px',
-              height: seAll ? '550px' : '150px'
+              height: seAll ? '550px' : (participants?.length ?? 0) > 0 ? '150px' : '50px'
             }}>
               <div className={styles.participants_row} >
-                <span>{participants?.length} Asistentes</span>
-                <Button className={styles.participants_toggle} type="text" onClick={handleToggle}>
-                  {seAll || closing ? 'Ver menos' : 'Ver todos'}
-                </Button>
+                <span>{(participants?.length ?? 0) > 0 ? `${participants?.length} Asistentes` : '¡Se el primero en confirmar!'} </span>
+                {
+                  (participants?.length ?? 0) > 0 &&
+                  <Button className={styles.participants_toggle} type="text" onClick={handleToggle}>
+                    {seAll || closing ? 'Ver menos' : 'Ver todos'}
+                  </Button>
+                }
+
               </div>
 
               {
