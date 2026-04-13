@@ -208,7 +208,7 @@ export const ConfirmCard: React.FC<ConfirmCardProps> = ({
     }
 
     const handleCard = () => {
-        if (user && event) {
+        if (user.id && event) {
             return (
                 <div onClick={(e) => e.stopPropagation()} style={{
                     opacity: onEdit ? 0 : 1, pointerEvents: onEdit ? 'none' : undefined,
