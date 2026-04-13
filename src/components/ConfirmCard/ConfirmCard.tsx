@@ -68,7 +68,7 @@ export const ConfirmCard: React.FC<ConfirmCardProps> = ({
     const [isAnonymous, setIsAnonymous] = useState(false)
     const [onIssue, setOnIssue] = useState(false)
     const [onUpdate, setOnUpdate] = useState(false)
-    const [customEmoji, setCustomEmoji] = useState<string>("null")
+    const [customEmoji, setCustomEmoji] = useState<string>("")
 
     const [onBackToPublic, setOnBackToPublic] = useState(false)
 

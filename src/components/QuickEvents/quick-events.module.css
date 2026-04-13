@@ -434,6 +434,8 @@
   transform: scale(0.6);
   transition: opacity 0.3s ease, transform 0.3s ease;
   aspect-ratio: 1;
+  color: #FFF;
+  font-weight: 600;
 }
 
 
