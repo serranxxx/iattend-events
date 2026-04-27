@@ -1,0 +1,91 @@
+.ticket_container {
+  z-index: 99;
+  max-width: 350px;
+  min-width: 350px;
+  border-radius: 36px;
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+  box-shadow:  0px 0px 12px rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  flex-direction: column;
+  background-color: transparent;
+  position: relative;
+}
+
+.ticket_first_section {
+
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  flex-direction: column;
+  height: 100%;
+}
+
+.ticket_image {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 400px;
+  width: 100%;
+  position: relative;
+}
+
+.ticket_shadow {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  mix-blend-mode: multiply;
+}
+
+.ticket_row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px;
+  box-sizing: border-box;
+}
+
+.ticket_col {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  flex-direction: column;
+}
+
+.ticket_logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-bottom: 12px;
+  position: absolute;
+  bottom: 0px;
+  left: 14px;
+}
+
+.ticket_effect {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(120deg,
+      transparent 40%,
+      rgba(255, 255, 255, 0.05) 50%,
+      transparent 60%);
+  background-size: 300% 300%;
+  animation: ticketShine 4s linear infinite;
+}
+
+@keyframes ticketShine {
+  0% {
+    background-position: 170% 0%;
+  }
+  66% {
+    background-position: 0% 0%;
+  }
+  100% {
+    background-position: 170% 0%;
+  }
+}

@@ -16,7 +16,7 @@ import { Gallery } from "../Gallery/Gallery";
 import Image from "next/image";
 import { textures } from "@/helpers/textures";
 import { TextureOverlay } from "./TexturesOverlay";
-import { Button, Drawer, Input, message, QRCode } from "antd";
+import { Button, Drawer, Input, message } from "antd";
 import Confirm from "../Confirm/Confirm";
 import { FaLock } from "react-icons/fa";
 import { GuestSubabasePayload } from "@/types/guests";
@@ -27,6 +27,7 @@ import { FaArrowsRotate } from "react-icons/fa6";
 import AnimatedPath from "@/components/Motion/AnimatedPath";
 import { FooterLand } from "@/components/LandPage/Footer/Footer";
 import Link from "next/link";
+import { Ticket } from "../Ticket/Ticket";
 
 type invProps = {
   invitation: NewInvitation | null;
@@ -314,18 +315,6 @@ export default function Invitation({ password, invitationID, ui, invitation, loa
 
 
 
-  const formatShortDate = (dateString: string) => {
-    const [year, month, day] = dateString.split("T")[0].split("-");
-
-    const months = [
-      "ENE", "FEB", "MAR", "ABR", "MAY", "JUN",
-      "JUL", "AGO", "SEP", "OCT", "NOV", "DIC",
-    ];
-
-    return `${months[Number(month) - 1]} ${Number(day)}`;
-  }
-
-
   if (loader || !invitation) {
     return (
       <div
@@ -554,125 +543,28 @@ export default function Invitation({ password, invitationID, ui, invitation, loa
         <div className={styles.ticket_cont}
           style={{ bottom: onShowTicket ? '20px' : '-80vh', transition: 'all 0.3s ease', justifyContent: companions.length === 0 ? 'center' : 'flex-start' }}>
 
-          <div onClick={() => setOnShowTicket(false)} className={styles.ticket_container} style={{
-            backgroundColor: `${accent}20`,
-            transition: 'all 0.3s ease'
-          }} >
-            <div className={styles.ticket_first_section} style={{
-              background: `linear-gradient(to top, ${accent} 0%, ${secondary} 100%)`,
-              color: accent,
-              borderColor: accent
-            }}>
-              {/* <div className={styles.ticket_head} style={{ fontFamily: invitation.generals.fonts.body?.value ?? 'Poppins', color: primary }}>
-                <span style={{ fontSize: '16px', fontWeight: 600 }}>{invitation.cover.title.text.value}</span>
-                <div className={styles.ticket_col}>
-                  <span style={{ fontWeight: 600, fontSize: '14px' }}>{formatShortDate(invitation.cover.date.value)}</span>
-                  <span>{invitation.itinerary.object[0].time ?? ""}</span>
-                </div>
+          {guestInfo && (
+            <Ticket
+              guest={guestInfo}
+              invitation={invitation}
+              tables={tables}
+              ui={ui}
+              colors={{ primary, secondary, accent }}
+              onClose={() => setOnShowTicket(false)}
+            />
+          )}
 
-              </div> */}
-
-              <div className={styles.ticket_image}>
-                <Image fill src={invitation.cover.image.prod!} alt="" style={{ objectFit: 'cover' }} />
-                <div style={{
-                  background: `linear-gradient(to top, ${accent} 0%, transparent 30%,  transparent 70%, ${accent} 110%)`
-                }} className={styles.ticket_shadow}></div>
-
-                <div className={styles.ticket_logo}>
-                  <img src="/assets/images/blanco.png" alt="" style={{ width: '70px', }} />
-                </div>
-              </div>
-
-
-
-              <div className={styles.ticket_row} style={{ fontFamily: invitation.generals.fonts.body?.value ?? 'Poppins', color: primary, }}>
-                <div className={styles.ticket_col} style={{ gap: '12px', marginBottom: '12px' }}>
-                  <div className={styles.ticket_col}>
-                    <span style={{ fontSize: '16px', fontWeight: 600 }}>{invitation.cover.title.text.value}</span>
-                    {/* <span style={{ opacity: '0.4' }}>{ui.confirm.digital_name}</span>
-                    <span>{guestInfo?.name ?? "Sin nombre"}</span> */}
-                  </div>
-                  <div className={styles.ticket_col}>
-                    <span style={{ fontWeight: 600, fontSize: '14px' }}>{formatShortDate(invitation.cover.date.value)}</span>
-                    <span>{invitation.itinerary.object[0].time ?? ""}</span>
-                  </div>
-                </div>
-
-                <div className={styles.ticket_col} style={{ gap: '12px' }}>
-                  <div className={styles.ticket_col} style={{ gap: '0' }}>
-                    <span style={{ opacity: '0.4', fontSize: '12px', lineHeight: 1 }}>{ui.confirm.digital_name}</span>
-                    <span>{guestInfo?.name ?? "Sin nombre"}</span>
-                  </div>
-                  <div className={styles.ticket_col}>
-                    <span style={{ opacity: '0.4', fontSize: '12px', lineHeight: 1 }}>{ui.confirm.digital_table}</span>
-                    <span>{tables.find(t => t.id === guestInfo?.table)?.number ?? 'Sin asignar'}</span>
-                  </div>
-                </div>
-
-                {/* <QRCode size={140} color={primary} value="www.iattend.mx" /> */}
-              </div>
-
-
-            </div>
-
-            <div className={styles.ticket_effect}></div>
-          </div>
-
-          {
-            companions?.map((companion) => (
-              <div key={companion.id} onClick={() => setOnShowTicket(false)} className={styles.ticket_container} style={{
-                backgroundColor: `${accent}20`, bottom: onShowTicket ? '20px' : '-80vh',
-                transition: 'all 0.3s ease'
-              }} >
-                <div className={styles.ticket_first_section} style={{
-                  background: `linear-gradient(to top, ${accent} 0%, ${secondary} 100%)`,
-                  color: accent,
-                  borderColor: accent
-                }}>
-                  <div className={styles.ticket_head} style={{ fontFamily: invitation.generals.fonts.body?.value ?? 'Poppins', color: primary }}>
-                    <span style={{ fontSize: '16px', fontWeight: 600 }}>{invitation.cover.title.text.value}</span>
-                    <div className={styles.ticket_col}>
-                      <span style={{ fontWeight: 600, fontSize: '14px' }}>{formatShortDate(invitation.cover.date.value)}</span>
-                      <span>{invitation.itinerary.object[0].time ?? ""}</span>
-                    </div>
-
-                  </div>
-
-                  <div className={styles.ticket_image}>
-                    <Image fill src={invitation.cover.image.prod!} alt="" style={{ objectFit: 'cover' }} />
-                    <div style={{
-                      background: `linear-gradient(to top, ${accent} 0%, transparent 30%,  transparent 70%, ${accent} 110%)`
-                    }} className={styles.ticket_shadow}></div>
-
-                    <div className={styles.ticket_logo}>
-                      <img src="/assets/images/blanco.png" alt="" style={{ width: '70px', }} />
-                    </div>
-                  </div>
-
-
-
-                  <div className={styles.ticket_row} style={{ fontFamily: invitation.generals.fonts.body?.value ?? 'Poppins', color: primary }}>
-                    <div className={styles.ticket_col} style={{ gap: '12px' }}>
-                      <div className={styles.ticket_col}>
-                        <span style={{ opacity: '0.4' }}>Nombre</span>
-                        <span>{companion?.name ?? "Sin nombre"}</span>
-                      </div>
-                      <div className={styles.ticket_col}>
-                        <span style={{ opacity: '0.4' }}>Mesa</span>
-                        <span>{tables.find(t => t.id === companion?.table)?.number ?? 'Sin asignar'}</span>
-                      </div>
-                    </div>
-
-                    <QRCode size={140} color={primary} value="www.iattend.mx" />
-                  </div>
-
-
-                </div>
-
-                <div className={styles.ticket_effect}></div>
-              </div>
-            ))
-          }
+          {companions?.map((companion) => (
+            <Ticket
+              key={companion.id}
+              guest={companion}
+              invitation={invitation}
+              tables={tables}
+              ui={ui}
+              colors={{ primary, secondary, accent }}
+              onClose={() => setOnShowTicket(false)}
+            />
+          ))}
         </div>
 
         {invitation.generals.texture !== null && tex && (
