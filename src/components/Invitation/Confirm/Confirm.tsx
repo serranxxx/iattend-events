@@ -40,7 +40,7 @@ export default function Confirm({ invitationID, ui, invitation, guestInfo, refre
 
   const supabase = createClient();
   const [mainGuest, setMainGuest] = useState<GuestSubabasePayload | null>(null);
-  const [localStatus, setLocalStatus] = useState<"creado" | "esperando" | "confirmado" | "rechazado">("esperando");
+  const [localStatus, setLocalStatus] = useState<"creado" | "esperando" | "confirmado" | "rechazado" | "asistente">("esperando");
   const [companions, setCompanions] = useState<GuestSubabasePayload[] | null>(null);
   const [openInvitation, setOpenInvitation] = useState<boolean>(false);
 
