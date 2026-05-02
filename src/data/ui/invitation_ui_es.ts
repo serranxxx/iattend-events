@@ -57,7 +57,7 @@ const uiES: InvitationUIBundle = {
     add_companion: "Agregar acompañante",
     open_add_name:"Por favor agrega tu nombre y el de las personas que te acompañan.",
     open_hi:"Hola, estamos muy contentos de que formes parte de este momento.",
-    digital_pass: "Pase Digital",
+    digital_pass: "Pase digital",
     digital_name: "Nombre",
     digital_table: "Mesa"
   }

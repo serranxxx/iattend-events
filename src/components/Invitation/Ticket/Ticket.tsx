@@ -6,6 +6,8 @@ import Image from "next/image";
 import { darker } from "@/helpers/functions";
 import styles from "./ticket.module.css";
 import { QRCode } from "antd";
+import { useEffect, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 
 type TicketColors = {
   primary: string;
@@ -16,10 +18,10 @@ type TicketColors = {
 type TicketProps = {
   guest: GuestSubabasePayload;
   invitation: NewInvitation;
-  tables: any[];
   ui: InvitationUIBundle;
   colors: TicketColors;
   onClose: () => void;
+  id?: string,
 };
 
 const formatShortDate = (dateString: string) => {
@@ -28,11 +30,35 @@ const formatShortDate = (dateString: string) => {
   return `${months[Number(month) - 1]} ${Number(day)}`;
 };
 
-export function Ticket({ guest, invitation, tables, ui, colors, onClose }: TicketProps) {
+
+
+export function Ticket({ guest, invitation, ui, colors, onClose, id }: TicketProps) {
   const { primary, accent } = colors;
   const font = invitation.generals.fonts.body?.value ?? "Poppins";
-  const tableNumber = tables.find((t) => t.id === guest.table)?.number ?? "Sin asignar";
+    const supabase = createClient();
 
+  const [tables, setTables] = useState<any[]>([])
+
+    const getTables = async () => {
+        if (id) {
+            const { data, error } = await supabase
+                .from('tables')
+                .select('*')
+                .eq('invitation_id', id)
+
+            if (error) {
+                console.error('Error al obtener mesas:', error)
+                return
+            }
+            setTables(data)
+        }
+    }
+
+  useEffect(() => {
+    getTables()
+  }, [])
+  
+  
   return (
     <div onClick={onClose} className={styles.ticket_container} style={{ backgroundColor: `${primary}80`, transition: "all 0.3s ease" }}>
       <div
@@ -51,33 +77,31 @@ export function Ticket({ guest, invitation, tables, ui, colors, onClose }: Ticke
         </div>
 
         <div className={styles.ticket_row} style={{ fontFamily: font, color: accent }}>
+          <QRCode
+            size={125}
+            style={{ border: "none", flexShrink: 0 }}
+            errorLevel="H"
+            color={accent}
+            bgColor="transparent"
+            value={guest.id?.toString() ?? ""}
+          />
 
-          {/* <QRCode style={{border:'none', minWidth:'136px'}} errorLevel="L" color={colors.accent} value="https://www.iattend.site/admin" /> */}
-          <div className={styles.ticket_col} style={{ gap: "12px", marginBottom: "12px" }}>
-            <div className={styles.ticket_col}>
-              <span style={{ fontSize: "16px", fontWeight: 600 }}>{invitation.cover.title.text.value}</span>
+          <div className={styles.ticket_col} style={{  flex: 1}}>
+            <span style={{ fontSize: "17px", fontWeight: 600, lineHeight: 1.2 }}>
+              {invitation.cover.title.text.value}
+            </span>
+            <div className={styles.ticket_col} style={{ flexDirection:'row', gap:'8px'}}>
+              <span style={{ fontWeight: 600, fontSize: "13px" }}>{formatShortDate(invitation.cover.date.value)}</span>
+              <span>/</span>
+              <span style={{ fontSize: "13px", opacity: 0.7 }}>{invitation.itinerary.object[0].time ?? ""}</span>
             </div>
-            <div className={styles.ticket_col}>
-              <span style={{ fontWeight: 600, fontSize: "14px" }}>{formatShortDate(invitation.cover.date.value)}</span>
-              <span>{invitation.itinerary.object[0].time ?? ""}</span>
+            <div className={styles.ticket_col} style={{ gap: "2px", marginTop: "4px" }}>
+              <span style={{ opacity: 0.4, fontSize: "12px", lineHeight: 1 }}>{ui.confirm.digital_name}</span>
+              <span style={{ fontSize: "16px", fontWeight: 500, lineHeight:1 }}>{guest.name ?? "Sin nombre"}</span>
             </div>
-          </div>
-
-          <div className={styles.ticket_col} style={{ gap: "12px", maxWidth:'140px' }}>
-            {/* <div className={styles.ticket_col}>
-              <span style={{ fontSize: "18px", fontWeight: 600 }}>{invitation.cover.title.text.value}</span>
-            </div>
-            <div className={styles.ticket_col}>
-              <span style={{ fontWeight: 600, fontSize: "14px" }}>{formatShortDate(invitation.cover.date.value)}</span>
-              <span>{invitation.itinerary.object[0].time ?? ""}</span>
-            </div> */}
-            <div className={styles.ticket_col} style={{ gap: "0" }}>
-              <span style={{ opacity: "0.4", fontSize: "12px", lineHeight: 1 }}>{ui.confirm.digital_name}</span>
-              <span>{guest.name ?? "Sin nombre"}</span>
-            </div>
-            <div className={styles.ticket_col}>
-              <span style={{ opacity: "0.4", fontSize: "12px", lineHeight: 1 }}>{ui.confirm.digital_table}</span>
-              <span>{tableNumber}</span>
+            <div className={styles.ticket_col} style={{ gap: "2px", marginTop: "4px" }}>
+              <span style={{ opacity: 0.4, fontSize: "12px", lineHeight: 1 }}>{ui.confirm.digital_table}</span>
+              <span style={{ fontSize: "16px", fontWeight: 500, lineHeight:1 }}>{tables?.find(t => t.id === guest.table)?.number ?? "-"}</span>
             </div>
           </div>
         </div>

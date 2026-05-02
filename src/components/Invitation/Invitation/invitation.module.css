@@ -175,7 +175,7 @@
   overflow: hidden;
 }
 
-.glow_button::before {
+/* .glow_button::before {
   content: "";
   position: absolute;
   inset: -2px;
@@ -188,9 +188,9 @@
   filter: blur(8px);
   opacity: 0.6;
   z-index: -1;
-  animation: glowMove 7s linear infinite;
+  animation: glowMove 8s linear infinite;
   border-radius: 999px;
-}
+} */
 
 @keyframes glowMove {
   0% {

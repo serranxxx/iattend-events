@@ -28,6 +28,7 @@ import AnimatedPath from "@/components/Motion/AnimatedPath";
 import { FooterLand } from "@/components/LandPage/Footer/Footer";
 import Link from "next/link";
 import { Ticket } from "../Ticket/Ticket";
+import { QrCode, RefreshCw } from "lucide-react";
 
 type invProps = {
   invitation: NewInvitation | null;
@@ -71,7 +72,6 @@ export default function Invitation({ password, invitationID, ui, invitation, loa
   const [messageApi, contextHolder] = message.useMessage();
   const [guestInfo, setGuestInfo] = useState<GuestSubabasePayload | null>(null);
   const [companions, setCompanions] = useState<GuestSubabasePayload[]>([])
-  const [tables, setTables] = useState<any[]>([])
 
   const primary = invitation?.generals?.colors.primary ?? "#FFFFFF";
   const secondary = invitation?.generals?.colors.secondary ?? "#FFFFFF";
@@ -158,7 +158,6 @@ export default function Invitation({ password, invitationID, ui, invitation, loa
         if (isErr) {
           console.log(isErr, 'not found')
         }
-        getTables()
         setCompanions(companions?.filter(c => c.state === 'confirmado') ?? [])
       }
 
@@ -202,7 +201,6 @@ export default function Invitation({ password, invitationID, ui, invitation, loa
           console.log(isErr, 'not found')
         }
 
-        getTables()
         setCompanions(companions?.filter(c => c.state === 'confirmado') ?? [])
       }
 
@@ -249,21 +247,7 @@ export default function Invitation({ password, invitationID, ui, invitation, loa
     }
   }
 
-  const getTables = async () => {
-    if (invitationID) {
-      const { data, error } = await supabase
-        .from('tables')
-        .select('*')
-        .eq('invitation_id', invitationID)
 
-      if (error) {
-        console.error('Error al obtener mesas:', error)
-        return
-      }
-
-      setTables(data)
-    }
-  }
 
 
   useEffect(() => {
@@ -387,39 +371,39 @@ export default function Invitation({ password, invitationID, ui, invitation, loa
                     letterSpacing: "2px",
                     fontSize: "16px",
                     height: "44px",
-                    width: guestInfo?.state === 'confirmado' ? "auto" : '200px',
+                    width: (guestInfo?.state === 'confirmado' || guestInfo?.state === 'asistente') && plan === 'pro' ? "auto" : '200px',
                     backgroundColor: actions,
                     color: primary,
                     boxShadow: "0 0 12px rgba(0, 0, 0, 0.26)",
                   }}
                 >
                   {
-                    guestInfo?.state === 'confirmado' ?
-                      <FaArrowsRotate />
+                    (guestInfo?.state === 'confirmado' || guestInfo?.state === 'asistente') && plan === 'pro' ?
+                      <RefreshCw size={18}>
+
+                      </RefreshCw>
                       : ui?.buttons.confirm
                   }
 
                 </Button>
 
                 {
-                  guestInfo?.state === 'confirmado' &&
+                  ((guestInfo?.state === 'confirmado' || guestInfo?.state === 'asistente') && plan === 'pro') &&
                   <Button
                     className={styles.glow_button}
-                    icon={<PiTicketDuotone size={20} />}
+                    icon={<QrCode size={18} />}
                     onClick={() => setOnShowTicket(true)}
                     style={{
-
-                      // height: '44px',
                       letterSpacing: "2px",
-                      fontSize: "16px",
+                      fontSize: "18px",
                       height: "44px",
                       minWidth: '44px',
-                      backgroundColor: `${secondary}80`,
+                      backgroundColor: `${actions}`,
                       backdropFilter: "blur(10px)",
-                      border: `1px solid ${secondary}40`,
-                      color: accent,
-                      boxShadow: "0 0 6px 0 rgba(0, 0, 0, 0.25)",
-                      // zIndex: 99999999999999
+                      border: `1px solid ${actions}40`,
+                      color: primary,
+                      boxShadow: "0 0 8px 0 rgba(0, 0, 0, 0.25)",
+                      zIndex: 99999
                     }}
                   >
                     {ui.confirm.digital_pass}
@@ -443,7 +427,7 @@ export default function Invitation({ password, invitationID, ui, invitation, loa
                       letterSpacing: "2px",
                       fontSize: "16px",
                       height: "44px",
-                      width: guestInfo?.state === 'confirmado' ? "auto" : '200px',
+                      width: (guestInfo?.state === 'confirmado' || guestInfo?.state === 'asistente') ? "auto" : '200px',
                       backgroundColor: actions,
                       color: primary,
                       boxShadow: "0 0 12px rgba(0, 0, 0, 0.26)",
@@ -525,7 +509,6 @@ export default function Invitation({ password, invitationID, ui, invitation, loa
             />
           }
 
-
         </div>
         <div
           style={{
@@ -540,14 +523,14 @@ export default function Invitation({ password, invitationID, ui, invitation, loa
           </div>
         }
 
-        <div className={styles.ticket_cont}
-          style={{ bottom: onShowTicket ? '20px' : '-80vh', transition: 'all 0.3s ease', justifyContent: companions.length === 0 ? 'center' : 'flex-start' }}>
+        <div className={`${styles.ticket_cont} scroll-invitation`}
+          style={{ bottom: onShowTicket ? '0px' : '-80vh', transition: 'all 0.3s ease', justifyContent: companions.length === 0 ? 'center' : 'flex-start', padding: '12px 24px', gap:'12px' }}>
 
           {guestInfo && (
             <Ticket
+              id={invitationID}
               guest={guestInfo}
               invitation={invitation}
-              tables={tables}
               ui={ui}
               colors={{ primary, secondary, accent }}
               onClose={() => setOnShowTicket(false)}
@@ -556,10 +539,10 @@ export default function Invitation({ password, invitationID, ui, invitation, loa
 
           {companions?.map((companion) => (
             <Ticket
+              id={invitationID}
               key={companion.id}
               guest={companion}
               invitation={invitation}
-              tables={tables}
               ui={ui}
               colors={{ primary, secondary, accent }}
               onClose={() => setOnShowTicket(false)}
