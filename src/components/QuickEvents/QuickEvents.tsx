@@ -35,7 +35,7 @@ export default function QuickEvents({ info, preview }: invProps) {
 
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const SIZES = [80, 60, 100, 65, 85, 55, 75, 90, 62];
+  const SIZES = [90, 70, 110, 75, 95, 65, 85, 100, 72];
 
   const [validated, setValidated] = useState<boolean>(false);
   const [guestCode, setGuestCode] = useState<string>("");
@@ -89,7 +89,7 @@ export default function QuickEvents({ info, preview }: invProps) {
   };
 
   function overlaps(x: number, y: number, r: number, placed: { x: number, y: number, r: number }[]) {
-    return placed.some(p => Math.hypot(x - p.x, y - p.y) < r + p.r + 12);
+    return placed.some(p => Math.hypot(x - p.x, y - p.y) < r + p.r + 18);
   }
 
   const formatDateMexico = (isoString: string | null | undefined): string => {
@@ -523,7 +523,7 @@ export default function QuickEvents({ info, preview }: invProps) {
     participants.forEach((p, i) => {
       setTimeout(() => {
         setVisibleParticipants(prev => [...prev, p]);
-      }, i * 80); // 80ms entre cada uno, ajusta a tu gusto
+      }, i * 50); // 80ms entre cada uno, ajusta a tu gusto
     });
 
   }, [seAll]);
@@ -766,13 +766,36 @@ export default function QuickEvents({ info, preview }: invProps) {
                   :
                   <div
                     ref={containerRef} className={`${styles.paticipants_cont_open} scroll-invitation`} >
-                    {visibleParticipants?.map((p, index) => (
-                      <Tooltip key={index} title={p.anonymous ? 'Anónimo' : p.name} color={profilesMap[p.profile].background}>
-                        <div data-bubble key={index} className={styles.participant_item_open} style={{ background: profilesMap[p.profile].background }}>
-                          <span>{p.anonymous ? '🥷' : p.emoji}</span>
-                        </div>
-                      </Tooltip>
-                    ))}
+                    {visibleParticipants?.map((p, index) => {
+                      const size = SIZES[index % SIZES.length];
+                      const fz = Math.max(11, Math.ceil(899 / size));
+                      const firstName = p.anonymous ? 'Anónimo' : p.name.split(' ')[0];
+                      const displayName = firstName.length > 100
+                        ? `${firstName.slice(0, 99)}…`
+                        : firstName;
+                      return (
+                        <Tooltip key={index} title={p.anonymous ? 'Anónimo' : p.name} color={profilesMap[p.profile].background}>
+                          <div  data-bubble className={styles.participant_item_open} style={{ background: profilesMap[p.profile].background }}>
+                            <span>{p.anonymous ? '🥷' : p.emoji}</span>
+                            {p.name !== 'Anónimos' && (
+                              <svg
+                                style={{ position: 'absolute', top: '-45%', left: 0, width: '100%', height: '100%', overflow: 'visible', pointerEvents: 'none',  }}
+                                viewBox="0 0 100 100"
+                              >
+                                <defs>
+                                  <path id={`arc-${index}`} d="M 12,120 A 60,90 0 0,0 82,126" fill="none" />
+                                </defs>
+                                <text fontSize={fz} fill={darker(profilesMap[p.profile].dark,0.8) ?? "#FFF"} textAnchor="middle" opacity="1" fontFamily="Poppins, sans-serif" fontWeight="600" letterSpacing="4">
+                                  <textPath href={`#arc-${index}`} startOffset="50%">
+                                    {displayName}
+                                  </textPath>
+                                </text>
+                              </svg>
+                            )}
+                          </div>
+                        </Tooltip>
+                      );
+                    })}
 
 
                   </div>

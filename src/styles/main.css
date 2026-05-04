@@ -357,12 +357,17 @@
     --info-color: var(--info-color-500);
 }
 
+html {
+    min-height: 100dvh;
+}
+
 * {
     font-family: var(--font-work-sans);
     margin: 0;
 }
 
 body {
+    min-height: 100dvh;
     color: var(--text-color);
     /* b1 */
     font-size: 16px;

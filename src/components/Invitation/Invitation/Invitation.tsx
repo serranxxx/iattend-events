@@ -329,7 +329,7 @@ export default function Invitation({ password, invitationID, ui, invitation, loa
         style={{
           backgroundColor: invitation.generals.colors.primary ?? "#FFF",
           paddingBottom: "0px",
-          maxHeight: "100vh",
+          maxHeight: "100dvh",
           position: "relative",
         }}
       >
