@@ -34,6 +34,9 @@ export default function QuickEvents({ info, preview }: invProps) {
   dayjs.locale("es");
 
   const containerRef = useRef<HTMLDivElement>(null);
+  const scrollRafRef = useRef<number | null>(null);
+  const cycleIndexRef = useRef<number>(0);
+  const participantsRef = useRef<ParticipansType[] | null>(null);
 
   const SIZES = [90, 70, 110, 75, 95, 65, 85, 100, 72];
 
@@ -391,23 +394,26 @@ export default function QuickEvents({ info, preview }: invProps) {
 
   const handleToggle = () => {
     if (seAll) {
-      // Animar salida primero
-      setClosing(true);
-      const items = containerRef.current?.querySelectorAll<HTMLElement>('[data-bubble]');
-      if (items) {
-        Array.from(items).reverse().forEach((el, i) => {
-          setTimeout(() => {
-            el.style.opacity = '0';
-            el.style.transform = 'scale(0.6)';
-          }, i * 40);
-        });
-      }
-      // Después de la animación, cerrar
-      setTimeout(() => {
-        setSeAll(false);
+       setSeAll(false);
         setClosing(false);
         setVisibleParticipants([]);
-      }, (items?.length ?? 0) * 40 + 300);
+      // Animar salida primero
+      // setClosing(true);
+      // const items = containerRef.current?.querySelectorAll<HTMLElement>('[data-bubble]');
+      // if (items) {
+      //   Array.from(items).reverse().forEach((el, i) => {
+      //     setTimeout(() => {
+      //       el.style.opacity = '0';
+      //       el.style.transform = 'scale(0.6)';
+      //     }, i * 40);
+      //   });
+      // }
+      // // Después de la animación, cerrar
+      // setTimeout(() => {
+      //   setSeAll(false);
+      //   setClosing(false);
+      //   setVisibleParticipants([]);
+      // }, (items?.length ?? 0) * 40 + 300);
     } else {
       setSeAll(true);
     }
@@ -469,7 +475,7 @@ export default function QuickEvents({ info, preview }: invProps) {
 
     const i = items.length - 1;
     const r = SIZES[i % SIZES.length] / 2;
-    const W = container.clientWidth;
+    const H = container.clientHeight;
 
     // Reconstruye placed desde los elementos ya posicionados
     const placed = Array.from(items).slice(0, -1).map((el) => ({
@@ -485,13 +491,14 @@ export default function QuickEvents({ info, preview }: invProps) {
 
     let bestX = r, bestY = r, found = false;
 
-    for (let testY = r; testY < 4000; testY += 6) {
-      for (let testX = r; testX <= W - r; testX += 6) {
+    // Eje primario: X (horizontal), eje secundario: Y (acotado a la altura fija)
+    for (let testX = r; testX < 8000; testX += 6) {
+      for (let testY = r; testY <= H - r; testY += 6) {
         if (!overlaps(testX, testY, r, placed)) {
           bestX = testX + (Math.random() - 0.5) * 10;
           bestY = testY + (Math.random() - 0.5) * 10;
-          bestX = Math.max(r + 2, Math.min(W - r - 2, bestX));
-          bestY = Math.max(r + 2, bestY);
+          bestX = Math.max(r + 2, bestX);
+          bestY = Math.max(r + 2, Math.min(H - r - 2, bestY));
           found = true;
           break;
         }
@@ -501,6 +508,13 @@ export default function QuickEvents({ info, preview }: invProps) {
 
     lastEl.style.left = `${bestX - r}px`;
     lastEl.style.top = `${bestY - r}px`;
+
+    // Expande el contenedor horizontalmente para que el scroll funcione
+    const neededWidth = bestX + r + 20;
+    const currentMin = parseFloat(container.style.minWidth) || 0;
+    if (neededWidth > currentMin) {
+      container.style.minWidth = `${neededWidth}px`;
+    }
 
     // Animación de entrada
     requestAnimationFrame(() => {
@@ -523,13 +537,53 @@ export default function QuickEvents({ info, preview }: invProps) {
     participants.forEach((p, i) => {
       setTimeout(() => {
         setVisibleParticipants(prev => [...prev, p]);
-      }, i * 50); // 80ms entre cada uno, ajusta a tu gusto
+      }, i * 80); // 80ms entre cada uno, ajusta a tu gusto
     });
 
   }, [seAll]);
 
   useEffect(() => {
+    if (!seAll) {
+      if (scrollRafRef.current) {
+        cancelAnimationFrame(scrollRafRef.current);
+        scrollRafRef.current = null;
+      }
+      return;
+    }
+
+    cycleIndexRef.current = 0;
+    let lastAppendScroll = 0;
+    const SPEED = 0;
+    const REFILL_THRESHOLD = 300;
+    const REFILL_MIN_ADVANCE = 70;
+
+    const tick = () => {
+      const container = containerRef.current;
+      if (container) {
+        container.scrollLeft += SPEED;
+
+        const distFromEnd = container.scrollWidth - container.clientWidth - container.scrollLeft;
+        const pts = participantsRef.current;
+
+        if (distFromEnd < REFILL_THRESHOLD && container.scrollLeft - lastAppendScroll > REFILL_MIN_ADVANCE && pts?.length) {
+          const nextP = pts[cycleIndexRef.current % pts.length];
+          cycleIndexRef.current++;
+          lastAppendScroll = container.scrollLeft;
+          setVisibleParticipants(prev => [...prev, nextP]);
+        }
+      }
+      scrollRafRef.current = requestAnimationFrame(tick);
+    };
+
+    scrollRafRef.current = requestAnimationFrame(tick);
+    return () => {
+      if (scrollRafRef.current) cancelAnimationFrame(scrollRafRef.current);
+    };
+  }, [seAll]);
+
+  useEffect(() => {
     participantIdsRef.current = new Set(participants?.map(p => p.id));
+    participantsRef.current = participants;
   }, [participants]);
 
 
@@ -704,15 +758,18 @@ export default function QuickEvents({ info, preview }: invProps) {
 
 
             <div className={styles.col_cont} style={{
-              gap: seAll ? '16px' : '12px',
-              height: seAll ? '550px' : (participants?.length ?? 0) > 0 ? '150px' : '50px'
+              gap: seAll ? '12px' : '12px',
+              height: seAll ? '340px' : (participants?.length ?? 0) > 0 ? '150px' : '50px',
+              padding: seAll ? '0px 0px 12px 0px' : '12px', boxSizing:'border-box'
             }}>
-              <div className={styles.participants_row} >
+              <div className={styles.participants_row} style={{
+                padding: seAll ? '12px' : '0px'
+              }}>
                 <span>{(participants?.length ?? 0) > 0 ?  `${participants?.length} Asistentes` : '¡Se el primero en confirmar!'} </span>
                 {
                   (participants?.length ?? 0) > 0 &&
-                  <Button icon={seAll || closing ? <ChevronUp size={16} /> : <ChevronDown size={16}/>} className={styles.participants_toggle} type="text" onClick={handleToggle}>
-                    {seAll || closing ? 'Ver menos' : 'Ver más'}
+                  <Button className={styles.participants_toggle} type="text" onClick={handleToggle}>
+                    {seAll || closing ? 'Cerrar' : 'Ver todo'}
                   </Button>
                 }
 
@@ -726,7 +783,7 @@ export default function QuickEvents({ info, preview }: invProps) {
                         participants?.slice(0, 8).map((p, index) => (
                           <Tooltip key={index} title={p.anonymous ? 'Anónimo' : p.name} color={profilesMap[p.profile].background}>
                             <div className={styles.participant_item} style={{
-                              background: profilesMap[p.profile].light
+                              background: profilesMap[p.profile].gradient
                             }}>
                               {p.anonymous ? '🥷' : p.emoji}
                             </div>
