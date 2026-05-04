@@ -355,94 +355,6 @@ export default function Invitation({ password, invitationID, ui, invitation, loa
                 />
               </div>
             )}
-            {(plan !== 'paperless') ?
-              <div style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px',
-                position: "fixed",
-                left: "50%",
-                transform: "translateX(-50%)",
-                bottom: "20px",
-                zIndex: 3,
-              }}>
-                <Button
-                  onClick={!dev ? () => setOpen(true) : () => { }}
-                  style={{
-
-                    letterSpacing: "2px",
-                    fontSize: "16px",
-                    height: "44px",
-                    width: (guestInfo?.state === 'confirmado' || guestInfo?.state === 'asistente') && plan === 'pro' ? "auto" : '200px',
-                    backgroundColor: actions,
-                    color: primary,
-                    boxShadow: "0 0 12px rgba(0, 0, 0, 0.26)",
-                  }}
-                >
-                  {
-                    (guestInfo?.state === 'confirmado' || guestInfo?.state === 'asistente') && plan === 'pro' ?
-                      <RefreshCw size={18}>
-
-                      </RefreshCw>
-                      : ui?.buttons.confirm
-                  }
-
-                </Button>
-
-                {
-                  ((guestInfo?.state === 'confirmado' || guestInfo?.state === 'asistente') && plan === 'pro') &&
-                  <Button
-                    className={styles.glow_button}
-                    icon={<QrCode size={18} />}
-                    onClick={() => setOnShowTicket(true)}
-                    style={{
-                      letterSpacing: "2px",
-                      fontSize: "18px",
-                      height: "44px",
-                      minWidth: '44px',
-                      backgroundColor: `${actions}`,
-                      backdropFilter: "blur(10px)",
-                      border: `1px solid ${actions}40`,
-                      color: primary,
-                      boxShadow: "0 0 8px 0 rgba(0, 0, 0, 0.25)",
-                      zIndex: 99999
-                    }}
-                  >
-                    {ui.confirm.digital_pass}
-                  </Button>
-                }
-              </div>
-
-              : phone_number && <div style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px',
-                position: "fixed",
-                left: "50%",
-                transform: "translateX(-50%)",
-                bottom: "20px",
-                zIndex: 3,
-              }}>
-                <Link href={`https://wa.me/${phone_number}?text=${messagePaperless}`}
-                  rel="noreferrer"
-                  target="_blank">
-                  <Button
-                    style={{
-                      letterSpacing: "2px",
-                      fontSize: "16px",
-                      height: "44px",
-                      width: (guestInfo?.state === 'confirmado' || guestInfo?.state === 'asistente') ? "auto" : '200px',
-                      backgroundColor: actions,
-                      color: primary,
-                      boxShadow: "0 0 12px rgba(0, 0, 0, 0.26)",
-                    }}
-                  >
-                    {
-                      ui?.buttons.confirm
-                    }
-
-                  </Button>
-                </Link>
-
-              </div>
-            }
-
             <FooterLand invitation={invitation}></FooterLand>
           </>
         )}
@@ -498,75 +410,130 @@ export default function Invitation({ password, invitationID, ui, invitation, loa
             {ui?.locked.access}
           </Button>
         </div>
-        <div style={{ opacity: animation ? 1 : 0 }} className={styles.animation_cont}>
-          {
-            animation &&
-            <AnimatedPath
-              color={primary}
-              opacityStart={0.3}
-              opacityEnd={0.5}
-              duration={2.5}
-            />
-          }
-
-        </div>
-        <div
-          style={{
-            opacity: animatedText ? 1 : 0, fontFamily: invitation.generals.fonts.body?.value ?? "Poppins", color: '#FFFFFF99', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', gap: '0px',
-            flexWrap: 'wrap'
-
-          }}
-          className={styles.welcome_label}><span style={{ marginRight: '8px' }}>{ui.confirm.hello}</span> <b style={{ color: '#FFF', textAlign: 'left', }}>{guestInfo?.name}</b></div>
-        {
-          onShowTicket &&
-          <div onClick={() => setOnShowTicket(false)} className={styles.ticket_bg}>
-          </div>
-        }
-
-        <div className={`${styles.ticket_cont} scroll-invitation`}
-          style={{ bottom: onShowTicket ? '0px' : '-80vh', transition: 'all 0.3s ease', justifyContent: companions.length === 0 ? 'center' : 'flex-start', padding: '12px 24px', gap:'12px' }}>
-
-          {guestInfo && (
-            <Ticket
-              id={invitationID}
-              guest={guestInfo}
-              invitation={invitation}
-              ui={ui}
-              colors={{ primary, secondary, accent }}
-              onClose={() => setOnShowTicket(false)}
-            />
-          )}
-
-          {companions?.map((companion) => (
-            <Ticket
-              id={invitationID}
-              key={companion.id}
-              guest={companion}
-              invitation={invitation}
-              ui={ui}
-              colors={{ primary, secondary, accent }}
-              onClose={() => setOnShowTicket(false)}
-            />
-          ))}
-        </div>
-
         {invitation.generals.texture !== null && tex && (
           <TextureOverlay
             containerRef={scrollableContentRef as unknown as React.RefObject<HTMLElement>}
             coverHeightPx={heightSize}
-            // extraMarginPx={mongoID === "68ffdb9cd673a17f84312991" ? 400 : 0}
             texture={{
-              image: tex.image, // StaticImageData o "/public/..."
+              image: tex.image,
               opacity: tex.opacity,
               blend: tex.blend,
               filter: tex.filter,
             }}
-            tileW={1024} // ajusta a tu imagen
+            tileW={1024}
             tileH={1024}
           />
         )}
 
       </div>
+
+      {validated && (
+        (plan !== 'paperless') ?
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px',
+            position: "fixed",
+            left: "50%",
+            transform: "translateX(-50%)",
+            bottom: "20px",
+            zIndex: 3,
+          }}>
+            <Button
+              onClick={!dev ? () => setOpen(true) : () => { }}
+              style={{
+                letterSpacing: "2px",
+                fontSize: "16px",
+                height: "44px",
+                width: (guestInfo?.state === 'confirmado' || guestInfo?.state === 'asistente') && plan === 'pro' ? "auto" : '200px',
+                backgroundColor: actions,
+                color: primary,
+                boxShadow: "0 0 12px rgba(0, 0, 0, 0.26)",
+              }}
+            >
+              {(guestInfo?.state === 'confirmado' || guestInfo?.state === 'asistente') && plan === 'pro'
+                ? <RefreshCw size={18} />
+                : ui?.buttons.confirm}
+            </Button>
+            {((guestInfo?.state === 'confirmado' || guestInfo?.state === 'asistente') && plan === 'pro') && (
+              <Button
+                className={styles.glow_button}
+                icon={<QrCode size={18} />}
+                onClick={() => setOnShowTicket(true)}
+                style={{
+                  letterSpacing: "2px",
+                  fontSize: "18px",
+                  height: "44px",
+                  minWidth: '44px',
+                  backgroundColor: `${actions}`,
+                  backdropFilter: "blur(10px)",
+                  border: `1px solid ${actions}40`,
+                  color: primary,
+                  boxShadow: "0 0 8px 0 rgba(0, 0, 0, 0.25)",
+                  zIndex: 99999
+                }}
+              >
+                {ui.confirm.digital_pass}
+              </Button>
+            )}
+          </div>
+          : phone_number ? (
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px',
+              position: "fixed",
+              left: "50%",
+              transform: "translateX(-50%)",
+              bottom: "20px",
+              zIndex: 3,
+            }}>
+              <Link href={`https://wa.me/${phone_number}?text=${messagePaperless}`} rel="noreferrer" target="_blank">
+                <Button
+                  style={{
+                    letterSpacing: "2px",
+                    fontSize: "16px",
+                    height: "44px",
+                    width: (guestInfo?.state === 'confirmado' || guestInfo?.state === 'asistente') ? "auto" : '200px',
+                    backgroundColor: actions,
+                    color: primary,
+                    boxShadow: "0 0 12px rgba(0, 0, 0, 0.26)",
+                  }}
+                >
+                  {ui?.buttons.confirm}
+                </Button>
+              </Link>
+            </div>
+          ) : null
+      )}
+
+      <div style={{ opacity: animation ? 1 : 0 }} className={styles.animation_cont}>
+        {animation && (
+          <AnimatedPath color={primary} opacityStart={0.3} opacityEnd={0.5} duration={2.5} />
+        )}
+      </div>
+      <div
+        style={{
+          opacity: animatedText ? 1 : 0, fontFamily: invitation.generals.fonts.body?.value ?? "Poppins",
+          color: '#FFFFFF99', display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
+          gap: '0px', flexWrap: 'wrap'
+        }}
+        className={styles.welcome_label}
+      >
+        <span style={{ marginRight: '8px' }}>{ui.confirm.hello}</span>
+        <b style={{ color: '#FFF', textAlign: 'left' }}>{guestInfo?.name}</b>
+      </div>
+      {onShowTicket && (
+        <div onClick={() => setOnShowTicket(false)} className={styles.ticket_bg} />
+      )}
+      <div
+        className={`${styles.ticket_cont} scroll-invitation`}
+        style={{ bottom: onShowTicket ? '0px' : '-80vh', transition: 'all 0.3s ease', justifyContent: companions.length === 0 ? 'center' : 'flex-start', padding: '12px 24px', gap: '12px' }}
+      >
+        {guestInfo && (
+          <Ticket id={invitationID} guest={guestInfo} invitation={invitation} ui={ui} colors={{ primary, secondary, accent }} onClose={() => setOnShowTicket(false)} />
+        )}
+        {companions?.map((companion) => (
+          <Ticket id={invitationID} key={companion.id} guest={companion} invitation={invitation} ui={ui} colors={{ primary, secondary, accent }} onClose={() => setOnShowTicket(false)} />
+        ))}
+      </div>
+
       <Drawer
         placement={isLargeScreen ? "left" : "bottom"}
         onClose={() => setOpen(false)}

@@ -861,23 +861,22 @@ export default function QuickEvents({ info, preview }: invProps) {
           </Button>
         </div>
 
-        <div className={styles.card_port_view}>
-          <div className={styles.port_view}>
-            <div className={styles.confirm_card}>
-              <ConfirmCard
-                getUser={getUser}
-                setUser={setUser} setEvent={setEvent}
-                setOpenModal={setOpenModal} openModal={openModal}
-                confirmAssitance={confirmAssitance} insertUSer={insertUSer}
-                updateAnonymous={updateAnonymous} insertUserAndUpgradeGuest={insertUserAndUpgradeGuest}
-                event={event} user={user} />
-            </div>
+      </div>
+
+      <div className={styles.card_port_view} >
+        <div className={styles.port_view} >
+          <div className={styles.confirm_card} >
+            <ConfirmCard
+              getUser={getUser}
+              setUser={setUser} setEvent={setEvent}
+              setOpenModal={setOpenModal} openModal={openModal}
+              confirmAssitance={confirmAssitance} insertUSer={insertUSer}
+              updateAnonymous={updateAnonymous} insertUserAndUpgradeGuest={insertUserAndUpgradeGuest}
+              event={event} user={user} />
           </div>
         </div>
-
-
-
       </div>
+
       {
         validated &&
         <FooterLand color={info?.body.color}></FooterLand>

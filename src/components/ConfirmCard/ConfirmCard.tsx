@@ -31,8 +31,8 @@ const CATEGORY_OPTIONS = [
 const EMOJIS = ['😆', '🤪', '🥸', '😈', '🤡', '👽', '💩', '🤖', '🐵', '🐸', '🐹', '🐙', '😸', '👻', '🤠']
 
 const HIDE_FULL_CARD = -1000
-const HIDE_NOT_CONFIRMED = -485
-const HIDE_CONFIRMED = -426
+const HIDE_NOT_CONFIRMED = -480
+const HIDE_CONFIRMED = -430
 
 const ON_EDIT_HEIGHT = 610
 const USER_NOT_CONFIRMED_HEIGHT = 520
@@ -215,8 +215,11 @@ export const ConfirmCard: React.FC<ConfirmCardProps> = ({
                     opacity: onEdit ? 0 : 1, pointerEvents: onEdit ? 'none' : undefined,
 
                 }} className={styles.guest_name_cont}>
-
-                    <span className={styles.guest_name}>{event?.anonymous ? 'Anónimo' : user?.name}</span>
+                    {
+                        displayCard &&
+                         <span className={styles.guest_name}>{event?.anonymous ? 'Anónimo' :  user?.name.length > 10 ? `${user?.name.split(' ')[0]} ${user?.name.split(' ')[1].slice(0,1)}.`: user?.name}</span>
+                    }
+                   
                     {
                         event.state === 'confirmado' ?
                             <div className={styles.status_col}>
@@ -432,6 +435,11 @@ export const ConfirmCard: React.FC<ConfirmCardProps> = ({
             }, 300);
         }
     }, [onIssue])
+
+    useEffect(() => {
+      console.log('event: ', event)
+    }, [event])
+    
 
 
 

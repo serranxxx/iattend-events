@@ -7,6 +7,7 @@
     align-items: flex-start;
     justify-content: flex-start;
     transition: all 0.3s ease;
+    border: 1px solid red;
 }
 
 .confirm_card_cont {
