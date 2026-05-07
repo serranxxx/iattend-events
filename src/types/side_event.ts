@@ -25,6 +25,7 @@ export type SideEvent = {
   type: 'open' | 'closed';
 };
 
+
 export type SideAddress = {
   city: string;
   state: string;
@@ -34,4 +35,58 @@ export type SideAddress = {
   zipcode: string;
   neighborhood: string;
   url: string;
+};
+
+
+export type popTheme = {
+  button: number,
+  animation: number,
+  palette: {
+    actions: string,
+    primary: string,
+    secondary: string
+  },
+  background: { type: string, media: string }[]
+};
+
+export type popContent = {
+  text: {
+    color: string,
+    family: string,
+  },
+  extra: {
+    info: string,
+    custom_question: {
+      type: string,
+      options: string[],
+      question: string
+    },
+  }
+  title: {
+    size: number,
+    color: string,
+    family: string,
+    weight: number,
+    opacity: number,
+    line_height: number,
+    value: string | null
+  },
+  information: {
+    date: string,
+    type: string,
+    address: SideAddress
+  }
+};
+
+
+export type popEventBody = {
+  theme: popTheme,
+  content: popContent
+};
+
+export type PopEvent = {
+  id: number;
+  created_at: string;
+  user_id: string;
+  body: popEventBody;
 };

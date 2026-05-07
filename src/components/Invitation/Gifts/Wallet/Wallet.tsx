@@ -12,6 +12,7 @@ import { FaCopy } from "react-icons/fa";
 import FadeIn from "@/components/Motion/FadeIn";
 import FadeDown from "@/components/Motion/FadeDown";
 import { useScreenWidth } from "@/hooks/useScreenWidth";
+import { Layers, Layers2, WalletCards, X } from "lucide-react";
 
 type CardProps = {
   invitation: NewInvitation;
@@ -44,6 +45,13 @@ export default function Wallet({ ui, invitation, dev = false }: CardProps) {
 
   const [movedIndex, setMovedIndex] = useState<number | null>(null);
   const [isScaled, setIsScaled] = useState(false);
+  const [fanOpen, setFanOpen] = useState(false);
+
+  const FAN_OFFSET = 150;
+  const FAN_ANGLES: Record<number, number[]> = { 1: [0], 2: [-12, -26], 3: [-10, -22, -36] };
+
+  const getFanAngle = (index: number, total: number) =>
+    FAN_ANGLES[total]?.[index] ?? 0;
 
   // ---- Control de animaciones y timeouts ----
   const timeoutsRef = useRef<number[]>([]);
@@ -134,8 +142,8 @@ export default function Wallet({ ui, invitation, dev = false }: CardProps) {
   };
 
   const handleReset = () => {
-    // cerrar si hay una abierta
     clearAllTimeouts();
+    setFanOpen(false);
     if (movedIndex !== null) {
       animatingRef.current = true;
       setIsScaled(false);
@@ -145,6 +153,27 @@ export default function Wallet({ ui, invitation, dev = false }: CardProps) {
         animatingRef.current = false;
       }, ANIM_MS);
     }
+  };
+
+  const toggleFan = (e: React.MouseEvent | React.PointerEvent) => {
+    e.stopPropagation();
+    if (animatingRef.current) return;
+    if (movedIndex !== null) {
+      handleReset();
+      schedule(() => setFanOpen(true), ANIM_MS + 10);
+    } else {
+      setFanOpen(f => !f);
+    }
+  };
+
+  const handleCardPointerDown = (e: React.PointerEvent, index: number) => {
+    e.stopPropagation();
+    if (fanOpen) {
+      setFanOpen(false);
+      schedule(() => handleClick(index), 150);
+      return;
+    }
+    handleClick(index);
   };
 
   const copyToClipboard = async (textToCopy: string) => {
@@ -211,25 +240,28 @@ export default function Wallet({ ui, invitation, dev = false }: CardProps) {
               <FadeDown
                 key={`${classifyGiftCard(card).className}-${index}`} // ✅ key para estabilidad en el render
                 duration={index}
-                zIndex={movedIndex === index ? 12 : cards.length + 1 - index}
+                zIndex={movedIndex === index ? 12 : cards.length + 5 - index}
               >
                 <div
                   className={`${styles.card} ${styles[classifyGiftCard(card).className]}`}
                   style={{
-                    zIndex: movedIndex === index ? 12 : cards.length + 1 - index,
-                    bottom: `${bottoms[index]}px`,
+                    zIndex: movedIndex === index ? 12 : cards.length + 5 - index,
+                    bottom: fanOpen && movedIndex === null ? `${(baseRef.current[index] ?? 0) + FAN_OFFSET}px` : `${bottoms[index]}px`,
                     padding: movedIndex === index ? "24px" : undefined,
                     border: `1px solid ${accent}10`,
                     transition: "bottom 250ms ease, transform 250ms ease",
                     transform:
-                      movedIndex === index
-                        ? isScaled
-                          ? `scale(${SCALE_UP}) translateY(${DOWN_PX}px)`
-                          : "scale(1) translateY(0)"
-                        : "scale(1) translateY(0)",
-                    transformOrigin: "center bottom",
+                      fanOpen && movedIndex === null
+                        ? `rotate(${getFanAngle(index, cards.length)}deg)`
+                        : movedIndex === index
+                          ? isScaled
+                            ? `scale(${SCALE_UP}) translateY(${DOWN_PX}px)`
+                            : "scale(1) translateY(0)"
+                          : "scale(1) translateY(0)",
+                    transformOrigin: "bottom center",
+                    touchAction: "manipulation",
                   }}
-                  onClick={() => handleClick(index)}
+                  onPointerDown={(e) => handleCardPointerDown(e, index)}
                 >
                   <div
                     className={styles.card_logo_container}
@@ -276,12 +308,14 @@ export default function Wallet({ ui, invitation, dev = false }: CardProps) {
 
           {/* Lines debajo y sin eventos */}
           <div
-            onClick={handleReset}
+            onClick={(e) => { e.stopPropagation(); handleReset(); }}
             style={{
               backgroundColor:
                 darker(content?.dynamic_background?.active ? (content.inverted ? primary : secondary) : content.inverted ? secondary : primary, 0.95) ??
                 "#FFF",
               borderColor: content.inverted ? `${accent}60` : `${primary}60`,
+              justifyContent: "space-between",
+              zIndex:10
             }}
             className={`${invitation.generals.texture !== null ? styles.department : styles.department_light} ${styles.one}`}
           >
@@ -299,6 +333,25 @@ export default function Wallet({ ui, invitation, dev = false }: CardProps) {
                 {ui.labels.cards}
               </span>
             </div>
+
+            {(cards?.length ?? 0) > 1 && (
+              <Button
+                shape="circle"
+                // size="small"
+                onClick={toggleFan}
+                icon={fanOpen
+                  ? <X size={12} style={{ color: content.inverted ? primary : accent }} />
+                  : <Layers2  size={16} style={{ color: content.inverted ? primary : accent }} />
+                }
+                style={{
+                  backgroundColor: "transparent",
+                  border: `1px solid ${content.inverted ? `${primary}40` : `${accent}40`}`,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              />
+            )}
           </div>
         </div>
       </FadeIn>

@@ -166,7 +166,7 @@ export const ConfirmCard: React.FC<ConfirmCardProps> = ({
     const updateProfile = async () => {
         try {
             const { data, error } = await supabase
-                .from("quick_events_users")
+                .from("pop_users")
                 .update({
                     profile: customData.profile,
                     emoji: customData.emoji,

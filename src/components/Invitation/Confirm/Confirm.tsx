@@ -585,7 +585,7 @@ export default function Confirm({ invitationID, ui, invitation, guestInfo, refre
           {invitation && (
             <AddToCalendarButton
               name={invitation?.cover?.title?.text?.value ?? ""}
-              options={["Google"]}
+              options={["Google", "Apple", "Outlook.com"]}
               // startDate={formatISODate(invitation.cover.date)}
               startDate={toYYYYMMDD(invitation?.cover?.date?.value)}
               timeZone="America/Los_Angeles"

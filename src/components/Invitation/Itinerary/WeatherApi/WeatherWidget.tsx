@@ -2,12 +2,16 @@
 import { ItineraryItem, NewInvitation } from "@/types/new_invitation";
 import { useEffect, useState } from "react";
 import styles from "./weather.module.css";
-import { SideEventBody } from "@/types/side_event";
+import { popContent, SideAddress, SideEventBody } from "@/types/side_event";
 
 type CardProps = {
   invitation?: NewInvitation;
   dev?: boolean;
-  item: ItineraryItem | SideEventBody | undefined;
+  item: ItineraryItem | SideEventBody | {
+      date: string,
+      type: string,
+      address: SideAddress
+    } |  undefined;
   isSide?: boolean;
   color?: string;
 };

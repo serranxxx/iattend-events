@@ -79,6 +79,40 @@
   animation: ticketShine 4s linear infinite;
 }
 
+.wallet_button {
+  width: 190px;
+  height: 60px;
+  border-radius: 8px;
+  overflow: hidden;
+  background-color: #000;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  border: none;
+  cursor: pointer;
+  z-index: 1;
+  transition: opacity 0.2s ease;
+  position: absolute;
+  right: 12px;
+  top: 12px;
+}
+
+.wallet_btn {
+  position: absolute;
+  left: 24px;
+  top: 24px;
+  box-shadow: 0px 0px 12px rgba(0, 0, 0, 0.4);
+  height: 33px;
+  border-radius: 8px;
+  z-index: 999;
+}
+
+.wallet_button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 @keyframes ticketShine {
   0% {
     background-position: 170% 0%;

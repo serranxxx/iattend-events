@@ -1,6 +1,6 @@
 "use client";
 
-import { SideEvent } from "@/types/side_event";
+import { PopEvent, SideEvent } from "@/types/side_event";
 import React, { useEffect, useRef, useState } from "react";
 import styles from "./quick-events.module.css";
 import Image from "next/image";
@@ -23,12 +23,12 @@ import { profilesMap } from "../ConfirmCard/profiles";
 import { ChevronDown, ChevronUp, CircleCheck, MapPin } from "lucide-react";
 
 type invProps = {
-  info: SideEvent | null;
+  info: PopEvent | null;
   password?: string;
   preview?: boolean
 };
 
-export default function QuickEvents({ info, preview }: invProps) {
+export default function PopEvents({ info, preview }: invProps) {
   dayjs.extend(utc);
   dayjs.extend(timezone);
   dayjs.locale("es");
@@ -155,7 +155,7 @@ export default function QuickEvents({ info, preview }: invProps) {
       };
 
       const { data, error } = await supabase
-        .from("quick_events_guests")
+        .from("pop_guests")
         .insert([newguest])
         .select()
         .maybeSingle();
@@ -204,7 +204,7 @@ export default function QuickEvents({ info, preview }: invProps) {
       };
 
       const { data, error } = await supabase
-        .from("quick_events_users")
+        .from("pop_users")
         .insert([newguest])
         .select()
         .maybeSingle();
@@ -235,7 +235,7 @@ export default function QuickEvents({ info, preview }: invProps) {
 
     try {
       const { data, error } = await supabase
-        .from("quick_events_guests")
+        .from("pop_guests")
         .select("*")
         .eq("id", id)
         .eq("quick_event_id", info?.id)
@@ -266,7 +266,7 @@ export default function QuickEvents({ info, preview }: invProps) {
   const getUser = async (id: string) => {
     try {
       const { data, error } = await supabase
-        .from("quick_events_users")
+        .from("pop_users")
         .select("*")
         .eq("id", id)
         .maybeSingle()
@@ -286,7 +286,7 @@ export default function QuickEvents({ info, preview }: invProps) {
   const updateAnonymous = async (anon: boolean) => {
     try {
       const { data, error } = await supabase
-        .from("quick_events_guests")
+        .from("pop_guests")
         .update({
           anonymous: anon,
         })
@@ -332,7 +332,7 @@ export default function QuickEvents({ info, preview }: invProps) {
       };
 
       const { data: userData, error: userError } = await supabase
-        .from("quick_events_users")
+        .from("pop_users")
         .insert([newUser])
         .select()
         .maybeSingle();
@@ -350,7 +350,7 @@ export default function QuickEvents({ info, preview }: invProps) {
       console.log('event: ', event)
 
       const { data: newEvent, error: guestError } = await supabase
-        .from("quick_events_guests")
+        .from("pop_guests")
         .update({
           quick_event_user_id: userData.id,
           anonymous: false
@@ -382,7 +382,7 @@ export default function QuickEvents({ info, preview }: invProps) {
   };
 
   const getParticipants = async () => {
-    const { data, error } = await supabase.rpc("get_quick_event_users_by_event", {
+    const { data, error } = await supabase.rpc("get_pop_users_by_event", {
       p_quick_event_id: info?.id,
     });
 
@@ -436,7 +436,7 @@ export default function QuickEvents({ info, preview }: invProps) {
 
   useEffect(() => {
 
-    if (info?.type === 'open' || preview) {
+    if (info?.body.content.information.type === 'open' || preview) {
       setValidated(true)
     }
 
@@ -598,7 +598,7 @@ export default function QuickEvents({ info, preview }: invProps) {
         {
           event: '*',
           schema: 'public',
-          table: 'quick_events_guests'
+          table: 'pop_guests'
         },
         (payload) => {
           const row = (payload.new ?? payload.old) as QuickEventGuest | null;
@@ -612,7 +612,7 @@ export default function QuickEvents({ info, preview }: invProps) {
 
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'quick_events_users' },
+        { event: '*', schema: 'public', table: 'pop_users' },
         (payload) => {
           const row = (payload.new ?? payload.old) as QuickEventUser | null;
           if (!row) return;
@@ -638,7 +638,7 @@ export default function QuickEvents({ info, preview }: invProps) {
       {contextHolder}
       <div className={styles.side_event_main_cont}>
         <div className={styles.hero}>
-          {info?.body.image && <Image className={styles.hero_bg} fill src={info?.body.image} alt="" style={{ objectFit: "cover" }} />}
+          {info?.body.theme.background[0].media && <Image className={styles.hero_bg} fill src={info?.body.theme.background[0].media} alt="" style={{ objectFit: "cover" }} />}
           <div className={styles.blur_cover}></div>
           <div className={styles.shadow}></div>
         </div>
@@ -650,25 +650,25 @@ export default function QuickEvents({ info, preview }: invProps) {
             className={styles.info_cont}
             style={
               {
-                "--blur-color": `${info?.body.color ?? "#000000"}`,
-                "--blur-color--dark": `${darker(info?.body.color!, 0.8) ?? "#000000"}80`,
-                "--blur-color--darker": `${darker(info?.body.color!, 0.2) ?? "#000000"}80`,
+                "--blur-color": `${info?.body.theme.palette.primary ?? "#000000"}`,
+                "--blur-color--dark": `${darker(info?.body.theme.palette.primary!, 0.8) ?? "#000000"}80`,
+                "--blur-color--darker": `${darker(info?.body.theme.palette.primary!, 0.2) ?? "#000000"}80`,
               } as React.CSSProperties
             }
           >
             <span
               style={{
-                fontFamily: info?.body.title.font,
-                fontWeight: info?.body.title.weight,
-                fontSize: `${info?.body.title.size}px`,
-                lineHeight: info?.body.title.line_height,
-                opacity: info?.body.title.opacity,
+                fontFamily: info?.body.content.title.family,
+                fontWeight: info?.body.content.title.weight,
+                fontSize: `${info?.body.content.title.size}px`,
+                lineHeight: info?.body.content.title.line_height,
+                opacity: info?.body.content.title.opacity,
                 textAlign: "center",
-                color: "#FFF",
+                color: info?.body.content.title.color ?? "#FFF",
                 textShadow: "0px 0px 18px rgba(0, 0, 0, 0.35)",
               }}
             >
-              {info?.name}
+              {info?.body?.content?.title?.value ?? "RuN"}
             </span>
 
             <div
@@ -678,12 +678,12 @@ export default function QuickEvents({ info, preview }: invProps) {
                 zIndex: 99,
               }}
             >
-              <span>{formatDateMexico(info?.body.hour)}</span>
+              <span>{formatDateMexico(info?.body.content.information.date)}</span>
               <span>
-                {info?.body.address.street} {info?.body.address.number},
+                {info?.body.content.information.address.street} {info?.body.content.information.address.number},
               </span>
               <span>
-                {info?.body.address.state} {info?.body.address.country}
+                {info?.body.content.information.address.state} {info?.body.content.information.address.country}
               </span>
             </div>
 
@@ -703,7 +703,7 @@ export default function QuickEvents({ info, preview }: invProps) {
 
 
 
-            {info?.body.extras && (
+            {info?.body.content.extra.info && (
               <div className={styles.mapa_container} style={{ padding: "12px 18px" }}>
                 <span
                   style={{
@@ -715,19 +715,19 @@ export default function QuickEvents({ info, preview }: invProps) {
                     mixBlendMode: "soft-light",
                   }}
                 >
-                  {renderTextWithStrong(info.body.extras ?? "")}
+                  {renderTextWithStrong(info?.body.content.extra.info ?? "")}
                 </span>
               </div>
             )}
 
 
-            {info?.body.address.street &&
-              info?.body.address.number &&
-              info?.body.address.neighborhood &&
-              info?.body.address.zipcode &&
-              info?.body.address.city &&
-              info?.body.address.state &&
-              info?.body.address.country && (
+            {info?.body.content.information.address.street &&
+              info?.body.content.information.address.number &&
+              info?.body.content.information.address.neighborhood &&
+              info?.body.content.information.address.zipcode &&
+              info?.body.content.information.address.city &&
+              info?.body.content.information.address.state &&
+              info?.body.content.information.address.country && (
                 <div className={styles.mapa_container}>
                   <Button icon={<MapPin size={16} />} className={styles.get_there} type="text">
                     Cómo llegar
@@ -741,13 +741,13 @@ export default function QuickEvents({ info, preview }: invProps) {
                     allowFullScreen
                     referrerPolicy="no-referrer-when-downgrade"
                     src={simpleaddress(
-                      info?.body.address.street,
-                      info?.body.address.number,
-                      info?.body.address.neighborhood,
-                      info?.body.address.zipcode,
-                      info?.body.address.city,
-                      info?.body.address.state,
-                      info?.body.address.country
+                      info?.body.content.information.address.street,
+                      info?.body.content.information.address.number,
+                      info?.body.content.information.address.neighborhood,
+                      info?.body.content.information.address.zipcode,
+                      info?.body.content.information.address.city,
+                      info?.body.content.information.address.state,
+                      info?.body.content.information.address.country
                     )}
                   />
                 </div>
@@ -861,8 +861,8 @@ export default function QuickEvents({ info, preview }: invProps) {
             </div>
 
             {
-              info?.body.address.city &&
-              <WeatherWidget item={info?.body} isSide={true} color={`${darker(info?.body.color!, 0.8) ?? "#000000"}80`} />
+              info?.body.content.information.address.city &&
+              <WeatherWidget item={info?.body.content.information} isSide={true} color={`${darker(info?.body.theme.palette.primary!, 0.8) ?? "#000000"}80`} />
             }
           </div>
         }
@@ -936,7 +936,7 @@ export default function QuickEvents({ info, preview }: invProps) {
 
       {
         validated &&
-        <FooterLand color={info?.body.color}></FooterLand>
+        <FooterLand color={info?.body.theme.palette.primary}></FooterLand>
       }
     </>
   );
