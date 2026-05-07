@@ -119,7 +119,7 @@ export function Ticket({ guest, invitation, ui, colors, onClose, id }: TicketPro
             <img src="/assets/images/nuevo_blanco.png" alt="" style={{ width: "70px" }} />
           </div>
 
-          {/* {isIOS() && (
+          {isIOS() && (
             <div
               onClick={addToWallet}
               className={styles.wallet_btn} style={{
@@ -128,7 +128,7 @@ export function Ticket({ guest, invitation, ui, colors, onClose, id }: TicketPro
               }}>
               <img src="/assets/tools/wallet_add.png" alt="" style={{ width: 100 }} />
             </div>
-          )} */}
+          )}
 
           {addingToWallet && (
             <div style={{
