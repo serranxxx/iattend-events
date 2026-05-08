@@ -35,6 +35,7 @@ interface CSSVars extends React.CSSProperties {
   ["--blur-color"]?: string;
   ["--blur-color--dark"]?: string;
   ["--blur-color--darker"]?: string;
+  ["--widget-tint"]?: string;
 }
 
 export default function PopEvents({ info, preview, password }: invProps) {
@@ -46,6 +47,7 @@ export default function PopEvents({ info, preview, password }: invProps) {
   const body = info?.body;
   const theme = body?.theme;
   const primary = theme?.palette.primary ?? "#000000";
+  const secondary = theme?.palette.secondary;
   const background = theme?.background;
   const content = body?.content;
   const titleCfg = content?.title;
@@ -340,6 +342,7 @@ export default function PopEvents({ info, preview, password }: invProps) {
     "--blur-color": primary,
     "--blur-color--dark": `${darker(primary, 0.8)}80`,
     "--blur-color--darker": `${darker(primary, 0.2)}80`,
+    "--widget-tint": secondary ? `${secondary}40` : "rgba(255, 255, 255, 0.1)",
   };
 
   useEffect(() => {
@@ -366,20 +369,34 @@ export default function PopEvents({ info, preview, password }: invProps) {
               onConfirmClick={() => setOpenModal(true)}
             />
 
-            {extra?.info && <ExtraInfo info={extra.info} />}
+            {extra?.info && (
+              <div style={{ display: "flex", flexDirection: "column", gap: "4px", alignItems: "center", width: "100%", maxWidth: "450px" }}>
+                <ExtraInfo info={extra.info} />
+                <small style={{ fontSize: "12px", color: "#FFF", fontWeight: 400, fontFamily: "Poppins" }}>Extras</small>
+              </div>
+            )}
 
-            <div style={{ display: "flex", gap: "16px", width: "100%", maxWidth: "450px", alignItems: "stretch", height: "144px" }}>
+            <div style={{ display: "flex", gap: "16px", width: "100%", maxWidth: "450px" }}>
               {hasFullAddress && address && (
-                <div style={{ flex: 1, minWidth: 0, height: "100%" }}>
-                  <EventMap address={address} />
+                <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "4px", alignItems: "center" }}>
+                  <div style={{ width: "100%", height: "144px" }}>
+                    <EventMap address={address} />
+                  </div>
+                  <small style={{ fontSize: "12px", color: "#FFF", fontWeight: 400, fontFamily: "Poppins" }}>Ubicación</small>
                 </div>
               )}
               {address?.city && (
-                <WeatherWidget item={eventInfo} color="#FFFFFF40" radius={24} />
+                <div style={{ display: "flex", flexDirection: "column", gap: "4px", alignItems: "center" }}>
+                  <WeatherWidget item={eventInfo} color="#FFFFFF40" radius={24} />
+                  <small style={{ fontSize: "12px", color: "#FFF", fontWeight: 400, fontFamily: "Poppins" }}>Clima</small>
+                </div>
               )}
             </div>
 
-            <Attendees participants={participants} />
+            <div style={{ display: "flex", flexDirection: "column", gap: "4px", alignItems: "center", width: "100%", maxWidth: "450px" }}>
+              <Attendees participants={participants} />
+              <small style={{ fontSize: "12px", color: "#FFF", fontWeight: 400, fontFamily: "Poppins" }}>Asistentes</small>
+            </div>
           </div>
         )}
 
