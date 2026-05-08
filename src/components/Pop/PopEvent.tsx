@@ -368,7 +368,7 @@ export default function PopEvents({ info, preview, password }: invProps) {
 
             {extra?.info && <ExtraInfo info={extra.info} />}
 
-            <div style={{ display: "flex", gap: "16px", width: "100%", maxWidth: "450px", alignItems: "stretch", height: "150px" }}>
+            <div style={{ display: "flex", gap: "16px", width: "100%", maxWidth: "450px", alignItems: "stretch", height: "144px" }}>
               {hasFullAddress && address && (
                 <div style={{ flex: 1, minWidth: 0, height: "100%" }}>
                   <EventMap address={address} />

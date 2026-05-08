@@ -121,7 +121,7 @@ export default function WeatherWidget({ invitation, item, isSide, color, radius 
               boxShadow: "0 8px 32px rgba(0,0,0,0.15), inset 0 1.5px 0 rgba(255,255,255,0.55), inset 0 -1px 0 rgba(0,0,0,0.1), inset 1px 0 0 rgba(255,255,255,0.2), inset -1px 0 0 rgba(255,255,255,0.1)",
               padding: "16px 12px",
               height: "100%",
-              maxHeight: "150px",
+              maxHeight: "144px",
             }),
             ...(radius !== undefined && { borderRadius: radius }),
           }}

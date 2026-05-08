@@ -10,11 +10,12 @@ export function EventMap({ address }: MapProps) {
     <div className={styles.container}>
       <iframe
         title="Mapa"
-        width="100%"
-        height="100%"
+        width="120%"
+        height="120%"
         loading="lazy"
         allowFullScreen
         referrerPolicy="no-referrer-when-downgrade"
+        style={{borderRadius:'24px', marginLeft:'-5%', marginTop:'-5%', opacity:'0.8'}}
         src={simpleaddress(
           address.street, address.number, address.neighborhood,
           address.zipcode, address.city, address.state, address.country
