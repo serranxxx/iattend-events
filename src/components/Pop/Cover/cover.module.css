@@ -1,0 +1,42 @@
+.col {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 0px;
+  text-shadow: 0px 0px 16px rgba(0, 0, 0, 0.12);
+  text-align: center;
+  color: #FFFFFF;
+  font-size: 16px;
+}
+
+.buttons_cont {
+  width: 100%;
+  border-radius: 24px;
+  background-color: #FFF;
+  backdrop-filter: blur(20px);
+  border: 1px solid #FFFFFF40;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  max-width: 450px;
+  margin-bottom: 12px;
+}
+
+.side_buttons {
+  flex: 1;
+  color: var(--blur-color--darker);
+  border: none !important;
+  box-shadow: inset 0px 0px 12px rgba(0, 0, 0, 0.15);
+  border-radius: 24px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.side_buttons:last-of-type {
+  border: none;
+}
+
+.side_buttons:hover {
+  color: #FFFFFF !important;
+}

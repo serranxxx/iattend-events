@@ -1,32 +1,4 @@
-.side_event_main_cont {
-  width: 100%;
-  position: relative;
-  background-image: linear-gradient(to bottom, #EEE, #CCC);
-}
-
-.info_cont {
-  position: relative;
-  width: 100%;
-  margin-top: -100dvh;
-  height: auto;
-  overflow: hidden;
-  z-index: 2;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-end;
-  padding: 24px;
-  padding-top: 68dvh;
-  gap: 16px;
-  background-image: linear-gradient(to bottom, transparent 55%, var(--blur-color) 88%);
-}
-
-.info_cont > * {
-  position: relative;
-  z-index: 2;
-}
-
-.inv_locked_blured {
+.overlay {
   position: absolute;
   height: 100%;
   width: 100%;
@@ -44,7 +16,7 @@
   transition: all 0.5s ease;
 }
 
-.locked_icon {
+.icon {
   height: 84px;
   width: 84px;
   display: flex;
@@ -56,28 +28,30 @@
   box-shadow: 0px 0px 12px rgba(0, 0, 0, 0.15);
 }
 
-.locked_title {
+.title {
   font-size: 24px;
   font-weight: 800;
   text-shadow: 0px 0px 12px rgba(0, 0, 0, 0.2);
   color: #FFF;
   text-align: center;
+  font-family: 'Poppins';
 }
 
-.locked_text {
+.text {
   font-size: 16px;
   max-width: 350px;
   color: #FFF;
   text-shadow: 0px 0px 8px rgba(0, 0, 0, 0.2);
   text-align: center;
+  font-family: 'Poppins';
 }
 
-.locked_input::placeholder {
+.input::placeholder {
   color: #FFFFFF80;
   font-style: italic;
 }
 
-.locked_btn {
+.btn {
   cursor: default !important;
   position: relative;
   overflow: hidden;
@@ -87,7 +61,7 @@
   transition: color 0.3s ease, border-color 0.3s ease !important;
 }
 
-.locked_btn::before {
+.btn::before {
   content: "";
   position: absolute;
   top: 0;
@@ -99,45 +73,16 @@
   transition: left 0.3s ease;
 }
 
-.locked_btn:hover::before {
+.btn:hover::before {
   left: 0;
 }
 
-.locked_btn span {
+.btn span {
   position: relative;
   z-index: 1;
 }
 
-.locked_btn:hover {
+.btn:hover {
   color: #fff !important;
   border-color: var(--hover-color, #a0d97b) !important;
-}
-
-.card_port_view {
-  width: 100%;
-  height: 100%;
-  position: fixed;
-  top: 0;
-  z-index: 999;
-  pointer-events: none;
-}
-
-.port_view {
-  width: 100%;
-  height: 100%;
-  position: relative;
-  pointer-events: none;
-}
-
-.confirm_card {
-  pointer-events: auto;
-}
-
-@media (min-width: 768px) {
-  .info_cont {
-    margin-top: -100dvh;
-    padding: 40px;
-    padding-top: 70dvh;
-    gap: 24px;
-  }
 }

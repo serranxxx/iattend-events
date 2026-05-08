@@ -1,0 +1,23 @@
+.container {
+  border-radius: 24px;
+  overflow: hidden;
+  width: 100%;
+  background-color: var(--blur-color--dark);
+  backdrop-filter: blur(10px);
+  border: 1px solid #FFFFFF40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  padding: 12px 18px;
+  max-width: 450px;
+}
+
+.text {
+  color: #FFFFFF;
+  white-space: pre-line;
+  text-align: center;
+  font-family: "Poppins";
+  font-size: 14px;
+  mix-blend-mode: soft-light;
+}

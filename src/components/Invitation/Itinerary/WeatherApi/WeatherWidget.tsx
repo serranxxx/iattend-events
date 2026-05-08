@@ -2,7 +2,7 @@
 import { ItineraryItem, NewInvitation } from "@/types/new_invitation";
 import { useEffect, useState } from "react";
 import styles from "./weather.module.css";
-import { popContent, SideAddress, SideEventBody } from "@/types/side_event";
+import { SideAddress, SideEventBody } from "@/types/side_event";
 
 type CardProps = {
   invitation?: NewInvitation;
@@ -14,9 +14,10 @@ type CardProps = {
     } |  undefined;
   isSide?: boolean;
   color?: string;
+  radius?: number;
 };
 
-export default function WeatherWidget({ invitation, item, isSide, color }: CardProps) {
+export default function WeatherWidget({ invitation, item, isSide, color, radius }: CardProps) {
   const [weather, setWeather] = useState<any>(null);
   const key = "fa4d2a7fce5841d5a51205220251009";
 
@@ -39,9 +40,12 @@ export default function WeatherWidget({ invitation, item, isSide, color }: CardP
           className={styles.wdiget_container}
           style={{
             maxWidth: "450px",
+            height: "200px",
+            padding: "24px",
             backdropFilter: "blur(10px)",
             border: "1px solid #FFFFFF40",
-            background: color,
+            background: color ?? "var(--blur-color--dark)",
+            borderRadius: radius,
             fontFamily: invitation?.generals.fonts.body?.typeFace ?? "Poppins",
           }}
         >
@@ -109,6 +113,17 @@ export default function WeatherWidget({ invitation, item, isSide, color }: CardP
             gap: "4px",
             maxHeight: "134px",
             fontFamily: invitation?.generals.fonts.body?.typeFace ?? "Poppins",
+            ...(color !== undefined && {
+              background: "rgba(255, 255, 255, 0.1)",
+              backdropFilter: "blur(24px) saturate(180%)",
+              WebkitBackdropFilter: "blur(24px) saturate(180%)",
+              border: "1px solid rgba(255, 255, 255, 0.28)",
+              boxShadow: "0 8px 32px rgba(0,0,0,0.15), inset 0 1.5px 0 rgba(255,255,255,0.55), inset 0 -1px 0 rgba(0,0,0,0.1), inset 1px 0 0 rgba(255,255,255,0.2), inset -1px 0 0 rgba(255,255,255,0.1)",
+              padding: "16px 12px",
+              height: "100%",
+              maxHeight: "150px",
+            }),
+            ...(radius !== undefined && { borderRadius: radius }),
           }}
         >
           <span className={styles.weather_label}>{weather?.location?.name}</span>

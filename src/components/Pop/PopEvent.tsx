@@ -1,156 +1,101 @@
 "use client";
 
-import { PopEvent, SideEvent } from "@/types/side_event";
+import { PopEvent } from "@/types/side_event";
 import React, { useEffect, useRef, useState } from "react";
 import styles from "./quick-events.module.css";
-import Image from "next/image";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
 import "dayjs/locale/es";
-import { Button, Input, message, Tooltip } from "antd";
-import { LuCircleCheck, LuCircleX, } from "react-icons/lu";
-import { simpleaddress } from "../Invitation/Itinerary/OpenCard/OpenCard";
-import WeatherWidget from "../Invitation/Itinerary/WeatherApi/WeatherWidget";
+import { message } from "antd";
 import { FooterLand } from "../LandPage/Footer/Footer";
-import { color } from "motion";
-import { FaLock } from "react-icons/fa";
 import { createClient } from "@/lib/supabase/client";
-import { ParticipansType, QuickEventGuest, QuickEventUser, } from "@/types/guests";
+import { ParticipansType, QuickEventGuest, QuickEventUser } from "@/types/guests";
 import { darker, generateSimpleId } from "@/helpers/functions";
 import { ConfirmCard } from "../ConfirmCard/ConfirmCard";
-import { profilesMap } from "../ConfirmCard/profiles";
-import { ChevronDown, ChevronUp, CircleCheck, MapPin } from "lucide-react";
+import WeatherWidget from "../Invitation/Itinerary/WeatherApi/WeatherWidget";
+import { Hero } from "./Hero/Hero";
+import { Cover } from "./Cover/Cover";
+import { ExtraInfo } from "./ExtraInfo/ExtraInfo";
+import { EventMap } from "./Map/Map";
+import { Attendees } from "./Attendees/Attendees";
+import { PrivateAccess } from "./PrivateAccess/PrivateAccess";
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 type invProps = {
   info: PopEvent | null;
   password?: string;
-  preview?: boolean
+  preview?: boolean;
 };
 
-export default function PopEvents({ info, preview }: invProps) {
-  dayjs.extend(utc);
-  dayjs.extend(timezone);
+interface CSSVars extends React.CSSProperties {
+  ["--hover-color"]?: string;
+  ["--blur-color"]?: string;
+  ["--blur-color--dark"]?: string;
+  ["--blur-color--darker"]?: string;
+}
+
+export default function PopEvents({ info, preview, password }: invProps) {
   dayjs.locale("es");
-
-  const containerRef = useRef<HTMLDivElement>(null);
-  const scrollRafRef = useRef<number | null>(null);
-  const cycleIndexRef = useRef<number>(0);
-  const participantsRef = useRef<ParticipansType[] | null>(null);
-
-  const SIZES = [90, 70, 110, 75, 95, 65, 85, 100, 72];
-
-  const [validated, setValidated] = useState<boolean>(false);
-  const [guestCode, setGuestCode] = useState<string>("");
-  const supabase = createClient();
-  const [messageApi, contextHolder] = message.useMessage();
-
-  const [user, setUser] = useState<QuickEventUser>({
-    name: "",
-    phone_number: "",
-    type: null,
-    profile: 0,
-    emoji: "A",
-    id: null
-  })
-
-  const [event, setEvent] = useState<QuickEventGuest>({
-    id: null,
-    quick_event_id: null,
-    quick_event_user_id: "",
-    password: "",
-    state: "",
-    last_action: "",
-    anonymous: false
-  });
-  const [guestInfo, setGuestInfo] = useState<QuickEventGuest | null>(null);
-  const [openModal, setOpenModal] = useState(false)
-  const [anonymous, setAnonymous] = useState(false)
-  const [participants, setParticipants] = useState<ParticipansType[] | null>(null)
-  const [visibleParticipants, setVisibleParticipants] = useState<ParticipansType[]>([]);
-  const [seAll, setSeAll] = useState(false)
-  const [closing, setClosing] = useState(false);
 
   const participantIdsRef = useRef<Set<string | null>>(new Set());
 
-  // Actualiza el ref cada vez que participants cambie
+  // ── Aliases ────────────────────────────────────────────────────────────────
+  const body = info?.body;
+  const theme = body?.theme;
+  const primary = theme?.palette.primary ?? "#000000";
+  const background = theme?.background;
+  const content = body?.content;
+  const titleCfg = content?.title;
+  const eventInfo = content?.information;
+  const address = eventInfo?.address;
+  const extra = content?.extra;
+  const hasFullAddress = !!(
+    address?.street && address?.number && address?.neighborhood &&
+    address?.zipcode && address?.city && address?.state && address?.country
+  );
+  // ──────────────────────────────────────────────────────────────────────────
 
+  const supabase = createClient();
+  const [messageApi, contextHolder] = message.useMessage();
 
-  interface CSSVars extends React.CSSProperties {
-    ["--hover-color"]?: string;
-  }
-
-  const btnStyle: CSSVars = {
-    ["--hover-color"]: `${color}`,
-    height: "56px",
-    width: "280px",
-    fontSize: "18px",
-    fontWeight: 600,
-    letterSpacing: "2px",
-    boxShadow: "0px 0px 12px rgba(0,0,0,0.2)",
-    fontFamily: 'Poppins',
-  };
-
-  function overlaps(x: number, y: number, r: number, placed: { x: number, y: number, r: number }[]) {
-    return placed.some(p => Math.hypot(x - p.x, y - p.y) < r + p.r + 18);
-  }
-
-  const formatDateMexico = (isoString: string | null | undefined): string => {
-    if (!isoString) return "";
-
-    return dayjs.utc(isoString).tz("America/Mexico_City").format("ddd D [de] MMMM, HH:mm");
-  };
-
-  const renderTextWithStrong = (text: string) => {
-    const parts = text.split(/(\*[^*]+\*)/g);
-
-    return parts.map((part, index) => {
-      if (part.startsWith("*") && part.endsWith("*")) {
-        return <strong key={index}>{part.slice(1, -1)}</strong>;
-      }
-      return <span key={index}>{part}</span>;
-    });
-  };
+  const [validated, setValidated] = useState<boolean>(false);
+  const [user, setUser] = useState<QuickEventUser>({ name: "", phone_number: "", type: null, profile: 0, emoji: "A", id: null });
+  const [event, setEvent] = useState<QuickEventGuest>({ id: null, quick_event_id: null, quick_event_user_id: "", password: "", state: "", last_action: "", anonymous: false });
+  const [guestInfo, setGuestInfo] = useState<QuickEventGuest | null>(null);
+  const [openModal, setOpenModal] = useState(false);
+  const [anonymous, setAnonymous] = useState(false);
+  const [participants, setParticipants] = useState<ParticipansType[] | null>(null);
 
   const onValidateUser = async (code: string) => {
-
     try {
       const { data, error } = await supabase
-        .from("side_events_guests")
+        .from("pop_guests")
         .select("*")
         .eq("password", code)
-        .eq("side_events_id", info?.id)
+        .eq("quick_event_id", info?.id)
         .maybeSingle();
 
-      if (error) {
-        console.log(error, 'not found')
-        return
-      }
-
+      if (error) { console.log(error); return; }
       if (!data) {
-        messageApi.error(`Código incorrecto`);
-        return
+        messageApi.error("Código incorrecto");
+        return;
       }
-
       setValidated(true);
-      setGuestInfo(data)
-
-
-    } catch (error) {
-
-    }
+      setGuestInfo(data);
+    } catch { }
   };
 
-
   const confirmAssitance = async (user: QuickEventUser, isAnonymous: boolean) => {
-    console.log('Euuuuuuu')
     try {
       const newguest = {
         quick_event_id: info?.id,
         quick_event_user_id: isAnonymous ? process.env.NEXT_PUBLIC_ANONYMOUS_ID : user.id,
         password: generateSimpleId(),
-        state: 'confirmado',
-        last_action: 'creado',
+        state: "confirmado",
+        last_action: "creado",
         anonymous: isAnonymous
       };
 
@@ -161,7 +106,6 @@ export default function PopEvents({ info, preview }: invProps) {
         .maybeSingle();
 
       if (error) {
-        console.log(error, "error inserting guest");
         messageApi.error("No se pudo agregar el invitado");
         return;
       }
@@ -178,24 +122,19 @@ export default function PopEvents({ info, preview }: invProps) {
       }));
 
       messageApi.success("Asistencia confirmada");
-      setEvent((prev) => (data))
-      if (isAnonymous) {
-        getUser(process.env.NEXT_PUBLIC_ANONYMOUS_ID ?? "")
-      }
-      else {
-        setUser(user)
-      }
+      setEvent(data);
 
-    } catch (error) {
-      console.log(error);
+      if (isAnonymous) getUser(process.env.NEXT_PUBLIC_ANONYMOUS_ID ?? "");
+      else setUser(user);
+
+    } catch (err) {
       messageApi.error("Error inesperado al agregar invitado");
     }
-
   };
 
   const insertUSer = async (g: QuickEventUser) => {
     try {
-      const newguest = {
+      const newUser = {
         phone_number: `+52${g.phone_number}`,
         name: g.name,
         type: g.type,
@@ -205,52 +144,39 @@ export default function PopEvents({ info, preview }: invProps) {
 
       const { data, error } = await supabase
         .from("pop_users")
-        .insert([newguest])
+        .insert([newUser])
         .select()
         .maybeSingle();
 
-      if (error) {
-        console.log(error, "error inserting guest");
+      if (error || !data) {
         messageApi.error("No se pudo agregar el invitado");
-        return;
-      }
-
-      if (!data) {
-        messageApi.error("No se pudo crear el invitado");
         return;
       }
 
       localStorage.setItem("quick_event_user_id", data.id);
       setUser(data);
-      confirmAssitance(data, false)
+      confirmAssitance(data, false);
       messageApi.success("Invitado agregado correctamente");
 
-    } catch (error) {
-      console.log(error);
+    } catch {
       messageApi.error("Error inesperado al agregar invitado");
     }
   };
 
   const findEvent = async (id: string) => {
-
     try {
       const { data, error } = await supabase
         .from("pop_guests")
         .select("*")
         .eq("id", id)
         .eq("quick_event_id", info?.id)
-        .maybeSingle()
+        .maybeSingle();
 
-      if (error) {
-        console.log(error)
-        return
-      }
+      if (error || !data) return;
 
-      setEvent(data)
+      setEvent(data);
 
-      const raw = localStorage.getItem(`quick_event_${info?.id}`);
-
-      if (!raw) {
+      if (!localStorage.getItem(`quick_event_${info?.id}`)) {
         localStorage.setItem(`quick_event_${info?.id}`, JSON.stringify({
           quick_event_id: data.id,
           guest_id: data.quick_event_user_id,
@@ -258,10 +184,8 @@ export default function PopEvents({ info, preview }: invProps) {
         }));
       }
 
-    } catch (error) {
-      console.log(error)
-    }
-  }
+    } catch { }
+  };
 
   const getUser = async (id: string) => {
     try {
@@ -269,39 +193,23 @@ export default function PopEvents({ info, preview }: invProps) {
         .from("pop_users")
         .select("*")
         .eq("id", id)
-        .maybeSingle()
+        .maybeSingle();
 
-      if (error) {
-        console.log(error)
-        return
-      }
+      if (!error && data) setUser(data);
 
-      setUser(data)
-
-    } catch (error) {
-
-    }
-  }
+    } catch { }
+  };
 
   const updateAnonymous = async (anon: boolean) => {
     try {
       const { data, error } = await supabase
         .from("pop_guests")
-        .update({
-          anonymous: anon,
-        })
+        .update({ anonymous: anon })
         .eq("id", event?.id)
         .select()
         .maybeSingle();
 
-      if (error) {
-        console.log(error, "error updating user");
-        return;
-      }
-
-      if (!data) {
-        return;
-      }
+      if (error || !data) return;
 
       localStorage.setItem(`quick_event_${info?.id}`, JSON.stringify({
         quick_event_id: data.id,
@@ -309,19 +217,13 @@ export default function PopEvents({ info, preview }: invProps) {
         anonymous: data.anonymous
       }));
 
-      messageApi.success('Privacidad editada')
-      setEvent(data)
+      messageApi.success("Privacidad editada");
+      setEvent(data);
 
-
-
-    } catch (error) {
-      console.log(error);
-    }
+    } catch { }
   };
 
   const insertUserAndUpgradeGuest = async (g: QuickEventUser) => {
-
-    console.log('Eoooooo')
     try {
       const newUser = {
         phone_number: `+52${g.phone_number}`,
@@ -338,34 +240,24 @@ export default function PopEvents({ info, preview }: invProps) {
         .maybeSingle();
 
       if (userError || !userData) {
-        console.log(userError, "error inserting user");
         messageApi.error("No se pudo crear el usuario");
         return;
       }
 
       localStorage.setItem("quick_event_user_id", userData.id);
       setUser(userData);
-      console.log('user creado: ', userData)
-
-      console.log('event: ', event)
 
       const { data: newEvent, error: guestError } = await supabase
         .from("pop_guests")
-        .update({
-          quick_event_user_id: userData.id,
-          anonymous: false
-        })
+        .update({ quick_event_user_id: userData.id, anonymous: false })
         .eq("id", event.id)
         .select()
-        .maybeSingle()
+        .maybeSingle();
 
       if (guestError) {
-        console.log(guestError, "error upgrading guest");
         messageApi.error("No se pudo actualizar la confirmación");
         return;
       }
-
-      console.log('evente updated: ', newEvent)
 
       localStorage.setItem(`quick_event_${info?.id}`, JSON.stringify({
         quick_event_id: newEvent.id,
@@ -375,569 +267,140 @@ export default function PopEvents({ info, preview }: invProps) {
 
       messageApi.success("¡Perfil creado y asistencia confirmada!");
 
-    } catch (error) {
-      console.log(error);
+    } catch {
       messageApi.error("Error inesperado");
     }
   };
 
   const getParticipants = async () => {
-    const { data, error } = await supabase.rpc("get_pop_users_by_event", {
-      p_quick_event_id: info?.id,
-    });
+    const { data, error } = await supabase
+      .rpc("get_pop_users_by_event", { p_quick_event_id: info?.id });
 
-    if (error) return
-
-    console.log('participants: ', data)
-    setParticipants(data)
-  }
-
-  const handleToggle = () => {
-    if (seAll) {
-       setSeAll(false);
-        setClosing(false);
-        setVisibleParticipants([]);
-      // Animar salida primero
-      // setClosing(true);
-      // const items = containerRef.current?.querySelectorAll<HTMLElement>('[data-bubble]');
-      // if (items) {
-      //   Array.from(items).reverse().forEach((el, i) => {
-      //     setTimeout(() => {
-      //       el.style.opacity = '0';
-      //       el.style.transform = 'scale(0.6)';
-      //     }, i * 40);
-      //   });
-      // }
-      // // Después de la animación, cerrar
-      // setTimeout(() => {
-      //   setSeAll(false);
-      //   setClosing(false);
-      //   setVisibleParticipants([]);
-      // }, (items?.length ?? 0) * 40 + 300);
-    } else {
-      setSeAll(true);
-    }
+    if (!error) setParticipants(data);
   };
 
-
-
+  // Parallax scroll + blur
   useEffect(() => {
     const onScroll = () => {
-      const scrollY = window.scrollY;
-
-      // ajusta estos valores a tu gusto
-      const scale = Math.min(1 + scrollY / 1000, 1.8);
+      const progress = Math.min(window.scrollY / 600, 1);
+      const scale = 1 + progress * 0.8;
+      const blur = Math.pow(progress, 0.7) * 12;
       document.documentElement.style.setProperty("--bg-scale", scale.toString());
+      document.documentElement.style.setProperty("--bg-blur", `${blur}px`);
     };
-
-    window.addEventListener("scroll", onScroll);
+    window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  // Init
   useEffect(() => {
-
-    if (info?.body.content.information.type === 'open' || preview) {
-      setValidated(true)
-    }
-
+    if (eventInfo?.type === "open" || preview) setValidated(true);
     const raw = localStorage.getItem(`quick_event_${info?.id}`);
     const eventData = raw ? JSON.parse(raw) : null;
-
     if (eventData) {
-      getUser(eventData.guest_id)
-      findEvent(eventData.quick_event_id)
-      setAnonymous(eventData.anonymous)
+      getUser(eventData.guest_id);
+      findEvent(eventData.quick_event_id);
+      setAnonymous(eventData.anonymous);
+    } else {
+      const userID = localStorage.getItem("quick_event_user_id");
+      if (userID) getUser(userID);
     }
-
-    else {
-      const userID = localStorage.getItem(`quick_event_user_id`);
-      if (userID) {
-        getUser(userID)
-      }
-    }
-
-
-    getParticipants()
-
-
-
-
+    getParticipants();
   }, []);
 
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container || !visibleParticipants.length) return;
-
-    // Solo posiciona el último elemento agregado, no recalcula todos
-    const items = container.querySelectorAll<HTMLElement>('[data-bubble]');
-    const lastEl = items[items.length - 1];
-    if (!lastEl) return;
-
-    const i = items.length - 1;
-    const r = SIZES[i % SIZES.length] / 2;
-    const H = container.clientHeight;
-
-    // Reconstruye placed desde los elementos ya posicionados
-    const placed = Array.from(items).slice(0, -1).map((el) => ({
-      x: parseFloat(el.style.left) + parseFloat(el.style.width) / 2,
-      y: parseFloat(el.style.top) + parseFloat(el.style.height) / 2,
-      r: parseFloat(el.style.width) / 2,
-    }));
-
-    lastEl.style.width = `${r * 2}px`;
-    lastEl.style.height = `${r * 2}px`;
-    lastEl.style.fontSize = `${r * 1}px`;
-    lastEl.style.transition = 'all 0.3s ease';
-
-    let bestX = r, bestY = r, found = false;
-
-    // Eje primario: X (horizontal), eje secundario: Y (acotado a la altura fija)
-    for (let testX = r; testX < 8000; testX += 6) {
-      for (let testY = r; testY <= H - r; testY += 6) {
-        if (!overlaps(testX, testY, r, placed)) {
-          bestX = testX + (Math.random() - 0.5) * 10;
-          bestY = testY + (Math.random() - 0.5) * 10;
-          bestX = Math.max(r + 2, bestX);
-          bestY = Math.max(r + 2, Math.min(H - r - 2, bestY));
-          found = true;
-          break;
-        }
-      }
-      if (found) break;
-    }
-
-    lastEl.style.left = `${bestX - r}px`;
-    lastEl.style.top = `${bestY - r}px`;
-
-    // Expande el contenedor horizontalmente para que el scroll funcione
-    const neededWidth = bestX + r + 20;
-    const currentMin = parseFloat(container.style.minWidth) || 0;
-    if (neededWidth > currentMin) {
-      container.style.minWidth = `${neededWidth}px`;
-    }
-
-    // Animación de entrada
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        lastEl.style.opacity = '1';
-        lastEl.style.transform = 'scale(1)';
-      });
-    });
-
-
-
-  }, [visibleParticipants]);
-
-
-  useEffect(() => {
-    if (!seAll || !participants?.length) return;
-
-    setVisibleParticipants([]); // reset al abrir
-
-    participants.forEach((p, i) => {
-      setTimeout(() => {
-        setVisibleParticipants(prev => [...prev, p]);
-      }, i * 80); // 80ms entre cada uno, ajusta a tu gusto
-    });
-
-  }, [seAll]);
-
-  useEffect(() => {
-    if (!seAll) {
-      if (scrollRafRef.current) {
-        cancelAnimationFrame(scrollRafRef.current);
-        scrollRafRef.current = null;
-      }
-      return;
-    }
-
-    cycleIndexRef.current = 0;
-    let lastAppendScroll = 0;
-    const SPEED = 0;
-    const REFILL_THRESHOLD = 300;
-    const REFILL_MIN_ADVANCE = 70;
-
-    const tick = () => {
-      const container = containerRef.current;
-      if (container) {
-        container.scrollLeft += SPEED;
-
-        const distFromEnd = container.scrollWidth - container.clientWidth - container.scrollLeft;
-        const pts = participantsRef.current;
-
-        if (distFromEnd < REFILL_THRESHOLD && container.scrollLeft - lastAppendScroll > REFILL_MIN_ADVANCE && pts?.length) {
-          const nextP = pts[cycleIndexRef.current % pts.length];
-          cycleIndexRef.current++;
-          lastAppendScroll = container.scrollLeft;
-          setVisibleParticipants(prev => [...prev, nextP]);
-        }
-      }
-      scrollRafRef.current = requestAnimationFrame(tick);
-    };
-
-    scrollRafRef.current = requestAnimationFrame(tick);
-    return () => {
-      if (scrollRafRef.current) cancelAnimationFrame(scrollRafRef.current);
-    };
-  }, [seAll]);
-
+  // Sync participantIdsRef
   useEffect(() => {
     participantIdsRef.current = new Set(participants?.map(p => p.id));
-    participantsRef.current = participants;
   }, [participants]);
 
-
+  // Realtime channel
   useEffect(() => {
     if (!supabase) return;
-
-    const channel = supabase
-      .channel(`upload_dynamic_participants`)
-
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'pop_guests'
-        },
-        (payload) => {
-          const row = (payload.new ?? payload.old) as QuickEventGuest | null;
-          if (!row) return;
-
-          if (row.quick_event_id === info?.id) {
-            getParticipants()
-          }
-        }
-      )
-
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'pop_users' },
-        (payload) => {
-          const row = (payload.new ?? payload.old) as QuickEventUser | null;
-          if (!row) return;
-
-          if (participantIdsRef.current.has(row.id)) {
-            getParticipants();
-          }
-        }
-      )
-      .subscribe((status) => {
-        console.log('sub status:', status);
-      });
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    const channel = supabase.channel("upload_dynamic_participants")
+      .on("postgres_changes", { event: "*", schema: "public", table: "pop_guests" }, (payload) => {
+        const row = (payload.new ?? payload.old) as QuickEventGuest | null;
+        if (row?.quick_event_id === info?.id) getParticipants();
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "pop_users" }, (payload) => {
+        const row = (payload.new ?? payload.old) as QuickEventUser | null;
+        if (row && participantIdsRef.current.has(row.id)) getParticipants();
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
   }, [supabase]);
 
+  useEffect(() => {
+    if (password) {
+      onValidateUser(password)
+    }
+  }, [password])
 
+
+  const infoCssVars: CSSVars = {
+    "--blur-color": primary,
+    "--blur-color--dark": `${darker(primary, 0.8)}80`,
+    "--blur-color--darker": `${darker(primary, 0.2)}80`,
+  };
+
+  useEffect(() => {
+    console.log("----")
+    console.log(titleCfg)
+    console.log(event)
+    console.log(eventInfo)
+    console.log("----")
+  }, [titleCfg, event, eventInfo])
+  
 
   return (
     <>
       {contextHolder}
       <div className={styles.side_event_main_cont}>
-        <div className={styles.hero}>
-          {info?.body.theme.background[0].media && <Image className={styles.hero_bg} fill src={info?.body.theme.background[0].media} alt="" style={{ objectFit: "cover" }} />}
-          <div className={styles.blur_cover}></div>
-          <div className={styles.shadow}></div>
-        </div>
+        <Hero background={background} />
 
-        {
-          validated &&
+        {validated && titleCfg && eventInfo && (
+          <div className={styles.info_cont} style={infoCssVars as React.CSSProperties}>
+            <Cover
+              titleCfg={titleCfg}
+              eventInfo={eventInfo}
+              event={event}
+              onConfirmClick={() => setOpenModal(true)}
+            />
 
-          <div
-            className={styles.info_cont}
-            style={
-              {
-                "--blur-color": `${info?.body.theme.palette.primary ?? "#000000"}`,
-                "--blur-color--dark": `${darker(info?.body.theme.palette.primary!, 0.8) ?? "#000000"}80`,
-                "--blur-color--darker": `${darker(info?.body.theme.palette.primary!, 0.2) ?? "#000000"}80`,
-              } as React.CSSProperties
-            }
-          >
-            <span
-              style={{
-                fontFamily: info?.body.content.title.family,
-                fontWeight: info?.body.content.title.weight,
-                fontSize: `${info?.body.content.title.size}px`,
-                lineHeight: info?.body.content.title.line_height,
-                opacity: info?.body.content.title.opacity,
-                textAlign: "center",
-                color: info?.body.content.title.color ?? "#FFF",
-                textShadow: "0px 0px 18px rgba(0, 0, 0, 0.35)",
-              }}
-            >
-              {info?.body?.content?.title?.value ?? "RuN"}
-            </span>
+            {extra?.info && <ExtraInfo info={extra.info} />}
 
-            <div
-              className={styles.col}
-              style={{
-                fontFamily: 'Poppins',
-                zIndex: 99,
-              }}
-            >
-              <span>{formatDateMexico(info?.body.content.information.date)}</span>
-              <span>
-                {info?.body.content.information.address.street} {info?.body.content.information.address.number},
-              </span>
-              <span>
-                {info?.body.content.information.address.state} {info?.body.content.information.address.country}
-              </span>
-            </div>
-
-
-            {
-              event.state !== 'confirmado' &&
-              <div style={{
-              }} className={styles.buttons_cont}>
-                <Button 
-                icon={<CircleCheck size={16} />}
-                onClick={() => setOpenModal(true)} style={{ height: '56px', textTransform:'uppercase', letterSpacing:'1px' }} type="text" className={styles.side_buttons}>
-                  Confirmar asistencia
-                </Button>
-              </div>
-            }
-
-
-
-
-            {info?.body.content.extra.info && (
-              <div className={styles.mapa_container} style={{ padding: "12px 18px" }}>
-                <span
-                  style={{
-                    color: "#FFFFFF",
-                    whiteSpace: "pre-line",
-                    textAlign: "center",
-                    fontFamily: "Poppins",
-                    fontSize: "14px",
-                    mixBlendMode: "soft-light",
-                  }}
-                >
-                  {renderTextWithStrong(info?.body.content.extra.info ?? "")}
-                </span>
-              </div>
-            )}
-
-
-            {info?.body.content.information.address.street &&
-              info?.body.content.information.address.number &&
-              info?.body.content.information.address.neighborhood &&
-              info?.body.content.information.address.zipcode &&
-              info?.body.content.information.address.city &&
-              info?.body.content.information.address.state &&
-              info?.body.content.information.address.country && (
-                <div className={styles.mapa_container}>
-                  <Button icon={<MapPin size={16} />} className={styles.get_there} type="text">
-                    Cómo llegar
-                  </Button>
-                  <iframe
-                    title="Mapa"
-                    width="100%"
-                    height="100%"
-                    // style={{ borderColor: content.inverted ? primary : secondary }}
-                    loading="lazy"
-                    allowFullScreen
-                    referrerPolicy="no-referrer-when-downgrade"
-                    src={simpleaddress(
-                      info?.body.content.information.address.street,
-                      info?.body.content.information.address.number,
-                      info?.body.content.information.address.neighborhood,
-                      info?.body.content.information.address.zipcode,
-                      info?.body.content.information.address.city,
-                      info?.body.content.information.address.state,
-                      info?.body.content.information.address.country
-                    )}
-                  />
+            <div style={{ display: "flex", gap: "16px", width: "100%", maxWidth: "450px", alignItems: "stretch", height: "150px" }}>
+              {hasFullAddress && address && (
+                <div style={{ flex: 1, minWidth: 0, height: "100%" }}>
+                  <EventMap address={address} />
                 </div>
               )}
-
-
-
-
-
-            <div className={styles.col_cont} style={{
-              gap: seAll ? '12px' : '12px',
-              height: seAll ? '340px' : (participants?.length ?? 0) > 0 ? '150px' : '50px',
-              padding: seAll ? '0px 0px 12px 0px' : '12px', boxSizing:'border-box'
-            }}>
-              <div className={styles.participants_row} style={{
-                padding: seAll ? '12px' : '0px'
-              }}>
-                <span>{(participants?.length ?? 0) > 0 ?  `${participants?.length} Asistentes` : '¡Se el primero en confirmar!'} </span>
-                {
-                  (participants?.length ?? 0) > 0 &&
-                  <Button className={styles.participants_toggle} type="text" onClick={handleToggle}>
-                    {seAll || closing ? 'Cerrar' : 'Ver todo'}
-                  </Button>
-                }
-
-              </div>
-
-              {
-                !seAll ?
-                  <>
-                    <div className={styles.paticipants_cont}>
-                      {
-                        participants?.slice(0, 8).map((p, index) => (
-                          <Tooltip key={index} title={p.anonymous ? 'Anónimo' : p.name} color={profilesMap[p.profile].background}>
-                            <div className={styles.participant_item} style={{
-                              background: profilesMap[p.profile].gradient
-                            }}>
-                              {p.anonymous ? '🥷' : p.emoji}
-                            </div>
-                          </Tooltip>
-                        ))
-                      }
-                    </div>
-
-                    <div className={styles.paticipants_cont} style={{ gap: '6px' }}>
-                      {(() => {
-                        const MAX_CHARS = 40;
-                        let total = 0;
-                        const visible: QuickEventUser[] = [];
-
-                        for (const p of (participants ?? [])) {
-                          if (p.anonymous || p.name === 'Anónimo') continue;
-                          if (total + p.name.length > MAX_CHARS) break;
-                          visible.push(p);
-                          total += p.name.length + 2; // +2 por ", "
-                        }
-
-                        return (
-                          <>
-                            {visible.map((p, index) => (
-                              <span style={{ fontSize: '12px', opacity: '0.5' }} key={index}>
-                                {p.name}{index < visible.length - 1 ? ', ' : ''}
-                              </span>
-                            ))}
-                            {(participants?.filter(p => !p.anonymous && p.name !== 'Anónimo').length ?? 0) > visible.length && (
-                              <span style={{ fontSize: '12px', opacity: '0.5' }}>...</span>
-                            )}
-                          </>
-                        );
-                      })()}
-                    </div>
-                  </>
-                  :
-                  <div
-                    ref={containerRef} className={`${styles.paticipants_cont_open} scroll-invitation`} >
-                    {visibleParticipants?.map((p, index) => {
-                      const size = SIZES[index % SIZES.length];
-                      const fz = Math.max(11, Math.ceil(899 / size));
-                      const firstName = p.anonymous ? 'Anónimo' : p.name.split(' ')[0];
-                      const displayName = firstName.length > 100
-                        ? `${firstName.slice(0, 99)}…`
-                        : firstName;
-                      return (
-                        <Tooltip key={index} title={p.anonymous ? 'Anónimo' : p.name} color={profilesMap[p.profile].background}>
-                          <div  data-bubble className={styles.participant_item_open} style={{ background: profilesMap[p.profile].background }}>
-                            <span>{p.anonymous ? '🥷' : p.emoji}</span>
-                            {p.name !== 'Anónimos' && (
-                              <svg
-                                style={{ position: 'absolute', top: '-45%', left: 0, width: '100%', height: '100%', overflow: 'visible', pointerEvents: 'none',  }}
-                                viewBox="0 0 100 100"
-                              >
-                                <defs>
-                                  <path id={`arc-${index}`} d="M 12,120 A 60,90 0 0,0 82,126" fill="none" />
-                                </defs>
-                                <text fontSize={fz} fill={darker(profilesMap[p.profile].dark,0.8) ?? "#FFF"} textAnchor="middle" opacity="1" fontFamily="Poppins, sans-serif" fontWeight="600" letterSpacing="4">
-                                  <textPath href={`#arc-${index}`} startOffset="50%">
-                                    {displayName}
-                                  </textPath>
-                                </text>
-                              </svg>
-                            )}
-                          </div>
-                        </Tooltip>
-                      );
-                    })}
-
-
-                  </div>
-
-              }
+              {address?.city && (
+                <WeatherWidget item={eventInfo} color="#FFFFFF40" radius={24} />
+              )}
             </div>
 
-            {
-              info?.body.content.information.address.city &&
-              <WeatherWidget item={info?.body.content.information} isSide={true} color={`${darker(info?.body.theme.palette.primary!, 0.8) ?? "#000000"}80`} />
-            }
+            <Attendees participants={participants} />
           </div>
-        }
-        <div
-          className={styles.inv_locked_blured}
-          style={{ pointerEvents: validated ? "none" : undefined, opacity: validated ? "0" : "1", backgroundColor: `${color}20` }}
-        >
-          <div className={styles.locked_icon}>
-            <FaLock size={32} style={{ color: "#FFF" }} />
-          </div>
-          <span style={{ fontFamily: 'Poppins' }} className={styles.locked_title}>
-            Invitación Privada
-          </span>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              flexDirection: "column",
-              gap: "8px",
-            }}
-          >
-            <span style={{ fontFamily: 'Poppins' }} className={styles.locked_text}>
-              Nos alegra mucho que seas parte de este evento tan especial.
-            </span>
-            <span style={{ fontFamily: 'Poppins' }} className={styles.locked_text}>
-              Esta invitación es exclusiva para ti. Ingresa tu código de invitado para continuar y disfrutar de esta experiencia única.
-            </span>
-          </div>
-          <Input
-            value={guestCode}
-            // length={6}
-            size="large"
-            onChange={(e) => setGuestCode(e.target.value)}
-            placeholder="Código de invitado"
-            className={styles.locked_input}
-            style={{
-              backgroundColor: "#FFFFFF20",
-              boxShadow: "0px 0px 12px rgba(0,0,0,0.2)",
-              borderWidth: "2px",
-              color: "#FFF",
-              fontSize: "18px",
-              textAlign: "center",
-              maxWidth: "280px",
-              borderRadius: "99px",
-              minHeight: "56px",
-              fontFamily: 'Poppins',
-            }}
-          />
+        )}
 
-          <Button className={styles.locked_btn} style={btnStyle} onClick={() => onValidateUser(guestCode)}>
-            ACCEDER
-          </Button>
-        </div>
-
+        <PrivateAccess validated={validated} onValidate={onValidateUser} />
       </div>
 
-      <div className={styles.card_port_view} >
-        <div className={styles.port_view} >
-          <div className={styles.confirm_card} >
+      <div className={styles.card_port_view}>
+        <div className={styles.port_view}>
+          <div className={styles.confirm_card}>
             <ConfirmCard
-              getUser={getUser}
-              setUser={setUser} setEvent={setEvent}
+              getUser={getUser} setUser={setUser} setEvent={setEvent}
               setOpenModal={setOpenModal} openModal={openModal}
               confirmAssitance={confirmAssitance} insertUSer={insertUSer}
               updateAnonymous={updateAnonymous} insertUserAndUpgradeGuest={insertUserAndUpgradeGuest}
-              event={event} user={user} />
+              event={event} user={user}
+            />
           </div>
         </div>
       </div>
 
-      {
-        validated &&
-        <FooterLand color={info?.body.theme.palette.primary}></FooterLand>
-      }
+      {/* {validated && <FooterLand color={primary} />} */}
     </>
   );
 }

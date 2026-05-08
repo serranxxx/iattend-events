@@ -112,5 +112,6 @@ export default async function InvitationDynamicPage({ params, searchParams }: Pa
   const popEvent = data as PopEvent;
   const password = typeof resolvedSearchParams?.password === "string" ? resolvedSearchParams.password : undefined;
 
+  console.log(password)
   return <PopEvents info={popEvent} password={password} />;
 }
