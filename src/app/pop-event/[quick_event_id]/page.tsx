@@ -16,8 +16,8 @@ type PageProps = {
 // --------------------
 // Metadata dinámica
 // --------------------
-export async function generateMetadata({ params }: { params: RouteParams }): Promise<Metadata> {
-  const { quick_event_id } = params;
+export async function generateMetadata({ params }: { params: Promise<RouteParams> }): Promise<Metadata> {
+  const { quick_event_id } = await params;
   const supabase = await getPublicServerClient();
   const { data } = await supabase
     .from("pop_events")
