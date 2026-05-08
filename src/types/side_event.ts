@@ -44,9 +44,11 @@ export type popTheme = {
   palette: {
     actions: string,
     primary: string,
-    secondary: string
+    secondary: string,
+    glass: number
   },
-  background: { type: string, media: string }[]
+  background: { type: string, media: string }[],
+  theme: string,
 };
 
 export type popContent = {

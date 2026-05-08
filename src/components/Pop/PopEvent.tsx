@@ -286,9 +286,9 @@ export default function PopEvents({ info, preview, password }: invProps) {
     const onScroll = () => {
       const progress = Math.min(window.scrollY / 600, 1);
       const scale = 1 + progress * 0.8;
-      const blur = Math.pow(progress, 0.7) * 12;
+      // const blur = Math.pow(progress, 0.7) * 12;
       document.documentElement.style.setProperty("--bg-scale", scale.toString());
-      document.documentElement.style.setProperty("--bg-blur", `${blur}px`);
+      // document.documentElement.style.setProperty("--bg-blur", `${blur}px`);
     };
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
@@ -342,7 +342,7 @@ export default function PopEvents({ info, preview, password }: invProps) {
     "--blur-color": primary,
     "--blur-color--dark": `${darker(primary, 0.8)}80`,
     "--blur-color--darker": `${darker(primary, 0.2)}80`,
-    "--widget-tint": secondary ? `${secondary}40` : "rgba(255, 255, 255, 0.1)",
+    "--widget-tint": secondary ? `${secondary}33` : "rgba(255, 255, 255, 0.15)",
   };
 
   useEffect(() => {

@@ -114,17 +114,33 @@ export default function WeatherWidget({ invitation, item, isSide, color, radius 
             maxHeight: "134px",
             fontFamily: invitation?.generals.fonts.body?.typeFace ?? "Poppins",
             ...(color !== undefined && {
-              background: "var(--widget-tint, rgba(255, 255, 255, 0.1))",
-              backdropFilter: "blur(24px) saturate(180%)",
-              WebkitBackdropFilter: "blur(24px) saturate(180%)",
-              border: "1px solid rgba(255, 255, 255, 0.28)",
-              boxShadow: "0 8px 32px rgba(0,0,0,0.15), inset 0 1.5px 0 rgba(255,255,255,0.55), inset 0 -1px 0 rgba(0,0,0,0.1), inset 1px 0 0 rgba(255,255,255,0.2), inset -1px 0 0 rgba(255,255,255,0.1)",
+              position: "relative",
+              overflow: "hidden",
+              background: "rgba(255, 255, 255, 0.06)",
+              backdropFilter: "blur(22px) saturate(180%) brightness(1.1)",
+              WebkitBackdropFilter: "blur(22px) saturate(180%) brightness(1.1)",
+              borderTop: "1px solid rgba(255, 255, 255, 0.55)",
+              borderBottom: "1px solid rgba(255, 255, 255, 0.12)",
+              borderLeft: "1px solid rgba(255, 255, 255, 0.25)",
+              borderRight: "1px solid rgba(255, 255, 255, 0.25)",
+              boxShadow: "0 0 14px 0 rgba(0,0,0,0.10), 0 8px 32px rgba(0,0,0,0.18), inset 0 -2px 6px rgba(0,0,0,0.2)",
               padding: "16px 12px",
               maxHeight: "144px",
             }),
             ...(radius !== undefined && { borderRadius: radius }),
           }}
         >
+          {color !== undefined && (
+            <div style={{
+              position: "absolute",
+              inset: 0,
+              height: "50%",
+              borderRadius: `${radius ?? 0}px ${radius ?? 0}px 0 0`,
+              background: "linear-gradient(to bottom, rgba(255,255,255,0.18), transparent)",
+              pointerEvents: "none",
+              zIndex: 1,
+            }} />
+          )}
           <span className={styles.weather_label}>{weather?.location?.name}</span>
           <span className={styles.weather_temperture}>{Math.round(weather?.current?.temp_c)}°</span>
           <img src={weather?.current?.condition?.icon} alt="icono" style={{ margin: "-4px 0px", height: "22px", padding: 0 }} />
