@@ -184,9 +184,9 @@ export function Attendees({ participants }: AttendeesProps) {
             ))}
           </div>
 
-          <div ref={namesContRef} className={styles.paticipants_cont} style={{ gap: '6px' }}>
+          <div ref={namesContRef} className={styles.paticipants_cont} style={{ gap: '6px', marginTop:'-6px' }}>
             {(() => {
-              const MAX_CHARS = namesWidth > 0 ? Math.floor(namesWidth / 7) : 40;
+              const MAX_CHARS = namesWidth > 0 ? Math.floor(namesWidth /6) : 40;
               let total = 0;
               const visible: ParticipansType[] = [];
               for (const p of (participants ?? [])) {

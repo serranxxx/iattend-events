@@ -6,8 +6,7 @@
     display: flex;
     align-items: flex-start;
     justify-content: flex-start;
-    transition: all 0.3s ease;
-    border: 1px solid red;
+    transition: top 0.35s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 .confirm_card_cont {
@@ -23,15 +22,28 @@
     height: 100%;
 }
 
-.bottom_button {
+.drag_handle_area {
     position: absolute;
+    bottom: -28px;
     left: 50%;
     transform: translateX(-50%);
-    bottom: -6px;
-    width: 120px !important;
-    height: 6px !important;
-    background-color: #FFFFFF80;
+    width: 100%;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: grab;
+}
+
+.drag_handle_area:active {
+    cursor: grabbing;
+}
+
+.drag_handle_pill {
+    width: 48px;
+    height: 4px;
     border-radius: 99px;
+    background: rgba(255, 255, 255, 0.55);
 }
 
 .user_image_cont {
