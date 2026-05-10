@@ -17,6 +17,7 @@
   justify-content: flex-end;
   padding: 24px;
   padding-top: 68dvh;
+  padding-bottom: 64px;
   gap: 16px;
   background-image: linear-gradient(to bottom, transparent 55%, var(--blur-color) 88%);
 }
@@ -138,6 +139,7 @@
     margin-top: -100dvh;
     padding: 40px;
     padding-top: 70dvh;
+    padding-bottom: 64px;
     gap: 16px;
   }
 }

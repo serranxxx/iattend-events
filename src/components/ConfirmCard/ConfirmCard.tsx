@@ -6,7 +6,7 @@ import { profiles, profilesMap } from './profiles'
 import { QuickEventGuest, QuickEventUser, SideGuestSubabasePayload } from '@/types/guests'
 import { BackgroundGaffette } from './BackgroundGaffette'
 import { createClient } from '@/lib/supabase/client'
-import { HatGlasses, ScanFace, UserRoundPen } from 'lucide-react'
+import { ChevronDown, HatGlasses, ScanFace, UserRoundPen } from 'lucide-react'
 
 interface ConfirmCardProps {
     setOpenModal: React.Dispatch<React.SetStateAction<boolean>>
@@ -33,7 +33,6 @@ const EMOJIS = ['😆', '🤪', '🥸', '😈', '🤡', '👽', '💩', '🤖', 
 const HIDE_FULL_CARD = -1000
 const HIDE_NOT_CONFIRMED = -480
 const HIDE_CONFIRMED = -430
-const OPEN_TOP = 30
 
 const ON_EDIT_HEIGHT = 610
 const USER_NOT_CONFIRMED_HEIGHT = 520
@@ -58,9 +57,6 @@ export const ConfirmCard: React.FC<ConfirmCardProps> = ({
 
 
     const sliderRef = useRef<HTMLDivElement | null>(null)
-    const modalRef = useRef<HTMLDivElement | null>(null)
-    const dragRef = useRef({ active: false, startY: 0, startTop: 0, lastY: 0, lastTime: 0, velocity: 0 })
-    const stateRef = useRef({ displayCard: false, userId: user.id, eventState: event?.state, noEvent: !event })
 
     const [onEdit, setOnEdit] = useState(false)
     const [onEditCont, setOnEditCont] = useState(false)
@@ -221,9 +217,9 @@ export const ConfirmCard: React.FC<ConfirmCardProps> = ({
                 }} className={styles.guest_name_cont}>
                     {
                         displayCard &&
-                         <span className={styles.guest_name}>{event?.anonymous ? 'Anónimo' :  user?.name.length > 10 ? `${user?.name.split(' ')[0]} ${user?.name.split(' ')[1].slice(0,1)}.`: user?.name}</span>
+                        <span className={styles.guest_name}>{event?.anonymous ? 'Anónimo' : user?.name.length > 10 ? `${user?.name.split(' ')[0]} ${user?.name.split(' ')[1].slice(0, 1)}.` : user?.name}</span>
                     }
-                   
+
                     {
                         event.state === 'confirmado' ?
                             <div className={styles.status_col}>
@@ -441,75 +437,18 @@ export const ConfirmCard: React.FC<ConfirmCardProps> = ({
     }, [onIssue])
 
     useEffect(() => {
-      console.log('event: ', event)
+        console.log('event: ', event)
     }, [event])
 
-    // Keep stateRef current so event handlers always read fresh values without stale closures
-    useEffect(() => {
-        stateRef.current = { displayCard, userId: user.id, eventState: event?.state, noEvent: !event }
-    }, [displayCard, user.id, event])
 
-    // passive:false touchmove so we can call preventDefault and block page scroll during drag
-    useEffect(() => {
-        const el = modalRef.current
-        if (!el) return
-        const handleMove = (e: TouchEvent) => {
-            const d = dragRef.current
-            const t = e.touches[0]
-            if (!d.active && Math.abs(t.clientY - d.startY) > 8) d.active = true
-            if (!d.active) return
-            e.preventDefault()
-            const now = Date.now()
-            const dt = now - d.lastTime
-            if (dt > 0) d.velocity = (t.clientY - d.lastY) / dt
-            d.lastY = t.clientY
-            d.lastTime = now
-            const { userId, eventState, noEvent } = stateRef.current
-            const closedTop = !userId ? HIDE_FULL_CARD : (noEvent || eventState !== 'confirmado') ? HIDE_NOT_CONFIRMED : HIDE_CONFIRMED
-            const newTop = Math.min(OPEN_TOP, Math.max(closedTop, d.startTop + (t.clientY - d.startY)))
-            el.style.top = `${newTop}px`
-        }
-        el.addEventListener('touchmove', handleMove, { passive: false })
-        return () => el.removeEventListener('touchmove', handleMove)
-    }, [])
-
-    const handleTouchStart = (e: React.TouchEvent) => {
-        const target = e.target as HTMLElement
-        if (target.closest('input, button, select')) return
-        const { displayCard: dc, userId, eventState, noEvent } = stateRef.current
-        if (!userId) return
-        const closedTop = (noEvent || eventState !== 'confirmado') ? HIDE_NOT_CONFIRMED : HIDE_CONFIRMED
-        const t = e.touches[0]
-        dragRef.current = { active: false, startY: t.clientY, startTop: dc ? OPEN_TOP : closedTop, lastY: t.clientY, lastTime: Date.now(), velocity: 0 }
-        if (modalRef.current) modalRef.current.style.transition = 'none'
-    }
-
-    const handleTouchEnd = () => {
-        const d = dragRef.current
-        const el = modalRef.current
-        if (!el) return
-        el.style.transition = ''
-        if (!d.active) return
-        d.active = false
-        const { displayCard: dc, userId, eventState, noEvent } = stateRef.current
-        const closedTop = !userId ? HIDE_FULL_CARD : (noEvent || eventState !== 'confirmado') ? HIDE_NOT_CONFIRMED : HIDE_CONFIRMED
-        const currentTop = parseFloat(el.style.top || String(dc ? OPEN_TOP : closedTop))
-        const midpoint = (OPEN_TOP + closedTop) / 2
-        const shouldOpen = Math.abs(d.velocity) > 0.3 ? d.velocity > 0 : currentTop > midpoint
-        el.style.top = `${shouldOpen ? OPEN_TOP : closedTop}px`
-        if (shouldOpen !== dc) setDisplayCard(shouldOpen)
-    }
 
 
     return (
         <div
-            ref={modalRef}
             style={{
                 top: displayCard ? '30px' : user.id ? (!event || event.state !== 'confirmado') ? HIDE_NOT_CONFIRMED : HIDE_CONFIRMED : HIDE_FULL_CARD,
             }}
             className={styles.confirm_modal}
-            onTouchStart={handleTouchStart}
-            onTouchEnd={handleTouchEnd}
             onClick={(e) => e.stopPropagation()}
         >
 
@@ -673,11 +612,17 @@ export const ConfirmCard: React.FC<ConfirmCardProps> = ({
                                     </div>
                                 </div>
 
-                                {!onEditCont && (
-                                    <div onClick={(e) => { e.stopPropagation(); setDisplayCard(!displayCard) }} className={styles.drag_handle_area}>
-                                        <div className={styles.drag_handle_pill} />
+                                {
+                                    !onEditCont &&
+                                    <div onClick={(e) => { e.stopPropagation(); setDisplayCard(!displayCard) }} 
+                                    style={{
+                                       
+                                        bottom: '-8%'
+                                    }}
+                                    className={styles.bottom_button}>
+                                        <ChevronDown size={18} style={{ transform: displayCard ? 'rotate(180deg)' : 'rotate(0deg)', color: '#FFF' }} />
                                     </div>
-                                )}
+                                }
 
 
                             </div>
