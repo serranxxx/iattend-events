@@ -7,6 +7,14 @@ import { lighter } from "@/helpers/functions";
 import { CoverSection, Generals, InvitationUIBundle } from "@/types/new_invitation";
 import styles from "./count.module.css";
 import ConfettiButton from "../Confetti/Confetti";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
+const MEXICO_TZ = "America/Mexico_City";
 
 type CountdownProps = {
   cover: CoverSection;
@@ -21,22 +29,11 @@ type TimeLeft = Record<Units, number>;
 
 const ZERO: TimeLeft = { days: 0, hours: 0, minutes: 0, seconds: 0 };
 
-/**
- * Parsea una fecha de invitación como "date-only".
- * Toma solo YYYY-MM-DD y crea un Date en UTC (00:00),
- * evitando el desfase por timezone del usuario.
- */
 function parseDateOnly(dateString?: string | null): Date | null {
   if (!dateString) return null;
-
-  // Nos quedamos con "YYYY-MM-DD"
   const ymd = dateString.slice(0, 10);
-  const [y, m, d] = ymd.split("-").map(Number);
-
-  if (!y || !m || !d) return null;
-
-  // 00:00 UTC de ese día (no se mueve por TZ local)
-  return new Date(Date.UTC(y, m - 1, d));
+  const d = dayjs.tz(ymd, MEXICO_TZ);
+  return d.isValid() ? d.toDate() : null;
 }
 
 /**
@@ -73,8 +70,8 @@ function diffToTimeLeft(target: Date, now = new Date()): TimeLeft {
   return { days, hours, minutes, seconds };
 }
 
-function isSameYMD_UTC(a: Date, b: Date) {
-  return a.getUTCFullYear() === b.getUTCFullYear() && a.getUTCMonth() === b.getUTCMonth() && a.getUTCDate() === b.getUTCDate();
+function isSameYMD_Mexico(a: Date, b: Date) {
+  return dayjs(a).tz(MEXICO_TZ).isSame(dayjs(b).tz(MEXICO_TZ), "day");
 }
 
 const labels: Record<Units, { singular: string; plural: string }> = {
@@ -102,7 +99,7 @@ export default function Countdown({ ui, cover, generals, dev, validated = true }
 
     const tick = () => {
       setTimeLeft(diffToTimeLeft(targetDate));
-      setIsToday(isSameYMD_UTC(new Date(), targetDate));
+      setIsToday(isSameYMD_Mexico(new Date(), targetDate));
     };
 
     tick();
