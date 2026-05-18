@@ -137,10 +137,15 @@ export default function Confirm({ invitationID, ui, invitation, guestInfo, refre
     companion_id: null,
     ticket: true,
     has_companion: false,
-    last_action_by: false,
+    last_action_by: "guest",
     created_at: new Date().toISOString(),
     last_update_date: new Date().toISOString(),
     side: null,
+    type: null,
+    invitation_sent_at: null,
+    reminder_count: 0,
+    last_reminder_at: null,
+    special_needs: null,
   });
 
   const addCompanion = () => {
@@ -182,10 +187,15 @@ export default function Confirm({ invitationID, ui, invitation, guestInfo, refre
           companion_id: null,
           ticket: true,
           has_companion: false,
-          last_action_by: false,
+          last_action_by: "guest",
           created_at: new Date().toISOString(),
           last_update_date: new Date().toISOString(),
           side: null,
+          type: null,
+          invitation_sent_at: null,
+          reminder_count: 0,
+          last_reminder_at: null,
+          special_needs: null,
           // id se genera en supabase → NO lo pones aquí
         };
         setOpenInvitation(true);
@@ -217,7 +227,7 @@ export default function Confirm({ invitationID, ui, invitation, guestInfo, refre
       state: updatedState,
       last_action: updatedState,
       last_update_date: new Date().toISOString(),
-      last_action_by: false,
+      last_action_by: "guest" as const,
     };
   };
 
@@ -230,7 +240,7 @@ export default function Confirm({ invitationID, ui, invitation, guestInfo, refre
       state: updatedState,
       last_action: updatedState,
       last_update_date: new Date().toISOString(),
-      last_action_by: false,
+      last_action_by: "guest" as const,
     };
   };
 

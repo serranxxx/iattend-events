@@ -72,25 +72,32 @@ export interface GuestAccessPayload {
 }
 
 export interface GuestSubabasePayload {
-  companion_id: string | null;
+  companion_id: number | null;
   created_at: string;
   has_companion: boolean;
   id?: number;
   invitation_id: string;
   last_action: string;
-  last_action_by: boolean;
+  last_action_by: 'admin' | 'guest' | 'system';
   last_update_date: string;
   meal: string | null;
   name: string | null;
   notes: string | null;
   password: string;
   phone_number: string | null;
-  side: null;
-  state: "creado" | "esperando" | "confirmado" | "rechazado" | "asistente";
+  side: string | null;
+  state: 'creado' | 'esperando' | 'confirmado' | 'rechazado' | 'asistente';
   table: string | null;
   tag: string | null;
   ticket: boolean;
   tier: string | null;
+  type: 'female' | 'male' | 'child' | 'undefined' | null;
+
+  // Fase 1
+  invitation_sent_at: string | null;
+  reminder_count: number;
+  last_reminder_at: string | null;
+  special_needs: string | null;
 }
 
 
