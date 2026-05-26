@@ -12,6 +12,8 @@
   overflow-y: auto;
   padding-bottom: 0px;
   min-height: 110vmax;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
 }
 
 
