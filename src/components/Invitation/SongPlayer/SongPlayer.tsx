@@ -33,7 +33,20 @@ export default function SongPlayer({ song, secondary = "#000000", dev = false }:
     audio.loop = true;
     audio.volume = 0.4;
     audioRef.current = audio;
-    if (!dev) audio.play().then(() => setPlaying(true)).catch(() => {});
+
+    if (!dev) {
+      audio.play()
+        .then(() => setPlaying(true))
+        .catch(() => {
+          // iOS blocks autoplay until user gesture — start on first touch
+          const onFirstTouch = () => {
+            audio.play().then(() => setPlaying(true)).catch(() => {});
+          };
+          document.addEventListener('touchstart', onFirstTouch, { once: true });
+          document.addEventListener('click', onFirstTouch, { once: true });
+        });
+    }
+
     return () => {
       audio.pause();
       audioRef.current = null;
