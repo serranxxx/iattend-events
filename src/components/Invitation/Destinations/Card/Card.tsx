@@ -27,6 +27,7 @@ export default function Card({ ui, invitation, invitationID }: CardProps) {
 
   const [frontCard, setFrontCard] = useState<number>(0);
   const [flipped, setFlipped] = useState<boolean>(false);
+  const [expanded, setExpanded] = useState<boolean>(false);
 
   const [order, setOrder] = useState<number[]>(() => visibleCards.map((_, i) => i));
 
@@ -35,6 +36,7 @@ export default function Card({ ui, invitation, invitationID }: CardProps) {
   const movedTouch = useRef<boolean>(false);
   const isAnimating = useRef<boolean>(false);
   const wheelAccumulator = useRef<number>(0);
+  const backScrolled = useRef<boolean>(false);
 
   const SWIPE_THRESHOLD = 40;
   const WHEEL_THRESHOLD = 60;
@@ -68,6 +70,11 @@ export default function Card({ ui, invitation, invitationID }: CardProps) {
     }
   };
 
+  const closeExpanded = () => {
+    setExpanded(false);
+    setFlipped(false);
+  };
+
   const bringToFront = (idx: number) => {
     if (total <= 1 || isAnimating.current) return;
 
@@ -76,6 +83,7 @@ export default function Card({ ui, invitation, invitationID }: CardProps) {
     setOrder((prev) => [idx, ...prev.filter((x) => x !== idx)]);
     setFrontCard(idx);
     setFlipped(false);
+    setExpanded(false);
 
     setTimeout(() => {
       isAnimating.current = false;
@@ -94,6 +102,7 @@ export default function Card({ ui, invitation, invitationID }: CardProps) {
     });
 
     setFlipped(false);
+    setExpanded(false);
 
     setTimeout(() => {
       isAnimating.current = false;
@@ -112,6 +121,7 @@ export default function Card({ ui, invitation, invitationID }: CardProps) {
     });
 
     setFlipped(false);
+    setExpanded(false);
 
     setTimeout(() => {
       isAnimating.current = false;
@@ -119,12 +129,14 @@ export default function Card({ ui, invitation, invitationID }: CardProps) {
   };
 
   const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (expanded) return;
     touchStartX.current = e.touches[0].clientX;
     touchDeltaX.current = 0;
     movedTouch.current = false;
   };
 
   const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (expanded) return;
     if (touchStartX.current === null) return;
 
     const currentX = e.touches[0].clientX;
@@ -136,13 +148,12 @@ export default function Card({ ui, invitation, invitationID }: CardProps) {
   };
 
   const handleTouchEnd = () => {
+    if (expanded) return;
     if (touchStartX.current === null) return;
 
     if (touchDeltaX.current <= -SWIPE_THRESHOLD) {
-      // swipe hacia la izquierda
       rotateForward();
     } else if (touchDeltaX.current >= SWIPE_THRESHOLD) {
-      // swipe hacia la derecha
       rotateBackward();
     }
 
@@ -155,9 +166,8 @@ export default function Card({ ui, invitation, invitationID }: CardProps) {
   };
 
   const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
-    if (total <= 1) return;
+    if (total <= 1 || expanded) return;
 
-    // prioridad al desplazamiento horizontal real del trackpad/mouse
     const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
 
     wheelAccumulator.current += delta;
@@ -198,222 +208,251 @@ export default function Card({ ui, invitation, invitationID }: CardProps) {
   };
 
   return (
-    <div
-      className="fan_container scroll-invitation"
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
-      onWheel={handleWheel}
-      style={{
-        position: "relative",
-        maxWidth: "100vw",
-        minWidth: "100vw",
-        height: "340px",
-        padding: "24px",
-        boxSizing: "border-box",
-        perspective: `${PERSPECTIVE}px`,
-        touchAction: "pan-x",
-        overflow: "hidden",
-        zIndex:99
-      }}
-    >
-      {visibleCards.map((card, i) => {
-        const rank = order.indexOf(i);
-        const { dx, dy, rot, scale, z } = getPos(rank, total);
+    <>
+      {expanded && (
+        <div
+          onClick={closeExpanded}
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 9998,
+            background: "rgba(0,0,0,0.5)",
+            backdropFilter: "blur(4px)",
+            WebkitBackdropFilter: "blur(4px)",
+          }}
+        />
+      )}
+      <div
+        className="fan_container scroll-invitation"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onWheel={handleWheel}
+        onClick={expanded ? closeExpanded : undefined}
+        style={{
+          position: "relative",
+          maxWidth: "100vw",
+          minWidth: "100vw",
+          height: "340px",
+          padding: "24px",
+          boxSizing: "border-box",
+          perspective: `${PERSPECTIVE}px`,
+          touchAction: expanded ? "none" : "pan-x",
+          overflow: expanded ? "visible" : "hidden",
+          zIndex: expanded ? 9999 : 99,
+        }}
+      >
+        {visibleCards.map((card, i) => {
+          const rank = order.indexOf(i);
+          const { dx, dy, rot, scale, z } = getPos(rank, total);
+          const isExpandedCard = i === frontCard && expanded;
 
-        return (
-          <FadeLeft
-            key={i}
-            zIndex={z}
-            duration={i}
-            start={-10 - i * 2}
-            end={180 + -28 * i}
-          >
-            <div
-              className={styles[card.type]}
-              onClick={(e) => {
-                e.stopPropagation();
-
-                if (movedTouch.current || isAnimating.current) return;
-
-                if (i === frontCard) {
-                  setFlipped((prev) => !prev);
-                } else {
-                  bringToFront(i);
-                }
-              }}
-              style={{
-                position: "absolute",
-                left: "50%",
-                bottom: "53%",
-                transform: `translate(-50%, 50%) translate(${dx}px, ${dy}px) rotate(${rot}deg) scale(${scale})`,
-                transformOrigin: "center",
-                zIndex: z,
-                transition: "transform .35s ease, z-index .35s ease",
-                cursor: total > 1 ? "pointer" : "default",
-              }}
+          return (
+            <FadeLeft
+              key={i}
+              zIndex={isExpandedCard ? 9999 : z}
+              duration={i}
+              start={-10 - i * 2}
+              end={180 + -28 * i}
             >
               <div
-                className={`${styles.flip_card} ${
-                  i === frontCard && flipped ? styles.flipped : ""
-                }`}
-              >
-                <div className={styles.flip_inner}>
-                  <div className={styles.flip_front}>
-                    <div
-                      className={styles.main_dest_card}
-                      style={{
-                        backgroundColor: lighter(primary, 0.9) ?? "#FFF",
-                      }}
-                    >
-                      <div className={styles.image_dest_cont}>
-                        <img
-                          src={card.image!}
-                          alt={card.name ?? ""}
-                          style={{
-                            width: "100%",
-                            height: "100%",
-                            objectFit: "cover",
-                          }}
-                        />
+                className={styles[card.type]}
+                onClick={(e) => {
+                  e.stopPropagation();
 
-                        <div className={styles.dest_text_box}>
-                          <span
-                            className={styles.dest_label}
+                  if (expanded) return;
+                  if (movedTouch.current || isAnimating.current) return;
+
+                  if (i === frontCard) {
+                    setFlipped((prev) => !prev);
+                  } else {
+                    bringToFront(i);
+                  }
+                }}
+                style={{
+                  position: "absolute",
+                  left: "50%",
+                  bottom: "53%",
+                  transform: isExpandedCard
+                    ? `translate(-50%, 50%) scale(1.2)`
+                    : `translate(-50%, 50%) translate(${dx}px, ${dy}px) rotate(${rot}deg) scale(${scale})`,
+                  transformOrigin: "center",
+                  zIndex: isExpandedCard ? 9999 : z,
+                  transition: "transform .4s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+                  cursor: expanded ? "default" : total > 1 ? "pointer" : "default",
+                }}
+              >
+                <div
+                  className={`${styles.flip_card} ${
+                    i === frontCard && flipped ? styles.flipped : ""
+                  }`}
+                >
+                  <div className={styles.flip_inner}>
+                    <div className={styles.flip_front}>
+                      <div
+                        className={styles.main_dest_card}
+                        style={{
+                          backgroundColor: lighter(primary, 0.9) ?? "#FFF",
+                        }}
+                      >
+                        <div className={styles.image_dest_cont}>
+                          <img
+                            src={card.image!}
+                            alt={card.name ?? ""}
                             style={{
-                              color: lighter(primary, 0.9) ?? "#FFF",
+                              width: "100%",
+                              height: "100%",
+                              objectFit: "cover",
                             }}
+                          />
+
+                          <div className={styles.dest_text_box}>
+                            <span
+                              className={styles.dest_label}
+                              style={{
+                                color: lighter(primary, 0.9) ?? "#FFF",
+                              }}
+                            >
+                              {card.name}
+                            </span>
+                          </div>
+
+                          {invitationID !== "80d0c716-86e4-4c90-9e6d-9133d970d769" &&
+                            frontCard === i && (
+                              <Button
+                                icon={<MdOpenInFull />}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (isAnimating.current) return;
+                                  setExpanded(true);
+                                  setFlipped(true);
+                                }}
+                                style={{
+                                  zIndex: 5,
+                                  fontSize: "12px",
+                                  fontWeight: 800,
+                                  backdropFilter: "blur(4px)",
+                                  boxShadow: "0px 0px 8px rgba(0,0,0,0.35)",
+                                  color: "#000",
+                                  position: "absolute",
+                                  top: "50%",
+                                  left: "50%",
+                                  height: "40px",
+                                  width: "40px",
+                                  transform: "translate(-50%,-50%)",
+                                }}
+                              />
+                            )}
+
+                          {invitationID !== "80d0c716-86e4-4c90-9e6d-9133d970d769" && (
+                            <div className={styles.tag_label_container}>
+                              <span className={styles.card_label_class}>
+                                {translateType(card.type)?.label}
+                              </span>
+                              <span className={styles.card_icon_class}>
+                                {translateType(card.type)?.icon}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div
+                      className={styles.flip_back}
+                      style={isExpandedCard ? { touchAction: "pan-y" } : {}}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (isAnimating.current) return;
+                        if (backScrolled.current) { backScrolled.current = false; return; }
+                        closeExpanded();
+                      }}
+                      onTouchStart={isExpandedCard ? (e) => { e.stopPropagation(); backScrolled.current = false; } : undefined}
+                      onTouchMove={isExpandedCard ? (e) => { e.stopPropagation(); backScrolled.current = true; } : undefined}
+                      onTouchEnd={isExpandedCard ? (e) => e.stopPropagation() : undefined}
+                    >
+                      <div
+                        className={styles.main_dest_card}
+                        style={{
+                          alignItems: "flex-start",
+                          justifyContent: "space-between",
+                          flexDirection: "column",
+                          padding: "12px",
+                          backgroundColor: lighter(primary, 0.9) ?? "#FFF",
+                          gap: "6px",
+                        }}
+                      >
+                        <div
+                          className="scroll-invitation"
+                          style={{
+                            display: "flex",
+                            alignItems: "flex-start",
+                            justifyContent: "flex-start",
+                            flexDirection: "column",
+                            gap: "6px",
+                            color: accent,
+                            flex: 1,
+                            minHeight: 0,
+                            overflowX: "hidden",
+                            overflowY: isExpandedCard ? "auto" : "hidden",
+                            paddingBottom: "6px",
+                            width: "100%",
+                          }}
+                        >
+                          <span className={styles.reversed_card_title}>
+                            <b>Información</b>
+                          </span>
+
+                          <span
+                            className={styles.reversed_card_text}
+                            style={{ whiteSpace: "pre-line" }}
                           >
-                            {card.name}
+                            {card.description}
                           </span>
                         </div>
 
-                        {invitationID !== "80d0c716-86e4-4c90-9e6d-9133d970d769" &&
-                          frontCard === i && (
-                            <Button
-                              icon={<MdOpenInFull />}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                if (isAnimating.current) return;
-                                setFlipped((prev) => !prev);
-                              }}
+                        <Button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            window.open(card.url!, "_blank");
+                          }}
+                          icon={<MdArrowOutward />}
+                          style={{
+                            zIndex: 5,
+                            fontSize: "12px",
+                            fontWeight: 400,
+                            backgroundColor: accent,
+                            backdropFilter: "blur(10px)",
+                            boxShadow: "0px 0px 4px rgba(0,0,0,0.1)",
+                            color: lighter(primary, 0.9) ?? "#FFF",
+                            flexShrink: 0,
+                          }}
+                        >
+                          Navegar
+                        </Button>
+
+                        {invitation.generals.texture !== null && (
+                          <div className={styles.card_texture}>
+                            <Image
+                              src={"/assets/textures/magazine.jpg"}
+                              alt=""
+                              fill
                               style={{
-                                zIndex: 5,
-                                fontSize: "12px",
-                                fontWeight: 800,
-                                backdropFilter: "blur(4px)",
-                                boxShadow: "0px 0px 8px rgba(0,0,0,0.35)",
-                                color: "#000",
-                                position: "absolute",
-                                top: "50%",
-                                left: "50%",
-                                height: "40px",
-                                width: "40px",
-                                transform: "translate(-50%,-50%)",
+                                objectFit: "cover",
+                                opacity: 1,
                               }}
                             />
-                          )}
-
-                        {invitationID !== "80d0c716-86e4-4c90-9e6d-9133d970d769" && (
-                          <div className={styles.tag_label_container}>
-                            <span className={styles.card_label_class}>
-                              {translateType(card.type)?.label}
-                            </span>
-                            <span className={styles.card_icon_class}>
-                              {translateType(card.type)?.icon}
-                            </span>
                           </div>
                         )}
                       </div>
-
-                     
-                    </div>
-                  </div>
-
-                  <div
-                    className={styles.flip_back}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (isAnimating.current) return;
-                      setFlipped((prev) => !prev);
-                    }}
-                  >
-                    <div
-                      className={styles.main_dest_card}
-                      style={{
-                        alignItems: "flex-start",
-                        justifyContent: "space-between",
-                        flexDirection: "column",
-                        padding: "12px",
-                        backgroundColor: lighter(primary, 0.9) ?? "#FFF",
-                        gap: "6px",
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "flex-start",
-                          justifyContent: "flex-start",
-                          flexDirection: "column",
-                          gap: "6px",
-                          color: accent,
-                          maxHeight: "100%",
-                          overflow: "auto",
-                          paddingBottom: "6px",
-                        }}
-                      >
-                        <span className={styles.reversed_card_title}>
-                          <b>Información</b>
-                        </span>
-
-                        <span
-                          className={styles.reversed_card_text}
-                          style={{ whiteSpace: "pre-line" }}
-                        >
-                          {card.description}
-                        </span>
-                      </div>
-
-                      <Button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          window.open(card.url!, "_blank");
-                        }}
-                        icon={<MdArrowOutward />}
-                        style={{
-                          zIndex: 5,
-                          fontSize: "12px",
-                          fontWeight: 400,
-                          backgroundColor: accent,
-                          backdropFilter: "blur(10px)",
-                          boxShadow: "0px 0px 4px rgba(0,0,0,0.1)",
-                          color: lighter(primary, 0.9) ?? "#FFF",
-                        }}
-                      >
-                        Navegar
-                      </Button>
-
-                      {invitation.generals.texture !== null && (
-                        <div className={styles.card_texture}>
-                          <Image
-                            src={"/assets/textures/magazine.jpg"}
-                            alt=""
-                            fill
-                            style={{
-                              objectFit: "cover",
-                              opacity: 1,
-                            }}
-                          />
-                        </div>
-                      )}
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
-          </FadeLeft>
-        );
-      })}
-    </div>
+            </FadeLeft>
+          );
+        })}
+      </div>
+    </>
   );
 }
