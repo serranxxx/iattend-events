@@ -153,15 +153,22 @@
   left: 50%;
   transform: translateX(-50%);
   padding: 0px 24px;
-  z-index: 99;
+  z-index: 101;
 }
 
 .ticket_bg {
-  width: 100%;
-  height: 100%;
-  background-color: #00000030;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.32);
+  backdrop-filter: blur(2px);
   position: fixed;
-  z-index: 99;
+  z-index: 100;
+  cursor: pointer;
+  animation: fadeInOverlay 0.25s ease;
+}
+
+@keyframes fadeInOverlay {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 .glow_button {

@@ -28,7 +28,9 @@ import AnimatedPath from "@/components/Motion/AnimatedPath";
 import { FooterLand } from "@/components/LandPage/Footer/Footer";
 import { Ticket } from "../Ticket/Ticket";
 import SongPlayer from "../SongPlayer/SongPlayer";
-import InvitationActions from "../InvitationActions/InvitationActions";
+import InvitationControlBar from "../InvitationControlBar/InvitationControlBar";
+import CameraView from "../CameraView/CameraView";
+import LiaGuest from "../LiaGuest/LiaGuest";
 
 type invProps = {
   invitation: NewInvitation | null;
@@ -64,7 +66,12 @@ export default function Invitation({ password, invitationID, ui, invitation, loa
   const supabase = createClient();
 
   const [open, setOpen] = useState(false);
-  const [onShowTicket, setOnShowTicket] = useState(false)
+  const [onShowTicket, setOnShowTicket] = useState(false);
+  const [showCamera, setShowCamera] = useState(false);
+  const [showLia, setShowLia] = useState(false);
+  const [scrolledDown, setScrolledDown] = useState(false);
+  const lastScrollY = useRef(0);
+  const scrollDirection = useRef<'up' | 'down'>('up');
   const [guestCode, setGuestCode] = useState<string>("");
   const [validated, setValidated] = useState<boolean>(false);
   const [animation, setAnimation] = useState<boolean>(false);
@@ -163,7 +170,7 @@ export default function Invitation({ password, invitationID, ui, invitation, loa
       // messageApi.success(`Bienvenido ${data.name}`);
       setValidated(true);
       setGuestInfo(data)
-
+      if (data?.name) localStorage.setItem(`guest_${invitationID}`, data.name);
 
     } catch (error) {
 
@@ -206,6 +213,7 @@ export default function Invitation({ password, invitationID, ui, invitation, loa
 
       setValidated(true);
       setGuestInfo(data)
+      if (data?.name) localStorage.setItem(`guest_${invitationID}`, data.name);
     }
     catch (error) {
       console.log(error)
@@ -296,6 +304,26 @@ export default function Invitation({ password, invitationID, ui, invitation, loa
     }
   }, [animation])
 
+  useEffect(() => {
+    const container = scrollableContentRef.current;
+    if (!container) return;
+
+    const onScroll = () => {
+      const currentY = container.scrollTop;
+      const delta = currentY - lastScrollY.current;
+      if (Math.abs(delta) < 4) return;
+      const dir = delta > 0 ? 'down' : 'up';
+      if (dir !== scrollDirection.current) {
+        scrollDirection.current = dir;
+        setScrolledDown(dir === 'down');
+      }
+      lastScrollY.current = currentY;
+    };
+
+    container.addEventListener('scroll', onScroll, { passive: true });
+    return () => container.removeEventListener('scroll', onScroll);
+  }, []);
+
 
 
 
@@ -337,7 +365,7 @@ export default function Invitation({ password, invitationID, ui, invitation, loa
 
         <Cover ui={ui} ref={coverRef} dev={dev} invitation={invitation} height={"100vh"} validated={validated} />
         {validated && coverSong && (
-          <SongPlayer song={coverSong} secondary={secondary} dev={dev} />
+          <SongPlayer song={coverSong} accent={accent} secondary={secondary} dev={dev} />
         )}
         {validated && (
           <>
@@ -432,16 +460,38 @@ export default function Invitation({ password, invitationID, ui, invitation, loa
       </div>
 
       {validated && (
-        <InvitationActions
+        <InvitationControlBar
           plan={plan}
           dev={dev}
           guestInfo={guestInfo}
           ui={ui}
           actions={actions}
           primary={primary}
+          accent={accent}
           phone_number={phone_number}
+          scrolledDown={scrolledDown}
           onOpenConfirm={() => setOpen(true)}
           onShowTicket={() => setOnShowTicket(true)}
+          onShowCamera={guestInfo?.state === 'confirmado' ? () => setShowCamera(true) : undefined}
+          onAskLia={() => setShowLia(true)}
+        />
+      )}
+
+      {showLia && invitationID && (
+        <LiaGuest
+          invitationID={invitationID}
+          guestName={guestInfo?.name ?? undefined}
+          accentColor={'#000'}
+          onClose={() => setShowLia(false)}
+        />
+      )}
+
+      {showCamera && guestInfo && invitationID && (
+        <CameraView
+          invitation={invitation}
+          invitationID={invitationID}
+          guestInfo={guestInfo}
+          onClose={() => setShowCamera(false)}
         />
       )}
 

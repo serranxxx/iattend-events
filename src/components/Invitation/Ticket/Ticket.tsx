@@ -39,9 +39,16 @@ const formatShortDate = (dateString: string) => {
 
 
 
+const toCoverImageUrl = (src: string | string[] | null | undefined): string | null => {
+  if (!src || typeof src !== 'string' && !Array.isArray(src)) return null;
+  if (typeof src === 'string') return src.trim() || null;
+  return src.find(s => typeof s === 'string' && s.trim()) ?? null;
+};
+
 export function Ticket({ guest, invitation, ui, colors, onClose, id }: TicketProps) {
   const { primary, accent } = colors;
   const font = invitation.generals.fonts.body?.value ?? "Poppins";
+  const coverImageSrc = toCoverImageUrl(invitation.cover.image.prod);
   const supabase = createClient();
 
   const [tables, setTables] = useState<any[]>([])
@@ -63,7 +70,7 @@ export function Ticket({ guest, invitation, ui, colors, onClose, id }: TicketPro
           eventDate: invitation.cover.date.value,
           eventTime: invitation.itinerary.object[0]?.time ?? "",
           tableNumber,
-          coverImageUrl: invitation.cover.image.prod ?? null,
+          coverImageUrl: coverImageSrc,
           primaryColor: primary,
           accentColor: accent,
         }),
@@ -110,7 +117,7 @@ export function Ticket({ guest, invitation, ui, colors, onClose, id }: TicketPro
         style={{ background: `linear-gradient(to top, ${primary} 0%, ${darker(primary, 0.5)} 100%)` }}
       >
         <div className={styles.ticket_image}>
-          <Image fill src={invitation.cover.image.prod!} alt="" style={{ objectFit: "cover" }} />
+          {coverImageSrc && <Image fill src={coverImageSrc} alt="" style={{ objectFit: "cover" }} />}
           <div
             style={{ background: `linear-gradient(to top, ${darker(primary, 0.8)} 0%, transparent 30%, transparent 70%, ${darker(primary, 0.6)} 110%)` }}
             className={styles.ticket_shadow}
