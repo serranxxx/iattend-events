@@ -13,7 +13,6 @@ import { LuCircleCheck, LuCircleHelp, LuCircleX } from "react-icons/lu";
 import { simpleaddress } from "../Invitation/Itinerary/OpenCard/OpenCard";
 import WeatherWidget from "../Invitation/Itinerary/WeatherApi/WeatherWidget";
 import { FooterLand } from "../LandPage/Footer/Footer";
-import { color } from "motion";
 import { FaLock } from "react-icons/fa";
 import { createClient } from "@/lib/supabase/client";
 import { GuestSubabasePayload, SideGuestSubabasePayload } from "@/types/guests";
@@ -42,7 +41,7 @@ export default function SideEvents({ info, password, preview }: invProps) {
   }
 
   const btnStyle: CSSVars = {
-    ["--hover-color"]: `${color}`,
+    ["--hover-color"]: `${info?.body.color}`,
     height: "56px",
     width: "280px",
     fontSize: "18px",
@@ -345,7 +344,7 @@ export default function SideEvents({ info, password, preview }: invProps) {
         }
         <div
           className={styles.inv_locked_blured}
-          style={{ pointerEvents: validated ? "none" : undefined, opacity: validated ? "0" : "1", backgroundColor: `${color}20` }}
+          style={{ pointerEvents: validated ? "none" : undefined, opacity: validated ? "0" : "1", backgroundColor: `${info?.body.color}20` }}
         >
           <div className={styles.locked_icon}>
             <FaLock size={32} style={{ color: "#FFF" }} />
@@ -398,7 +397,7 @@ export default function SideEvents({ info, password, preview }: invProps) {
       </div>
       {
         validated &&
-        <FooterLand color={info?.body.color}></FooterLand>
+        <FooterLand></FooterLand>
       }
     </>
   );
