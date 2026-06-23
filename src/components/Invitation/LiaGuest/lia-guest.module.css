@@ -214,7 +214,7 @@
 /* ── Horizontal prompt chips bar ── */
 .promptBar {
   flex-shrink: 0;
-  padding: 12px 0 32px;
+  padding: 12px 0 max(32px, env(safe-area-inset-bottom, 32px));
   border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 

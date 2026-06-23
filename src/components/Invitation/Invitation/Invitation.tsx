@@ -16,6 +16,7 @@ import { Gallery } from "../Gallery/Gallery";
 import Image from "next/image";
 import { textures } from "@/helpers/textures";
 import { TextureOverlay } from "./TexturesOverlay";
+import { createPortal } from "react-dom";
 import { Button, Drawer, Input, message } from "antd";
 import Confirm from "../Confirm/Confirm";
 import { FaLock } from "react-icons/fa";
@@ -31,6 +32,7 @@ import SongPlayer from "../SongPlayer/SongPlayer";
 import InvitationControlBar from "../InvitationControlBar/InvitationControlBar";
 import CameraView from "../CameraView/CameraView";
 import LiaGuest from "../LiaGuest/LiaGuest";
+import { PhotoWall } from "@/components/PhotoWall/PhotoWall";
 
 type invProps = {
   invitation: NewInvitation | null;
@@ -62,6 +64,7 @@ export default function Invitation({ password, invitationID, ui, invitation, loa
   const galleryRef = useRef<HTMLDivElement>(null);
   const destinationRef = useRef<HTMLDivElement>(null);
   const scrollableContentRef = useRef<HTMLDivElement>(null);
+  const footerRef = useRef<HTMLDivElement>(null);
   const [heightSize, setHeightSize] = useState<number>(0);
   const supabase = createClient();
 
@@ -69,6 +72,9 @@ export default function Invitation({ password, invitationID, ui, invitation, loa
   const [onShowTicket, setOnShowTicket] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
   const [showLia, setShowLia] = useState(false);
+  const [showPhotoWall, setShowPhotoWall] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [footerVisible, setFooterVisible] = useState(false);
   const [scrolledDown, setScrolledDown] = useState(false);
   const lastScrollY = useRef(0);
   const scrollDirection = useRef<'up' | 'down'>('up');
@@ -257,6 +263,8 @@ export default function Invitation({ password, invitationID, ui, invitation, loa
 
 
 
+  useEffect(() => { setMounted(true); }, []);
+
   useEffect(() => {
 
 
@@ -324,6 +332,17 @@ export default function Invitation({ password, invitationID, ui, invitation, loa
     return () => container.removeEventListener('scroll', onScroll);
   }, []);
 
+  useEffect(() => {
+    const el = footerRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setFooterVisible(entry.isIntersecting),
+      { threshold: 0.1 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [validated]);
+
 
 
 
@@ -387,7 +406,9 @@ export default function Invitation({ password, invitationID, ui, invitation, loa
                 />
               </div>
             )}
-            <FooterLand invitation={invitation}></FooterLand>
+            <div ref={footerRef} style={{ width: '100%' }}>
+              <FooterLand invitation={invitation} />
+            </div>
           </>
         )}
 
@@ -470,6 +491,7 @@ export default function Invitation({ password, invitationID, ui, invitation, loa
           accent={accent}
           phone_number={phone_number}
           scrolledDown={scrolledDown}
+          hidden={showLia || footerVisible}
           onOpenConfirm={() => setOpen(true)}
           onShowTicket={() => setOnShowTicket(true)}
           onShowCamera={guestInfo?.state === 'confirmado' ? () => setShowCamera(true) : undefined}
@@ -492,7 +514,19 @@ export default function Invitation({ password, invitationID, ui, invitation, loa
           invitationID={invitationID}
           guestInfo={guestInfo}
           onClose={() => setShowCamera(false)}
+          onOpenPhotoWall={() => { setShowCamera(false); setShowPhotoWall(true); }}
         />
+      )}
+
+      {showPhotoWall && mounted && invitationID && createPortal(
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999, background: '#0a0a0a' }}>
+          <PhotoWall
+            eventId={invitationID}
+            eventTitle={invitation?.cover?.title?.text?.value ?? ""}
+            onClose={() => setShowPhotoWall(false)}
+          />
+        </div>,
+        document.body
       )}
 
       <div style={{ opacity: animation ? 1 : 0 }} className={styles.animation_cont}>

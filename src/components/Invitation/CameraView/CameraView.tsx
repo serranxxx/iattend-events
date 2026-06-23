@@ -3,6 +3,7 @@
 import { NewInvitation } from "@/types/new_invitation";
 import { GuestSubabasePayload } from "@/types/guests";
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { X, Camera, CameraOff, ImagePlus, Images, Check, Trash2, SwitchCamera } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -17,9 +18,10 @@ interface CameraViewProps {
   invitationID: string;
   guestInfo: GuestSubabasePayload;
   onClose: () => void;
+  onOpenPhotoWall?: () => void;
 }
 
-export default function CameraView({ invitation, invitationID, guestInfo, onClose }: CameraViewProps) {
+export default function CameraView({ invitation, invitationID, guestInfo, onClose, onOpenPhotoWall }: CameraViewProps) {
   const router = useRouter();
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -37,6 +39,7 @@ export default function CameraView({ invitation, invitationID, guestInfo, onClos
   const [previewBlob, setPreviewBlob] = useState<Blob | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewTakenAt, setPreviewTakenAt] = useState<Date | null>(null);
+  const [mounted, setMounted] = useState(false);
 
   const eventDate = new Date(invitation.cover.date.value);
   eventDate.setHours(0, 0, 0, 0);
@@ -89,6 +92,8 @@ export default function CameraView({ invitation, invitationID, guestInfo, onClos
     setFacingMode(newMode);
     await startCamera(newMode);
   };
+
+  useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
     if (isAvailable && hasName) {
@@ -208,19 +213,22 @@ export default function CameraView({ invitation, invitationID, guestInfo, onClos
 
   // --- Error screens ---
 
+  if (!mounted) return null;
+
   if (!hasName) {
-    return (
+    return createPortal(
       <div className={styles.fullscreen}>
         <div className={styles.message}>
           <CameraOff size={48} color="#fff" />
           <p>No podemos identificar tu nombre. Contacta al organizador del evento.</p>
         </div>
-      </div>
+      </div>,
+      document.body
     );
   }
 
   if (!isAvailable) {
-    return (
+    return createPortal(
       <div className={styles.fullscreen}>
         <button className={styles.closeBtn} onClick={onClose}>
           <X size={24} />
@@ -233,7 +241,8 @@ export default function CameraView({ invitation, invitationID, guestInfo, onClos
               : "El Photo Wall ya no está disponible"}
           </p>
         </div>
-      </div>
+      </div>,
+      document.body
     );
   }
 
@@ -241,7 +250,7 @@ export default function CameraView({ invitation, invitationID, guestInfo, onClos
   const circumference = 2 * Math.PI * RADIUS;
   const offset = circumference - (remaining / MAX_PHOTOS) * circumference;
 
-  return (
+  return createPortal(
     <div className={styles.fullscreen}>
 
       {/* --- Preview overlay --- */}
@@ -371,12 +380,13 @@ export default function CameraView({ invitation, invitationID, guestInfo, onClos
 
         <button
           className={styles.iconBtn}
-          onClick={() => router.push(`/event/${invitationID}/photowall`)}
+          onClick={() => onOpenPhotoWall ? onOpenPhotoWall() : router.push(`/event/${invitationID}/photowall?title=${encodeURIComponent(invitation.cover?.title?.text?.value ?? '')}`)}
           aria-label="Ver Photo Wall"
         >
           <Images size={28} />
         </button>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

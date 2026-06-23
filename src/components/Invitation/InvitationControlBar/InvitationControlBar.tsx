@@ -1,12 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { QrCode, RefreshCw, Camera, SquarePen, Sparkles } from "lucide-react";
+import { QrCode, Camera, SquarePen, Sparkles } from "lucide-react";
 import { GuestSubabasePayload } from "@/types/guests";
 import { InvitationUIBundle } from "@/types/new_invitation";
 import styles from "./invitation-control-bar.module.css";
-import { MdOutlineCamera } from "react-icons/md";
-import { IoSparkles } from "react-icons/io5";
 
 type InvitationControlBarProps = {
   plan?: string;
@@ -18,6 +16,7 @@ type InvitationControlBarProps = {
   accent: string;
   phone_number?: string | null;
   scrolledDown?: boolean;
+  hidden?: boolean;
   onOpenConfirm: () => void;
   onShowTicket: () => void;
   onShowCamera?: () => void;
@@ -34,11 +33,13 @@ export default function InvitationControlBar({
   actions,
   phone_number,
   scrolledDown = false,
+  hidden = false,
   onOpenConfirm,
   onShowTicket,
   onShowCamera,
   onAskLia,
 }: InvitationControlBarProps) {
+  if (hidden) return null;
   const isConfirmed = guestInfo?.state === 'confirmado' || guestInfo?.state === 'asistente';
   const showPill = isConfirmed && plan === 'pro';
   const showLite = isConfirmed && plan === 'lite';

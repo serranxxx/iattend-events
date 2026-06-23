@@ -24,6 +24,8 @@ interface PhotoLike {
 
 interface PhotoWallProps {
   eventId: string;
+  eventTitle?: string;
+  onClose?: () => void;
 }
 
 const formatTime = (dateStr: string) => {
@@ -35,7 +37,7 @@ const formatTime = (dateStr: string) => {
   });
 };
 
-export function PhotoWall({ eventId }: PhotoWallProps) {
+export function PhotoWall({ eventId, eventTitle, onClose }: PhotoWallProps) {
   const router = useRouter();
   const [photos, setPhotos] = useState<EventPhoto[]>([]);
   const [likesMap, setLikesMap] = useState<Record<string, string[]>>({});
@@ -161,9 +163,10 @@ export function PhotoWall({ eventId }: PhotoWallProps) {
   return (
     <div className={styles.container}>
       <div className={styles.topBar}>
-        <button className={styles.backBtn} onClick={() => router.back()} aria-label="Regresar">
+        <button className={styles.backBtn} onClick={() => onClose ? onClose() : router.back()} aria-label="Regresar">
           <ArrowLeft size={22} />
         </button>
+        {eventTitle && <span className={styles.topBarTitle}>{eventTitle}</span>}
       </div>
 
       {photos.length === 0 ? (
@@ -193,14 +196,23 @@ export function PhotoWall({ eventId }: PhotoWallProps) {
                     <span className={styles.name}>{photo.guest_name}</span>
                     <span className={styles.time}>{formatTime(photo.taken_at ?? photo.uploaded_at)}</span>
                   </div>
-                  <button
-                    className={`${styles.likeBtn} ${liked ? styles.likeBtnActive : ""}`}
-                    onClick={(e) => count > 0 ? openLikersSheet(photo.id, e) : e.stopPropagation()}
-                    aria-label={`${count} likes`}
-                  >
-                    <Heart size={13} fill={liked ? "currentColor" : "none"} />
-                    {count > 0 && <span className={styles.likeCount}>{count}</span>}
-                  </button>
+                  <div className={styles.likeRow}>
+                    <button
+                      className={`${styles.likeBtn} ${liked ? styles.likeBtnActive : ""}`}
+                      onClick={(e) => { e.stopPropagation(); toggleLike(photo.id); }}
+                      aria-label="Like"
+                    >
+                      <Heart size={13} fill={liked ? "currentColor" : "none"} />
+                    </button>
+                    {count > 0 && (
+                      <button
+                        className={styles.likeCount}
+                        onClick={(e) => openLikersSheet(photo.id, e)}
+                      >
+                        {count}
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             );
