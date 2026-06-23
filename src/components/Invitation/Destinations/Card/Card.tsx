@@ -199,7 +199,7 @@ export default function Card({ ui, invitation, invitationID }: CardProps) {
           padding: "24px",
           boxSizing: "border-box",
           perspective: `${PERSPECTIVE}px`,
-          touchAction: expanded ? "none" : "pan-x",
+          touchAction: expanded ? "none" : "pan-x pan-y",
           overflow: expanded ? "visible" : "hidden",
           zIndex: expanded ? 9999 : 99,
         }}
