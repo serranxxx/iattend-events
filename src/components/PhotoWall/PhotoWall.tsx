@@ -6,7 +6,7 @@ import { ArrowLeft, Heart, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import styles from "./photo-wall.module.css";
 
-const API_URL = "http://localhost:4000/api";
+const API_URL = process.env.NEXT_PUBLIC_IATTEND_API_URL;
 
 interface EventPhoto {
   id: string;

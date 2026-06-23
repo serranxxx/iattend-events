@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { X, Sparkles } from "lucide-react";
 import styles from "./lia-guest.module.css";
 
-const API_URL = "http://localhost:4000/api";
+const API_URL = process.env.NEXT_PUBLIC_IATTEND_API_URL;
 
 const PROMPTS = [
   "¿A qué hora y dónde empieza la ceremonia?",

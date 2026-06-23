@@ -8,7 +8,7 @@ import { X, Camera, CameraOff, ImagePlus, Images, Check, Trash2, SwitchCamera } 
 import { createClient } from "@/lib/supabase/client";
 import styles from "./camera-view.module.css";
 
-const API_URL = "http://localhost:4000/api";
+const API_URL = process.env.NEXT_PUBLIC_IATTEND_API_URL;
 const MAX_PHOTOS = 10;
 const RADIUS = 20;
 
