@@ -1,0 +1,110 @@
+.player {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.42);
+  backdrop-filter: blur(28px) saturate(200%);
+  border-radius: 99px;
+  padding-top: 6px;
+  padding-bottom: 6px;
+  padding-left: 6px;
+  padding-right: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  max-width: 300px;
+  overflow: hidden;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.14),
+    0 2px 8px rgba(0, 0, 0, 0.08),
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.65),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.15);
+  transition:
+    max-width    0.4s cubic-bezier(0.32, 0.72, 0, 1),
+    padding-right 0.4s ease,
+    gap          0.4s ease;
+}
+
+.playerCollapsed {
+  max-width: 42px;
+  padding-right: 6px;
+  gap: 0;
+}
+
+/* ── Disc ── */
+.disc {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  cursor: pointer;
+  animation: spinDisc 6s linear infinite;
+  animation-play-state: paused;
+}
+
+.discSpinning {
+  animation-play-state: running;
+}
+
+@keyframes spinDisc {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* ── Info ── */
+.info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  font-family: Poppins, sans-serif;
+  min-width: 0;
+  max-width: 200px;
+  overflow: hidden;
+  transition: max-width 0.35s ease, opacity 0.2s ease;
+}
+
+.infoHidden {
+  max-width: 0;
+  opacity: 0;
+}
+
+.title {
+  font-size: 12px;
+  line-height: 1;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.artist {
+  font-size: 10px;
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0.5;
+}
+
+/* ── Toggle button ── */
+.toggleBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  max-width: 18px;
+  overflow: hidden;
+  transition: max-width 0.35s ease, opacity 0.2s ease;
+}
+
+.toggleBtnHidden {
+  max-width: 0;
+  opacity: 0;
+}

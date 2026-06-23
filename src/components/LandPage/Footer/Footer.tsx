@@ -1,84 +1,85 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 import styles from "./footer.module.css";
-import { Button } from "antd";
-import { FaBars, FaHeadset, FaInstagram, FaRegEnvelope, FaRegPaperPlane, FaWhatsapp } from "react-icons/fa";
-import { Generals, NewInvitation } from "@/types/new_invitation";
-import { darker, lighter } from "@/helpers/functions";
+import { FaInstagram } from "react-icons/fa";
+import { Clock } from "lucide-react";
 import Link from "next/link";
-
-
+import { NewInvitation } from "@/types/new_invitation";
+import { darker } from "@/helpers/functions";
 
 type Props = {
   invitation?: NewInvitation;
-  color?: string;
-}
+};
 
-export const FooterLand = ({ invitation, color }: Props) => {
+export const FooterLand = ({ invitation }: Props) => {
+  const primary  = invitation?.generals.colors.primary  ?? "#0c171b";
+  const accent   = invitation?.generals.colors.accent   ?? "#EEE9DE";
+  const actions  = invitation?.generals.colors.actions  ?? "#AAC186";
 
+  const darkPrimary = darker(primary, 0.98) ?? "#071013";
 
-  const secondary = color ? color : (invitation?.generals.colors.secondary ?? "#CFBEE6")
+  const bg = `repeating-linear-gradient(
+    90deg,
+    ${primary} 0px,
+    ${primary} 20px,
+    ${darkPrimary} 20px,
+    ${darkPrimary} 50px
+  )`;
+
   return (
-    <div className={styles.main_cont} style={{
-      background: (color || invitation )? `linear-gradient(to top, ${darker(secondary, 0.5)} 0%, ${darker(secondary,1)} 100%)` : 'linear-gradient(to bottom, #CFBEE680 0%, #CFBEE6 100%)',
-    }}>
-      <div className={styles.footer_cont}>
-        <div className={styles.footer_main_col}>
-          <Link href="www.iattend.mx/about">
-            <div className={styles.footer_row}>
-              <img className={styles.footer_logo} src="/assets/images/blanco.png" alt="" />
-              <div className={styles.footer_col}>
-                <span style={{ fontWeight: "500", fontSize: "18px", textTransform: "uppercase" }}>Guest management</span>
-                <span style={{ fontWeight: "200", fontSize: "14px" }}>Plan with ease</span>
-              </div>
-            </div>
-          </Link>
+    <div className={styles.main_cont} style={{ background: bg, borderTopColor: `${primary}` , marginBottom:'82px'}}>
 
-          <div className={styles.links_col}>
-            <a href="https://wa.me/6145338500" rel="noreferrer" target="_blank" className={styles.footer_link}>
-              <FaHeadset /> Ayuda
-            </a>
-            <a href="https://wa.me/6145338500" rel="noreferrer" target="_blank" className={styles.footer_link}>
-              <FaWhatsapp /> Contacto
-            </a>
-            <a href="https://www.instagram.com/iattend.mx" rel="noreferrer" target="_blank" className={styles.footer_link}>
-              <FaInstagram />
-              @iattend.mx
-            </a>
-            <a href="mailto:contacto.iattend@gmail.com" rel="noreferrer" target="_blank" className={styles.footer_link}>
-              <FaRegEnvelope /> Mail
-            </a>
-            <a href="/about/legal" className={styles.footer_link}>
-              <FaRegPaperPlane /> Legal
-            </a>
-          </div>
-        </div>
+      <div className={styles.cta_section}>
+        <p className={styles.created_with} style={{ color: accent }}>
+          Esta invitación fue creada con
+        </p>
+        <div className={styles.logo} style={{ backgroundColor: accent }} />
 
-        <div className={styles.links}>
-          <div className={styles.link_cont}>
-            <span style={{ fontWeight: 900, marginBottom: '8px' }}><b>Servicios</b></span>
-            <a href="/about/invitacion-digital">Invitación Paperless</a>
-            <a href="/about/guest-management">Gestión de invitados</a>
-            <a href="/about/mapa-de-mesas">Organización por mesas</a>
-            <a href="/about/pases-digitales">Pases digitales</a>
-            <a href="/about/privacidad">Eventos privados</a>
-            <a href="/about/envios-whatsapp">Envíos automáticos</a>
-          </div>
+        <h2 className={styles.cta_heading} style={{ color: accent }}>
+          ¿Tú también estás organizando algo?
+        </h2>
 
-          <div className={styles.link_cont}>
-            <span style={{ fontWeight: 900, marginBottom: '8px' }}><b>Extras</b></span>
-            <a href="/about/cliente-ideal">I attend para ti</a>
-            <a href="/about/como-funciona">Cómo usar I attend</a>
-            <a href="/about/opiniones">Reviews</a>
-            <a href="/about/faqs">FAQs</a>
-          </div>
-        </div>
+        <Link
+          style={{ marginTop: '12px', background: accent, color: primary,  }}
+          href="https://iattend.mx"
+          className={styles.cta_button}
+        >
+          Crea la tuya →
+        </Link>
 
-
-
+        <span className={styles.cta_subtext} style={{ color: accent }}>
+          <Clock size={14} />
+          Lista en minutos · sin tarjeta para empezar
+        </span>
       </div>
-    </div>
 
+      <div className={styles.bottom_bar} style={{ borderTopColor: `${accent}20`, color: accent }}>
+        <a
+          href="https://www.instagram.com/iattend.mx"
+          target="_blank"
+          rel="noreferrer"
+          className={styles.bottom_link}
+          style={{ color: accent }}
+        >
+          <FaInstagram size={14} /> @iattend.mx
+        </a>
+        <span className={styles.dot} style={{ color: accent }}>·</span>
+        <a
+          href="https://wa.me/6145338500"
+          target="_blank"
+          rel="noreferrer"
+          className={styles.bottom_link}
+          style={{ color: accent }}
+        >
+          Contacto
+        </a>
+        <span className={styles.dot} style={{ color: accent }}>·</span>
+        <Link href="/about/legal" className={styles.bottom_link} style={{ color: accent }}>
+          Legal
+        </Link>
+      </div>
+
+    </div>
   );
 };

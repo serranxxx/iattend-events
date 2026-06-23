@@ -2,7 +2,7 @@
 
 import { Button } from "antd";
 import Link from "next/link";
-import { QrCode, RefreshCw } from "lucide-react";
+import { QrCode, RefreshCw, Camera } from "lucide-react";
 import { GuestSubabasePayload } from "@/types/guests";
 import { InvitationUIBundle } from "@/types/new_invitation";
 import styles from "./invitation-actions.module.css";
@@ -17,6 +17,7 @@ type InvitationActionsProps = {
   phone_number?: string | null;
   onOpenConfirm: () => void;
   onShowTicket: () => void;
+  onShowCamera?: () => void;
 };
 
 export default function InvitationActions({
@@ -29,6 +30,7 @@ export default function InvitationActions({
   phone_number,
   onOpenConfirm,
   onShowTicket,
+  onShowCamera,
 }: InvitationActionsProps) {
   const isConfirmed = guestInfo?.state === 'confirmado' || guestInfo?.state === 'asistente';
   const messagePaperless = encodeURIComponent("¡Hola! Confirmo mi asistencia.");
@@ -82,6 +84,25 @@ export default function InvitationActions({
             }}
           >
             {ui.confirm.digital_pass}
+          </Button>
+        )}
+
+        {isConfirmed && onShowCamera && (
+          <Button
+            icon={<Camera size={18} />}
+            onClick={onShowCamera}
+            style={{
+              letterSpacing: '2px',
+              fontSize: '16px',
+              height: '44px',
+              minWidth: '44px',
+              backgroundColor: `${actions}99`,
+              backdropFilter: 'blur(10px)',
+              color: primary,
+              boxShadow: '0 0 8px 0 rgba(0, 0, 0, 0.25)',
+            }}
+          >
+            Photo Wall
           </Button>
         )}
       </div>

@@ -115,8 +115,8 @@ export interface CoverSection {
     type: number | null; // define enum si tienes catálogo
   };
   image: {
-    prod: string | null;
-    dev: string | null;
+    prod: string | string[] | null;
+    dev: string | string[] | null;
     background: boolean | null;
     blur: boolean | null;
     position: { x: number; y: number };
