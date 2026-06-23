@@ -40,6 +40,10 @@ export const Cover = forwardRef<HTMLDivElement, CoverProps>(function Cover(
   const [activeIndex, setActiveIndex] = useState(0);
 
   useEffect(() => {
+    if (activeIndex >= mediaItems.length) setActiveIndex(0);
+  }, [mediaItems.length, activeIndex]);
+
+  useEffect(() => {
     if (!isCarousel) return;
     const id = setInterval(
       () => setActiveIndex((i) => (i + 1) % mediaItems.length),

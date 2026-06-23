@@ -31,12 +31,14 @@ export const FooterLand = ({ invitation }: Props) => {
     <div className={styles.main_cont} style={{ background: bg, borderTopColor: `${primary}` , marginBottom:'82px'}}>
 
       <div className={styles.cta_section}>
-        <p className={styles.created_with} style={{ color: accent }}>
+        {/* <p className={styles.created_with} style={{ color: accent }}>
           Esta invitación fue creada con
-        </p>
-        <div className={styles.logo} style={{ backgroundColor: accent }} />
+        </p> */}
+        <a href="https://iattend.mx" target="_blank" rel="noreferrer">
+          <div className={styles.logo} style={{ backgroundColor: accent }} />
+        </a>
 
-        <h2 className={styles.cta_heading} style={{ color: accent }}>
+        {/* <h2 className={styles.cta_heading} style={{ color: accent }}>
           ¿Tú también estás organizando algo?
         </h2>
 
@@ -46,12 +48,12 @@ export const FooterLand = ({ invitation }: Props) => {
           className={styles.cta_button}
         >
           Crea la tuya →
-        </Link>
+        </Link> */}
 
-        <span className={styles.cta_subtext} style={{ color: accent }}>
+        {/* <span className={styles.cta_subtext} style={{ color: accent }}>
           <Clock size={14} />
           Lista en minutos · sin tarjeta para empezar
-        </span>
+        </span> */}
       </div>
 
       <div className={styles.bottom_bar} style={{ borderTopColor: `${accent}20`, color: accent }}>

@@ -15,7 +15,8 @@
     align-items: center;
     justify-content: center;
     text-align: center;
-    padding: 56px 24px 48px;
+    padding-top: 12px;
+    /* padding: 56px 24px 48px; */
     width: 100%;
     max-width: 520px;
 }
