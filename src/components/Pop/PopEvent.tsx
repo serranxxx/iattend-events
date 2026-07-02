@@ -67,7 +67,7 @@ export default function PopEvents({ info, preview, password }: invProps) {
   const [event, setEvent] = useState<QuickEventGuest>({ id: null, quick_event_id: null, quick_event_user_id: "", password: "", state: "", last_action: "", anonymous: false });
   // const [ setGuestInfo] = useState<QuickEventGuest | null>(null);
   const [openModal, setOpenModal] = useState(false);
-  const [ setAnonymous] = useState(false);
+  const [, setAnonymous] = useState(false);
   const [participants, setParticipants] = useState<ParticipansType[] | null>(null);
 
   const onValidateUser = async (code: string) => {
