@@ -8,7 +8,6 @@ import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
 import "dayjs/locale/es";
 import { message } from "antd";
-import { FooterLand } from "../LandPage/Footer/Footer";
 import { createClient } from "@/lib/supabase/client";
 import { ParticipansType, QuickEventGuest, QuickEventUser } from "@/types/guests";
 import { darker, generateSimpleId } from "@/helpers/functions";
@@ -66,9 +65,9 @@ export default function PopEvents({ info, preview, password }: invProps) {
   const [validated, setValidated] = useState<boolean>(false);
   const [user, setUser] = useState<QuickEventUser>({ name: "", phone_number: "", type: null, profile: 0, emoji: "A", id: null });
   const [event, setEvent] = useState<QuickEventGuest>({ id: null, quick_event_id: null, quick_event_user_id: "", password: "", state: "", last_action: "", anonymous: false });
-  const [guestInfo, setGuestInfo] = useState<QuickEventGuest | null>(null);
+  // const [ setGuestInfo] = useState<QuickEventGuest | null>(null);
   const [openModal, setOpenModal] = useState(false);
-  const [anonymous, setAnonymous] = useState(false);
+  const [ setAnonymous] = useState(false);
   const [participants, setParticipants] = useState<ParticipansType[] | null>(null);
 
   const onValidateUser = async (code: string) => {
@@ -86,7 +85,7 @@ export default function PopEvents({ info, preview, password }: invProps) {
         return;
       }
       setValidated(true);
-      setGuestInfo(data);
+      // setGuestInfo(data);
     } catch { }
   };
 
@@ -130,6 +129,7 @@ export default function PopEvents({ info, preview, password }: invProps) {
       else setUser(user);
 
     } catch (err) {
+      if (err)
       messageApi.error("Error inesperado al agregar invitado");
     }
   };

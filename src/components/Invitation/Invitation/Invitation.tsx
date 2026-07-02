@@ -23,8 +23,6 @@ import { FaLock } from "react-icons/fa";
 import { GuestSubabasePayload } from "@/types/guests";
 import { useScreenWidth } from "@/hooks/useScreenWidth";
 import { createClient } from "@/lib/supabase/client";
-import { PiTicketDuotone } from "react-icons/pi";
-import { FaArrowsRotate } from "react-icons/fa6";
 import AnimatedPath from "@/components/Motion/AnimatedPath";
 import { FooterLand } from "@/components/LandPage/Footer/Footer";
 import { Ticket } from "../Ticket/Ticket";
@@ -52,7 +50,7 @@ type invProps = {
 
 
 
-export default function Invitation({ password, invitationID, ui, invitation, loader, type, mongoID, dev, height, plan, phone_number }: invProps) {
+export default function Invitation({ password, invitationID, ui, invitation, loader, type, mongoID, dev, plan, phone_number }: invProps) {
   const coverRef = useRef<HTMLDivElement>(null);
   const greetingRef = useRef<HTMLDivElement>(null);
   const peopleRef = useRef<HTMLDivElement>(null);
@@ -92,7 +90,7 @@ export default function Invitation({ password, invitationID, ui, invitation, loa
   const accent = invitation?.generals?.colors.accent ?? "#FFFFFF";
   const actions = invitation?.generals?.colors.actions ?? "#FFFFFF";
   const font = invitation?.generals.fonts.body?.typeFace ?? "Poppins";
-  const coverSong = (invitation?.cover as any)?.song as { id: string; name: string; artist: string; albumArt?: string } | null | undefined;
+  const coverSong = (invitation?.cover as unknown as Record<string, unknown>)?.song as { id: string; name: string; artist: string; albumArt?: string } | null | undefined;
 
   const width = useScreenWidth();
   const isLargeScreen = width >= 768;
@@ -170,7 +168,7 @@ export default function Invitation({ password, invitationID, ui, invitation, loa
         if (isErr) {
           console.log(isErr, 'not found')
         }
-        setCompanions(companions?.filter(c => c.state === 'confirmado') ?? [])
+        setCompanions(companions?.filter(c => c.state === 'confirmado' || c.state === 'asistente') ?? [])
       }
 
       // messageApi.success(`Bienvenido ${data.name}`);
@@ -179,7 +177,7 @@ export default function Invitation({ password, invitationID, ui, invitation, loa
       if (data?.name) localStorage.setItem(`guest_${invitationID}`, data.name);
 
     } catch (error) {
-
+      console.log(error)
     }
   };
 
@@ -213,7 +211,7 @@ export default function Invitation({ password, invitationID, ui, invitation, loa
           console.log(isErr, 'not found')
         }
 
-        setCompanions(companions?.filter(c => c.state === 'confirmado') ?? [])
+        setCompanions(companions?.filter(c => c.state === 'confirmado' || c.state === 'asistente') ?? [])
       }
 
 
@@ -250,7 +248,7 @@ export default function Invitation({ password, invitationID, ui, invitation, loa
           console.log(isErr, 'not found')
         }
 
-        setCompanions(companions?.filter(c => c.state === 'confirmado') ?? [])
+        setCompanions(companions?.filter(c => c.state === 'confirmado' || c.state === 'asistente') ?? [])
       }
 
       setGuestInfo(data)
@@ -494,7 +492,7 @@ export default function Invitation({ password, invitationID, ui, invitation, loa
           hidden={showLia || footerVisible}
           onOpenConfirm={() => setOpen(true)}
           onShowTicket={() => setOnShowTicket(true)}
-          onShowCamera={guestInfo?.state === 'confirmado' ? () => setShowCamera(true) : undefined}
+          onShowCamera={(guestInfo?.state === 'confirmado' || guestInfo?.state === 'asistente') ? () => setShowCamera(true) : undefined}
           onAskLia={() => setShowLia(true)}
         />
       )}

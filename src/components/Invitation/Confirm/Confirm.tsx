@@ -5,9 +5,9 @@ import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
 import { useCallback, useEffect, useState } from "react";
 import { Button, Input, message } from "antd";
-import { FaMinus, FaRegCalendarCheck } from "react-icons/fa";
+import {  FaRegCalendarCheck } from "react-icons/fa";
 import { FaRegCalendarXmark } from "react-icons/fa6";
-import { InvitationType, InvitationUIBundle, NewInvitation } from "@/types/new_invitation";
+import { InvitationUIBundle, NewInvitation } from "@/types/new_invitation";
 import { GuestSubabasePayload } from "@/types/guests";
 import styles from "./confirm.module.css";
 import { IoClose } from "react-icons/io5";
@@ -36,7 +36,7 @@ export default function Confirm({ invitationID, ui, invitation, guestInfo, refre
   const primary = generals?.colors.primary ?? "#FFFFFF";
   const secondary = generals?.colors.secondary ?? "#FFFFFF";
   const accent = generals?.colors.accent ?? "#FFFFFF";
-  const actions = generals?.colors.actions ?? "#FFFFFF";
+  // const actions = generals?.colors.actions ?? "#FFFFFF";
 
   const supabase = createClient();
   const [mainGuest, setMainGuest] = useState<GuestSubabasePayload | null>(null);
@@ -67,7 +67,7 @@ export default function Confirm({ invitationID, ui, invitation, guestInfo, refre
     const allUpdates = [mainGuestUpdate, ...companionsUpdate];
 
     // 4. Guardar en Supabase
-    const { data, error } = await supabase.from("guests").upsert(allUpdates, { onConflict: "id" });
+    const {  error } = await supabase.from("guests").upsert(allUpdates, { onConflict: "id" });
 
     if (error) {
       console.error("❌ Error al actualizar:", error);
@@ -79,23 +79,23 @@ export default function Confirm({ invitationID, ui, invitation, guestInfo, refre
     refreshGuest();
   };
 
-  const getTitle = (title: unknown): string => {
-    // si ya es string
-    if (typeof title === "string") return title;
-    // si es objeto con .text o .value (ajústalo a tu modelo)
-    if (title && typeof title === "object") {
-      // @ts-expect-error acceder flexible
-      return title.text ?? title.value ?? "Mi evento";
-    }
-    return "Mi evento";
-  };
+  // const getTitle = (title: unknown): string => {
+  //   // si ya es string
+  //   if (typeof title === "string") return title;
+  //   // si es objeto con .text o .value (ajústalo a tu modelo)
+  //   if (title && typeof title === "object") {
+  //     // @ts-expect-error acceder flexible
+  //     return title.text ?? title.value ?? "Mi evento";
+  //   }
+  //   return "Mi evento";
+  // };
 
   const toYYYYMMDD = (dateLike: unknown): string => {
     let raw: string | undefined;
 
     if (typeof dateLike === "string") raw = dateLike;
     else if (dateLike && typeof dateLike === "object") {
-      raw = (dateLike as any).value;
+      raw = (dateLike as Record<string, unknown>).value as string | undefined;
     }
 
     if (!raw) return "";
@@ -119,7 +119,7 @@ export default function Confirm({ invitationID, ui, invitation, guestInfo, refre
 
       // console.log('companions: ', data)
       setCompanions(data);
-    } catch (error) {}
+    } catch (error) {console.log(error)}
   };
 
   const createNewCompanion = (invitationID: string): GuestSubabasePayload => ({
@@ -169,7 +169,11 @@ export default function Confirm({ invitationID, ui, invitation, guestInfo, refre
         getCompanions();
       }
       setOpenInvitation(false);
-      setLocalStatus(guestInfo.state === "creado" ? "esperando" : guestInfo.state);
+      setLocalStatus(
+        guestInfo.state === "creado" ? "esperando"
+        : guestInfo.state === "asistente" ? "confirmado"
+        : guestInfo.state
+      );
     } else {
       if (invitationID) {
         const newguest: GuestSubabasePayload = {
@@ -258,7 +262,7 @@ export default function Confirm({ invitationID, ui, invitation, guestInfo, refre
     const allUpdates = [mainGuestUpdate, ...companionsUpdate];
 
     // 4. Guardar en Supabase
-    const { data, error } = await supabase.from("guests").upsert(allUpdates, { onConflict: "id" });
+    const {  error } = await supabase.from("guests").upsert(allUpdates, { onConflict: "id" });
 
     if (error) {
       console.error("❌ Error al actualizar:", error);
@@ -338,7 +342,7 @@ export default function Confirm({ invitationID, ui, invitation, guestInfo, refre
     }));
 
     // 5. Insertar companions válidos
-    const { data: companionsInserted, error: companionsError } = await supabase.from("guests").insert(formattedCompanions).select();
+    const { error: companionsError } = await supabase.from("guests").insert(formattedCompanions).select();
 
     if (companionsError) {
       console.error("❌ Error insertando companions:", companionsError);
