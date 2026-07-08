@@ -54,7 +54,14 @@ export const DressCode = forwardRef<HTMLDivElement, DresscodeProps>(function Gre
   };
 
 
-  return content.active && generals ? (
+  const hasContent = Boolean(content?.title?.trim())
+    || Boolean(content?.description?.trim())
+    || Boolean(content?.colors?.length)
+    || (content?.images_active && Boolean(images_src?.length))
+    || (content?.links_active && Boolean(content?.links?.length));
+  const hasSeparator = Boolean(content?.dynamic_separator?.active);
+
+  return content.active && generals && (hasContent || hasSeparator) ? (
     <>
       <div ref={ref} className="main_container"
         style={{
@@ -62,9 +69,11 @@ export const DressCode = forwardRef<HTMLDivElement, DresscodeProps>(function Gre
           backgroundColor: content?.dynamic_background?.active ? secondary : "transparent",
           borderRadius: content?.dynamic_background?.border_radius,
           width: content?.dynamic_background?.active ? `${content.dynamic_background.width}%` : '100%',
-          boxShadow: content?.dynamic_background?.active ? content?.dynamic_background?.shadow ? '0px 0px 12px rgba(0,0,0,0.4)' : '0px 0px 0px rgba(0,0,0,0)' : '0px 0px 0px rgba(0,0,0,0)'
+          boxShadow: content?.dynamic_background?.active ? content?.dynamic_background?.shadow ? '0px 0px 12px rgba(0,0,0,0.4)' : '0px 0px 0px rgba(0,0,0,0)' : '0px 0px 0px rgba(0,0,0,0)',
+          padding: hasContent ? undefined : 0,
         }}>
 
+        {hasContent && (
         <div className="g_module_info_container">
           <FadeLeft>
             <span
@@ -156,7 +165,8 @@ export const DressCode = forwardRef<HTMLDivElement, DresscodeProps>(function Gre
             </div>
           )}
         </div>
-        {content?.dynamic_separator?.active && (
+        )}
+        {hasSeparator && (
           content?.dynamic_separator?.type === 'single' ?
             <Separador inverted={content.inverted} generals={generals} value={content?.dynamic_separator.single.value ?? 1} />
             :

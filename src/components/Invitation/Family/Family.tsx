@@ -36,9 +36,12 @@ export const People = forwardRef<HTMLDivElement, peopleProps>(function Greeting(
   }
 
 
+  const hasContent = Boolean(content?.title?.trim()) || Boolean(content?.personas?.length);
+  const hasSeparator = Boolean(content?.dynamic_separator?.active);
+
   return (
     <>
-      {content?.active && generals?.colors ? (
+      {content?.active && generals?.colors && (hasContent || hasSeparator) ? (
         <div ref={ref} className="main_container"
           style={{
             position: "relative",
@@ -46,9 +49,11 @@ export const People = forwardRef<HTMLDivElement, peopleProps>(function Greeting(
             borderRadius: content?.dynamic_background?.border_radius,
             width: content?.dynamic_background?.active ? `${content?.dynamic_background?.width}%` : '100%',
             boxShadow: content?.dynamic_background?.active ? content?.dynamic_background?.shadow ? '0px 0px 12px rgba(0,0,0,0.4)' : '0px 0px 0px rgba(0,0,0,0)' : '0px 0px 0px rgba(0,0,0,0)',
+            padding: hasContent ? undefined : 0,
             // gap:'44px'
           }}>
 
+          {hasContent && (
           <div className="g_module_info_container">
             <span
               // data-aos={!dev && generals.texture == null ? "fade-right" : undefined}
@@ -111,7 +116,8 @@ export const People = forwardRef<HTMLDivElement, peopleProps>(function Greeting(
               ))
               : null}
           </div>
-          {content?.dynamic_separator?.active && (
+          )}
+          {hasSeparator && (
             content?.dynamic_separator?.type === 'single' ?
               <Separador inverted={content.inverted} generals={generals} value={content?.dynamic_separator.single.value ?? 1} />
               :

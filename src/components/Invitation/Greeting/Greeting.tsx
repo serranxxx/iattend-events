@@ -46,58 +46,63 @@ export const Greeting = forwardRef<HTMLDivElement, GreetingProps>(function Greet
     });
   };
 
+  const hasContent = Boolean(content?.title?.trim()) || Boolean(content?.description?.trim());
+  const hasSeparator = Boolean(content?.dynamic_separator?.active);
 
   return (
     <>
-      {content?.active && generals?.colors ? (
+      {content?.active && generals?.colors && (hasContent || hasSeparator) ? (
         <div ref={ref} className="main_container"
           style={{
             position: "relative",
             backgroundColor: content?.dynamic_background?.active ? secondary : "transparent",
             borderRadius: content?.dynamic_background?.border_radius,
             width: content?.dynamic_background?.active ? `${content?.dynamic_background?.width}%` : '100%',
-            boxShadow: content?.dynamic_background?.active ? content?.dynamic_background?.shadow ? '0px 0px 12px rgba(0,0,0,0.4)' : '0px 0px 0px rgba(0,0,0,0)' : '0px 0px 0px rgba(0,0,0,0)'
+            boxShadow: content?.dynamic_background?.active ? content?.dynamic_background?.shadow ? '0px 0px 12px rgba(0,0,0,0.4)' : '0px 0px 0px rgba(0,0,0,0)' : '0px 0px 0px rgba(0,0,0,0)',
+            padding: hasContent ? undefined : 0,
           }}>
 
-          <div
-            className="g_module_info_container"
-            style={{
-              width: "100%",
-              height: "100%",
-              boxSizing: "border-box",
-            }}
-          >
-            <FadeLeft>
-              <span
-                className="g_module_title"
-                style={{
-                  display: "inline-block", whiteSpace: "pre-line",
-                  color: content?.inverted ? primary : title?.color,
-                  fontFamily: title?.font ?? "Poppins",
-                  fontSize: title?.size, fontWeight: title?.weight, opacity: title?.opacity
-                }}
-              >
-                {renderTextWithStrong(content.title ?? "")}
-              </span>
-            </FadeLeft>
+          {hasContent && (
+            <div
+              className="g_module_info_container"
+              style={{
+                width: "100%",
+                height: "100%",
+                boxSizing: "border-box",
+              }}
+            >
+              <FadeLeft>
+                <span
+                  className="g_module_title"
+                  style={{
+                    display: "inline-block", whiteSpace: "pre-line",
+                    color: content?.inverted ? primary : title?.color,
+                    fontFamily: title?.font ?? "Poppins",
+                    fontSize: title?.size, fontWeight: title?.weight, opacity: title?.opacity
+                  }}
+                >
+                  {renderTextWithStrong(content.title ?? "")}
+                </span>
+              </FadeLeft>
 
-            <FadeLeft>
-              <span
-                className="g_module_regular_text"
-                style={{
-                  display: "inline-block", whiteSpace: "pre-line",
-                  color: content?.inverted ? primary : accent,
-                  fontFamily: body.font ?? "Poppins",
-                  fontWeight: body.weight, opacity: body.opacity
-                }}
-              >
-                {renderTextWithStrong(content.description ?? "")}
-              </span>
-            </FadeLeft>
+              <FadeLeft>
+                <span
+                  className="g_module_regular_text"
+                  style={{
+                    display: "inline-block", whiteSpace: "pre-line",
+                    color: content?.inverted ? primary : accent,
+                    fontFamily: body.font ?? "Poppins",
+                    fontWeight: body.weight, opacity: body.opacity
+                  }}
+                >
+                  {renderTextWithStrong(content.description ?? "")}
+                </span>
+              </FadeLeft>
 
-          </div>
+            </div>
+          )}
 
-          {content?.dynamic_separator?.active && (
+          {hasSeparator && (
             content?.dynamic_separator?.type === 'single' ?
               <Separador inverted={content.inverted} generals={generals} value={content?.dynamic_separator.single.value ?? 1} />
               :

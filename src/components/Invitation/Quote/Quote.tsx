@@ -20,6 +20,9 @@ export const Quote = forwardRef<HTMLDivElement, quoteProps>(function Greeting({ 
   const secondary = generals?.colors.secondary ?? "#FFFFFF";
   const accent = generals?.colors.accent ?? "#FFFFFF";
 
+  const hasQuoteContent = content.image.active || Boolean(content.text.font.value?.trim());
+  const hasSeparator = Boolean(content?.dynamic_separator?.active);
+
   const renderTextWithStrong = (text: string) => {
     const parts = text.split(/(\*[^*]+\*)/g);
 
@@ -34,7 +37,7 @@ export const Quote = forwardRef<HTMLDivElement, quoteProps>(function Greeting({ 
 
   return (
     <>
-      {content.active ? (
+      {content.active && (hasQuoteContent || hasSeparator) ? (
         <div ref={ref} className="main_container"
           style={{
             position: "relative",
@@ -42,11 +45,11 @@ export const Quote = forwardRef<HTMLDivElement, quoteProps>(function Greeting({ 
             borderRadius: content?.dynamic_background?.border_radius,
             width: content?.dynamic_background?.active ? `${content.dynamic_background.width}%` : '100%',
             boxShadow: content?.dynamic_background?.active ? content.dynamic_background.shadow ? '0px 0px 12px rgba(0,0,0,0.4)' : '0px 0px 0px rgba(0,0,0,0)' : '0px 0px 0px rgba(0,0,0,0)',
-            padding: content?.image?.active ? 0 : '24px',
-           
+            padding: hasQuoteContent ? (content?.image?.active ? 0 : '24px') : 0,
+
           }}>
 
-          {content.image.active ? (
+          {hasQuoteContent && (content.image.active ? (
             <FadeIn>
               <div className="background_image_quote_container" style={{
                 borderRadius: content?.dynamic_background?.border_radius,
@@ -121,9 +124,9 @@ export const Quote = forwardRef<HTMLDivElement, quoteProps>(function Greeting({ 
             >
               {renderTextWithStrong(content.text.font.value ?? "")}
             </span>
-          )}
+          ))}
 
-          {content?.dynamic_separator?.active && (
+          {hasSeparator && (
             content?.dynamic_separator?.type === 'single' ?
               <Separador inverted={content.inverted} generals={generals} value={content?.dynamic_separator.single.value ?? 1} />
               :
