@@ -28,7 +28,7 @@ export function Cover({ titleCfg, eventInfo, event, onConfirmClick }: CoverProps
   const { address } = eventInfo;
   return (
     <>
-      <span style={{
+      <span translate="no" className="notranslate" style={{
         fontFamily: titleCfg.family,
         fontWeight: titleCfg.weight,
         fontSize: `${titleCfg.size}px`,

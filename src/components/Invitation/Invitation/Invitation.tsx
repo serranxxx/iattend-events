@@ -541,7 +541,7 @@ export default function Invitation({ password, invitationID, ui, invitation, loa
         className={styles.welcome_label}
       >
         <span style={{ marginRight: '8px' }}>{ui.confirm.hello}</span>
-        <b style={{ color: '#FFF', textAlign: 'left' }}>{guestInfo?.name}</b>
+        <b translate="no" className="notranslate" style={{ color: '#FFF', textAlign: 'left' }}>{guestInfo?.name}</b>
       </div>
       {onShowTicket && (
         <div onClick={() => setOnShowTicket(false)} className={styles.ticket_bg} />

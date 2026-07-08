@@ -151,6 +151,8 @@ export const Cover = forwardRef<HTMLDivElement, CoverProps>(function Cover(
             }}
           >
             <span
+              translate="no"
+              className="notranslate"
               style={{
                 color: cover?.title.text.color ?? lighter(generals?.colors.accent ?? "#000000", 0.6) ?? "#FFFFFF",
                 width: "100%",
