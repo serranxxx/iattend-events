@@ -73,7 +73,7 @@ export interface ItineraryItem {
   time: string | null;
   subtext: string | null;
   // active: boolean;
-  icon: number | null;
+  icon: number | string | null; // number = catálogo de iconos, string = ruta de imagen (/assets/itinerary/*)
   id: number | null;
   address?: Address;
   moments?: MomentItem[];

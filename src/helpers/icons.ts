@@ -91,3 +91,7 @@ export const iconsItinerary = [
 export type ItineraryIconId = typeof iconsItinerary[number]["index"];
 export const getItineraryIcon = (id: ItineraryIconId): IconType | undefined =>
   iconsItinerary.find(x => x.index === id)?.value;
+
+// Un icono guardado puede ser el índice de un icono del catálogo o la ruta de una imagen subida (/assets/itinerary/*)
+export const isImageIcon = (icon: number | string | null | undefined): icon is string =>
+  typeof icon === "string";

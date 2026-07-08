@@ -31,16 +31,6 @@ export const Itinerary = forwardRef<HTMLDivElement, quoteProps>(function Greetin
     color: invitation?.generals.fonts.titles?.color === '#000000' ? accent : (invitation?.generals.fonts.titles?.color ?? accent)
   }
 
-  const body = {
-    font: invitation?.generals.fonts.body?.typeFace,
-    weight: invitation?.generals.fonts.body?.weight ?? 500,
-    size: invitation?.generals.fonts.body?.size ?? 16,
-    opacity: invitation?.generals.fonts.body?.opacity ?? 1,
-    color: invitation?.generals.fonts.body?.color ?? accent
-  }
-
-
-
   // useEffect(() => {
   //   AOS.init({
   //     duration: 900,       // duración de las animaciones (en ms)

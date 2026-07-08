@@ -1,17 +1,13 @@
-import React, { useEffect, useState } from "react";
-import { Button, Col, Drawer } from "antd";
+import React, { useState } from "react";
+import { Button, Drawer } from "antd";
+import Image from "next/image";
 import { LuBadgeHelp } from "react-icons/lu";
-import { FaArrowDown, FaArrowRight } from "react-icons/fa";
 import { InvitationUIBundle, ItineraryItem, NewInvitation } from "@/types/new_invitation";
-import { getItineraryIcon } from "@/helpers/icons";
-import styles from "./card.module.css";
-import { buttonsColorText, getMexicoHour, lighter } from "@/helpers/functions";
-import Image, { StaticImageData } from "next/image";
-import { textures } from "@/helpers/textures";
+import { getItineraryIcon, isImageIcon } from "@/helpers/icons";
+import { buttonsColorText, lighter } from "@/helpers/functions";
 import OpenCard from "../OpenCard/OpenCard";
 import { MdArrowOutward } from "react-icons/md";
 import { FaDiamondTurnRight } from "react-icons/fa6";
-import FadeLeft from "@/components/Motion/FadeLeft";
 import FadeSides from "@/components/Motion/FadeSides";
 import { useScreenWidth } from "@/hooks/useScreenWidth";
 
@@ -48,31 +44,13 @@ export default function Card({ ui, invitation, dev }: CardProps) {
     color: invitation?.generals.fonts.body?.color ?? accent
   }
 
-  const renderIcon = (iconID: number, size: number, variable: boolean) => {
-    if (!iconID)
-      return (
-        <LuBadgeHelp
-          size={size}
-          style={{ color: content.background ? (content.inverted ? primary : accent) : content.inverted ? accent : accent }}
-        />
-      );
-    const Icon = getItineraryIcon(iconID);
-    if (Icon) {
-      return (
-        <Icon
-          size={size}
-          style={{ color: content.background ? (content.inverted ? primary : accent) : content.inverted ? accent : accent }}
-        />
-      );
+  const renderIcon = (icon: number | string | null, size: number) => {
+    const color = content.background ? (content.inverted ? primary : accent) : content.inverted ? accent : accent;
+    if (isImageIcon(icon)) {
+      return <Image src={icon} alt="" width={100} height={100} style={{ width: "100%", height: "auto", objectFit: "cover" }} />;
     }
-  };
-
-  const renderDrawerIcon = (iconID: number, size: number, variable: boolean) => {
-    if (!iconID) return <LuBadgeHelp size={size} style={{ color: content.inverted ? primary : accent }} />;
-    const Icon = getItineraryIcon(iconID);
-    if (Icon) {
-      return <Icon size={size} style={{ color: content.inverted ? primary : accent }} />;
-    }
+    const Icon = icon ? getItineraryIcon(icon) : undefined;
+    return Icon ? <Icon size={size} style={{ color }} /> : <LuBadgeHelp size={size} style={{ color }} />;
   };
 
   const ROW_HEIGHT = 180; // alto mínimo de cada fila (ajústalo a tu diseño)
@@ -121,14 +99,14 @@ export default function Card({ ui, invitation, dev }: CardProps) {
               <FadeSides side={leftSide}>
                 <div
                   style={{
-                    width: "44%",
+                    width: isImageIcon(item.icon) ? "74%" : "44%",
                     margin: "0 2%",
                     display: "flex",
                     alignItems: "center",
                     flexDirection: "column",
                   }}
                 >
-                  {renderIcon(item.icon!, 56, content.inverted)}
+                  {renderIcon(item.icon, 56)}
                   <div
                     style={{
                       display: "flex",
@@ -198,9 +176,6 @@ export default function Card({ ui, invitation, dev }: CardProps) {
                       color: content.inverted ? primary : accent,
                     }}
                   >
-                    {" "}
-                    { }
-                    {renderDrawerIcon(open?.icon!, 20, content.inverted)}
                     {open?.name}
                   </div>
                 }
