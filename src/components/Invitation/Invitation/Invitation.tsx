@@ -44,13 +44,15 @@ type invProps = {
   password?: string;
   plan?: string;
   phone_number?: string | null;
+  scrollToSection?: string | null;
+  onSectionChange?: (section: string) => void;
 };
 
 
 
 
 
-export default function Invitation({ password, invitationID, ui, invitation, loader, type, mongoID, dev, plan, phone_number }: invProps) {
+export default function Invitation({ password, invitationID, ui, invitation, loader, type, mongoID, dev, plan, phone_number, scrollToSection, onSectionChange }: invProps) {
   const coverRef = useRef<HTMLDivElement>(null);
   const greetingRef = useRef<HTMLDivElement>(null);
   const peopleRef = useRef<HTMLDivElement>(null);
@@ -96,6 +98,89 @@ export default function Invitation({ password, invitationID, ui, invitation, loa
   const isLargeScreen = width >= 768;
 
   // const scrollableContentRef = useRef<HTMLDivElement | null>(null);
+
+  const programmaticScrollGuardRef = useRef(0);
+  const lastReportedSectionRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!scrollToSection) return;
+    const sectionRefs: Record<string, React.RefObject<HTMLDivElement | null>> = {
+      generals: coverRef,
+      cover: coverRef,
+      greeting: greetingRef,
+      family: peopleRef,
+      quote: quoteRef,
+      itinerary: itineraryRef,
+      dresscode: dresscodeRef,
+      gifts: giftsRef,
+      destinations: destinationRef,
+      notices: noticesRef,
+      gallery: galleryRef,
+    };
+    const target = sectionRefs[scrollToSection]?.current;
+    if (!target) return;
+    // Evita que el scrollspy reporte las secciones intermedias mientras dura el scroll animado
+    programmaticScrollGuardRef.current = Date.now() + 700;
+    target.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [scrollToSection]);
+
+  // Scrollspy: avisa al host qué sección está a la vista mientras el invitado navega libremente
+  useEffect(() => {
+    if (!validated || !onSectionChange) return;
+    const container = scrollableContentRef.current;
+    if (!container) return;
+
+    const sections: Array<[string, React.RefObject<HTMLDivElement | null>]> = [
+      ["cover", coverRef],
+      ["greeting", greetingRef],
+      ["family", peopleRef],
+      ["quote", quoteRef],
+      ["itinerary", itineraryRef],
+      ["dresscode", dresscodeRef],
+      ["gifts", giftsRef],
+      ["destinations", destinationRef],
+      ["notices", noticesRef],
+      ["gallery", galleryRef],
+    ];
+
+    const visibleRatios = new Map<string, number>();
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const name = (entry.target as HTMLElement).dataset.scrollSection;
+          if (!name) return;
+          visibleRatios.set(name, entry.isIntersecting ? entry.intersectionRatio : 0);
+        });
+
+        if (Date.now() < programmaticScrollGuardRef.current) return;
+
+        let bestSection: string | null = null;
+        let bestRatio = 0;
+        visibleRatios.forEach((ratio, name) => {
+          if (ratio > bestRatio) {
+            bestRatio = ratio;
+            bestSection = name;
+          }
+        });
+
+        if (bestSection && bestSection !== lastReportedSectionRef.current) {
+          lastReportedSectionRef.current = bestSection;
+          onSectionChange(bestSection);
+        }
+      },
+      { root: container, threshold: [0, 0.25, 0.5, 0.75, 1] }
+    );
+
+    sections.forEach(([name, ref]) => {
+      if (ref.current) {
+        ref.current.dataset.scrollSection = name;
+        observer.observe(ref.current);
+      }
+    });
+
+    return () => observer.disconnect();
+  }, [validated, invitation?.generals?.positions?.join(","), onSectionChange]);
 
 
   const handlePosition = (id: number, invitation: NewInvitation, index: number) => {

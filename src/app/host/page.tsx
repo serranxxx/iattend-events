@@ -2,7 +2,7 @@
 import Invitation from "@/components/Invitation/Invitation/Invitation";
 import uiES from "@/data/ui/invitation_ui_es";
 import { InvitationType, InvitationUIBundle, NewInvitation } from "@/types/new_invitation";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 
 
@@ -17,6 +17,7 @@ const ALLOWED_ORIGINS = [
 export default function Page() {
   const [invitation, setInvitation] = useState<NewInvitation | null>(null);
   const [hostOrigin, setHostOrigin] = useState<string | null>(null);
+  const [scrollToSection, setScrollToSection] = useState<string | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
 
   // Handshake inicial
@@ -35,9 +36,18 @@ export default function Page() {
       if (type === "HOST_PROPS" && payload?.invitationConfig) {
         setInvitation(payload.invitationConfig as NewInvitation);
       }
+      if (type === "HOST_SCROLL_TO" && payload?.section) {
+        setScrollToSection(payload.section as string);
+      }
     }
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
+  }, [hostOrigin]);
+
+  // Reportar al host la sección visible mientras el invitado navega
+  const handleSectionChange = useCallback((section: string) => {
+    if (!hostOrigin) return;
+    window.parent?.postMessage({ type: "REMOTE_SCROLL_SECTION", payload: { section } }, hostOrigin);
   }, [hostOrigin]);
 
   // Reportar altura al host
@@ -68,7 +78,8 @@ export default function Page() {
         type={"open" as InvitationType}
         mongoID={null}
         ui={uiES as InvitationUIBundle}
-        
+        scrollToSection={scrollToSection}
+        onSectionChange={handleSectionChange}
       />
     </div>
   ) : null;

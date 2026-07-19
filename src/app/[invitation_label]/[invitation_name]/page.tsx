@@ -28,6 +28,11 @@ type PageProps = {
 };
 
 // --------------------
+// Helpers
+// --------------------
+const LABEL_FALLBACKS: Record<string, string> = { wedding: "xv", xv: "wedding" };
+
+// --------------------
 // Metadata dinámica
 // --------------------
 export async function generateMetadata({ params }: { params: Promise<RouteParams> }): Promise<Metadata> {
@@ -38,7 +43,11 @@ export async function generateMetadata({ params }: { params: Promise<RouteParams
   const label = decodeURIComponent(invitation_label);
   const name = decodeURIComponent(invitation_name);
 
-  const { data } = await supabase.from("invitations").select("data, url_image").eq("label", label).eq("name", name).maybeSingle();
+  let { data } = await supabase.from("invitations").select("data, url_image").eq("label", label).eq("name", name).maybeSingle();
+
+  if (!data?.data && LABEL_FALLBACKS[label]) {
+    ({ data } = await supabase.from("invitations").select("data, url_image").eq("label", LABEL_FALLBACKS[label]).eq("name", name).maybeSingle());
+  }
 
   if (!data?.data) {
     return {
@@ -93,7 +102,7 @@ export default async function InvitationDynamicPage({ params, searchParams }: Pa
   const label = decodeURIComponent(invitation_label);
   const name = decodeURIComponent(invitation_name);
 
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from("invitations")
     .select("data, type, mongo_id, id, plan, phone_number")
     .eq("label", label)
@@ -103,6 +112,20 @@ export default async function InvitationDynamicPage({ params, searchParams }: Pa
   if (error) {
     console.error("[Supabase error]", error);
     notFound();
+  }
+
+  if (!data?.data && LABEL_FALLBACKS[label]) {
+    ({ data, error } = await supabase
+      .from("invitations")
+      .select("data, type, mongo_id, id, plan, phone_number")
+      .eq("label", LABEL_FALLBACKS[label])
+      .eq("name", name)
+      .maybeSingle());
+
+    if (error) {
+      console.error("[Supabase error fallback]", error);
+      notFound();
+    }
   }
 
   if (!data?.data) notFound();
