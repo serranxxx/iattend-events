@@ -4,6 +4,7 @@ import crypto from "crypto";
 import { createClient } from "@/lib/supabase/server";
 import { translateInvitationObject } from "./deepl";
 import type { SourceLanguageCode } from "deepl-node";
+import type { NewInvitation } from "@/types/new_invitation";
 
 export function hashInvitation(invitation: unknown) {
   return crypto
@@ -13,10 +14,10 @@ export function hashInvitation(invitation: unknown) {
 }
 
 type GetTranslatedParams = {
-  invitationId: string;    // mongoID u otro id único
-  invitation: Record<string, unknown>;  // JSON original
-  lang: string;            // 'nl', 'en', ...
-  sourceLang?: string;     // opcional: 'es'
+  invitationId: string;
+  invitation: NewInvitation;
+  lang: string;
+  sourceLang?: string;
 };
 
 export async function getTranslatedInvitationFromCache({
@@ -41,7 +42,7 @@ export async function getTranslatedInvitationFromCache({
     }
 
   // 2) Traduce
-  const translated = await translateInvitationObject(invitation, lang, sourceLang as SourceLanguageCode | undefined);
+  const translated = await translateInvitationObject(invitation as unknown as Record<string, unknown>, lang, sourceLang as SourceLanguageCode | undefined) as unknown as NewInvitation;
 
   // 3) Upsert
   await supabase.from("invitation_translations").upsert(

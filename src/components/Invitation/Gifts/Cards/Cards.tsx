@@ -87,7 +87,7 @@ export default function Card({ invitation, dev: _dev, GiftCard, onSelect }: Card
       {contextHolder}
 
       {GiftCard?.slice().reverse().map((item, index) => {
-        const key = (item as Record<string, unknown>)?.id ?? index; // usa id si existe
+        const key = index;
         const color = content.background ? accent : content.inverted ? primary : accent;
         const baseClass = item.kind === "bank" ? styles.gift_card_bank : styles.gift_card_page;
         const composedClass = `${baseClass} ${styles[handleClass(item)]}`;

@@ -1,7 +1,8 @@
 import { AppState } from "@/types/context";
 import { types } from "./types";
 
-export const authReducer = (state: AppState, action: { type: string; payload?: unknown }): AppState => {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const authReducer = (state: AppState, action: { type: string; payload?: any }): AppState => {
   switch (action.type) {
     case types.LOGIN:
       return { ...state, logged: true, user: action.payload };

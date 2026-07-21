@@ -2,13 +2,16 @@
 
 import { useEffect, useRef } from "react";
 
+type TranslateElementConstructor = {
+  new (_options: Record<string, unknown>, _containerId: string): void;
+  InlineLayout: { SIMPLE: unknown };
+};
+
 type GoogleTranslateWindow = Window & {
   googleTranslateElementInit?: () => void;
   google?: {
     translate: {
-      TranslateElement: new (_options: Record<string, unknown>, _containerId: string) => void & {
-        InlineLayout: { SIMPLE: unknown };
-      };
+      TranslateElement: TranslateElementConstructor;
     };
   };
 };
@@ -43,11 +46,14 @@ export default function GoogleTranslate({ id }: GoogleTranslateProps) {
 
     // 1) Callback global requerido por Google
     (window as GoogleTranslateWindow).googleTranslateElementInit = () => {
-      new (window as GoogleTranslateWindow).google.translate.TranslateElement(
+      const gw = window as GoogleTranslateWindow;
+      const TE = gw.google?.translate?.TranslateElement;
+      if (!TE) return;
+      new TE(
         {
           pageLanguage: "es",
           includedLanguages: "nl,en,es,fr,it,de,pt",
-          layout: (window as GoogleTranslateWindow).google.translate.TranslateElement.InlineLayout.SIMPLE,
+          layout: TE.InlineLayout.SIMPLE,
           autoDisplay: false,
         },
         containerId
@@ -90,10 +96,10 @@ export default function GoogleTranslate({ id }: GoogleTranslateProps) {
     } else {
       // Si ya estaba, llamamos el callback cuando esté listo
       if ((window as GoogleTranslateWindow).google?.translate) {
-        (window as GoogleTranslateWindow).googleTranslateElementInit();
+        (window as GoogleTranslateWindow).googleTranslateElementInit?.();
       } else {
         existing.addEventListener("load", () =>
-          (window as GoogleTranslateWindow).googleTranslateElementInit()
+          (window as GoogleTranslateWindow).googleTranslateElementInit?.()
         );
       }
     }
