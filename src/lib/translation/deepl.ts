@@ -109,7 +109,7 @@ function shouldTranslateString(value: string, keyPath: string[], fullPath: strin
   return true;
 }
 
-export function collectTranslatableStrings(obj: any, path: (string|number)[] = [], out: WalkedItem[] = []) {
+export function collectTranslatableStrings(obj: unknown, path: (string|number)[] = [], out: WalkedItem[] = []) {
   if (obj == null) return out;
 
   if (typeof obj === "string") {
@@ -148,7 +148,7 @@ export async function translateStringsBatch(
   return Array.isArray(result) ? result.map(r => r.text) : [result.text];
 }
 
-export async function translateInvitationObject<T extends Record<string, any>>(
+export async function translateInvitationObject<T extends Record<string, unknown>>(
   invitation: T,
   targetLang: string,
   sourceLang?: deepl.SourceLanguageCode
@@ -162,13 +162,13 @@ export async function translateInvitationObject<T extends Record<string, any>>(
     sourceLang
   );
 
-  const clone: any = structuredClone(invitation);
+  const clone: Record<string | number, unknown> = structuredClone(invitation);
   items.forEach((item, idx) => {
-    let ref = clone;
+    let ref: Record<string | number, unknown> = clone;
     const steps = [...item.path];
     const last = steps.pop()!;
-    for (const s of steps) ref = ref[s as any];
-    ref[last as any] = translated[idx];
+    for (const s of steps) ref = ref[s as string | number] as Record<string | number, unknown>;
+    ref[last as string | number] = translated[idx];
   });
 
   return clone as T;

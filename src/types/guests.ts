@@ -11,7 +11,7 @@ export interface Guests {
     password: string;
     id: string;
   }[];
-  tables: any[]; // o define una interfaz Table[] si tienes su estructura
+  tables: Table[]; // o define una interfaz Table[] si tienes su estructura
 }
 
 export interface Guest {

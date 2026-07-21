@@ -2,7 +2,6 @@ import { NewInvitation } from "@/types/new_invitation";
 import Image from "next/image";
 import React, { forwardRef } from "react";
 import { Separador } from "../Separator/Separator";
-import styles from "./gallery.module.css";
 import FanStack from "./FanStack";
 import FadeLeft from "@/components/Motion/FadeLeft";
 import FadeIn from "@/components/Motion/FadeIn";

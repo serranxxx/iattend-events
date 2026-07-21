@@ -9,7 +9,7 @@ type DresscodeProps = {
   invitation: NewInvitation;
 };
 
-export const Notices = forwardRef<HTMLDivElement, DresscodeProps>(function notices({ dev, invitation }, ref) {
+export const Notices = forwardRef<HTMLDivElement, DresscodeProps>(function notices({ dev: _dev, invitation }, ref) {
   const content = invitation.notices;
   const generals = invitation.generals;
 

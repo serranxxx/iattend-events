@@ -1,10 +1,7 @@
 // FanStack.tsx
 "use client";
 import React, { useEffect, useState } from "react";
-import grunge from "../../../assets/textures/grunge.jpg";
 import { NewInvitation } from "@/types/new_invitation";
-import { lighter } from "@/helpers/functions";
-import { Image } from "antd";
 
 type FanStackProps = {
   images: string[];
@@ -13,12 +10,12 @@ type FanStackProps = {
   invitation: NewInvitation;
 };
 
-export default function FanStack({ images, radius = 24, invitation }: FanStackProps) {
+export default function FanStack({ images, radius: _radius = 24, invitation: _invitation }: FanStackProps) {
   // centro “conceptual” del abanico
 
   const [onScroll, setOnScroll] = useState<boolean>(false);
   const [handleImages, setHandleImages] = useState<string[]>([]);
-  const [visible, setVisible] = useState(false);
+  const [_visible, _setVisible] = useState(false);
 
   useEffect(() => {
     if (onScroll) {

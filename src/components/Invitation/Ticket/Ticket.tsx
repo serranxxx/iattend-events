@@ -51,7 +51,7 @@ export function Ticket({ guest, invitation, ui, colors, onClose, id }: TicketPro
   const coverImageSrc = toCoverImageUrl(invitation.cover.image.prod);
   const supabase = createClient();
 
-  const [tables, setTables] = useState<any[]>([])
+  const [tables, setTables] = useState<{ id: string; number: number }[]>([])
   const [addingToWallet, setAddingToWallet] = useState(false)
 
   const addToWallet = async (e: React.MouseEvent) => {

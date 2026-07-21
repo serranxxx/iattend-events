@@ -1,5 +1,5 @@
 import { InvitationUIBundle, NewInvitation } from "@/types/new_invitation";
-import React, { forwardRef, useEffect } from "react";
+import React, { forwardRef } from "react";
 import Card from "./Card/Card";
 import { Separador } from "../Separator/Separator";
 import FadeLeft from "@/components/Motion/FadeLeft";
@@ -12,7 +12,7 @@ type DresscodeProps = {
   invitationID: string | undefined;
 };
 
-export const Destinations = forwardRef<HTMLDivElement, DresscodeProps>(function destinations({ ui, dev, invitation, invitationID }, ref) {
+export const Destinations = forwardRef<HTMLDivElement, DresscodeProps>(function destinations({ ui, dev: _dev, invitation, invitationID }, ref) {
   const content = invitation.destinations;
   const generals = invitation.generals;
   const primary = generals?.colors.primary ?? "#FFFFFF";

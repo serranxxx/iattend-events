@@ -2,7 +2,7 @@
 "use client";
 
 import { NewInvitation } from "@/types/new_invitation";
-import React, { forwardRef, useEffect } from "react";
+import React, { forwardRef } from "react";
 import { Separador } from "../Separator/Separator";
 import FadeLeft from "@/components/Motion/FadeLeft";
 import Image from "next/image";
@@ -12,7 +12,7 @@ type GreetingProps = {
   invitation: NewInvitation | null;
 };
 
-export const Greeting = forwardRef<HTMLDivElement, GreetingProps>(function Greeting({ dev, invitation }, ref) {
+export const Greeting = forwardRef<HTMLDivElement, GreetingProps>(function Greeting({ dev: _dev, invitation }, ref) {
   const content = invitation?.greeting;
   const generals = invitation?.generals;
   const primary = generals?.colors.primary ?? "#FFFFFF";

@@ -1,6 +1,6 @@
 import BackButton from "@/components/BackButton/BackButton";
+import Link from "next/link";
 import React from "react";
-import { IoMdReturnLeft } from "react-icons/io";
 
 export default function Page() {
     const schemaProduct = {
@@ -139,7 +139,7 @@ export default function Page() {
                         sin costos adicionales ni reimpresiones.
                     </p>
 
-                    <a href="/about/invitacion-paperless" style={{textDecoration:'underline'}}>Ver más</a>
+                    <Link href="/about/invitacion-paperless" style={{textDecoration:'underline'}}>Ver más</Link>
 
                 </section>
             </div>

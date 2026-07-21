@@ -88,7 +88,7 @@ export default function SwipeToConfirm({
 
   const onWindowPointerMove = (e: PointerEvent) => {
     if (!dragging) return;
-    if (e.pointerType === "mouse" && (e as any).buttons === 0) return;
+    if (e.pointerType === "mouse" && e.buttons === 0) return;
     e.preventDefault(); // evita scroll/gestos
     const x = e.clientX - startX.current;
     dragX.current = clamp(x);

@@ -1,9 +1,8 @@
 import { generateSimpleId } from "@/helpers/functions";
 import { Guest, GuestAccessPayload, GuestUpdate, Guests, Table } from "@/types/guests";
 import { AxiosRequestConfig } from "axios";
-import { StringSchema } from "firebase/vertexai";
 
-export async function getGuestsByInvitationID(operation: (params: AxiosRequestConfig) => Promise<void>, invitationID: string) {
+export async function getGuestsByInvitationID(operation: (_params: AxiosRequestConfig) => Promise<void>, invitationID: string) {
   try {
     await operation({
       method: "GET",
@@ -14,7 +13,7 @@ export async function getGuestsByInvitationID(operation: (params: AxiosRequestCo
   }
 }
 
-export async function getUpdatesByID(operation: (params: AxiosRequestConfig) => Promise<void>, invitationID: string) {
+export async function getUpdatesByID(operation: (_params: AxiosRequestConfig) => Promise<void>, invitationID: string) {
   const token = localStorage.getItem("token");
   try {
     await operation({
@@ -30,7 +29,7 @@ export async function getUpdatesByID(operation: (params: AxiosRequestConfig) => 
   }
 }
 
-export async function AddNewGuest(operation: (params: AxiosRequestConfig) => Promise<void>, guests: Guests, newGuest: Guest) {
+export async function AddNewGuest(operation: (_params: AxiosRequestConfig) => Promise<void>, guests: Guests, newGuest: Guest) {
   const data = {
     userID: guests.userID,
     invitationID: guests.invitationID,
@@ -50,7 +49,7 @@ export async function AddNewGuest(operation: (params: AxiosRequestConfig) => Pro
   }
 }
 
-export async function deleteGuestByID(operation: (params: AxiosRequestConfig) => Promise<void>, invitationID: string, guestID: string) {
+export async function deleteGuestByID(operation: (_params: AxiosRequestConfig) => Promise<void>, invitationID: string, guestID: string) {
   const token = localStorage.getItem("token");
 
   try {
@@ -70,7 +69,7 @@ export async function deleteGuestByID(operation: (params: AxiosRequestConfig) =>
   }
 }
 
-export async function confirmGuests(operation: (params: AxiosRequestConfig) => Promise<void>, invitationID: string, newGuest: Guest){
+export async function confirmGuests(operation: (_params: AxiosRequestConfig) => Promise<void>, invitationID: string, newGuest: Guest){
 
   const data = {
       guest: newGuest // Enviar solo el invitado, no todo el array
@@ -89,7 +88,7 @@ export async function confirmGuests(operation: (params: AxiosRequestConfig) => P
 }
 
 
-export async function moveTickets(operation: (params: AxiosRequestConfig) => Promise<void>, invitationID: string, card: Guest) {
+export async function moveTickets(operation: (_params: AxiosRequestConfig) => Promise<void>, invitationID: string, card: Guest) {
   const token = localStorage.getItem("token");
 
   try {
@@ -115,7 +114,7 @@ export async function moveTickets(operation: (params: AxiosRequestConfig) => Pro
 }
 
 export async function editCurrentGuest(
-  operation: (params: AxiosRequestConfig) => Promise<void>,
+  operation: (_params: AxiosRequestConfig) => Promise<void>,
   invitationID: string,
   card: Guest,
   updates: GuestUpdate
@@ -147,7 +146,7 @@ export async function editCurrentGuest(
   }
 }
 
-export async function updateTables(operation: (params: AxiosRequestConfig) => Promise<void>, invitationID: string, tables: Table) {
+export async function updateTables(operation: (_params: AxiosRequestConfig) => Promise<void>, invitationID: string, tables: Table) {
   const token = localStorage.getItem("token");
 
   try {
@@ -168,7 +167,7 @@ export async function updateTables(operation: (params: AxiosRequestConfig) => Pr
   }
 }
 
-export async function guestLogin(operation: (params: AxiosRequestConfig) => Promise<void>, invitationID: string, guestID: string) {
+export async function guestLogin(operation: (_params: AxiosRequestConfig) => Promise<void>, invitationID: string, guestID: string) {
   try {
     await operation({
       method: "POST",
@@ -184,7 +183,7 @@ export async function guestLogin(operation: (params: AxiosRequestConfig) => Prom
 }
 
 export async function editGuestsGuest(
-  operation: (params: AxiosRequestConfig) => Promise<void>,
+  operation: (_params: AxiosRequestConfig) => Promise<void>,
   invitationID: string,
   guestInfo: GuestAccessPayload,
   confirmed: string,
@@ -217,7 +216,7 @@ export async function editGuestsGuest(
 }
 
 export async function EditTickets(
-  operation: (params: AxiosRequestConfig) => Promise<void>,
+  operation: (_params: AxiosRequestConfig) => Promise<void>,
   guests: Guests,
   availableTickets: number | null,
   guestsUpdated: Guest,
@@ -248,7 +247,7 @@ export async function EditTickets(
   }
 }
 
-export async function addShare(operation: (params: AxiosRequestConfig) => Promise<void>, invitationID: string, email: string) {
+export async function addShare(operation: (_params: AxiosRequestConfig) => Promise<void>, invitationID: string, email: string) {
   const token = localStorage.getItem("token");
 
   try {
@@ -270,7 +269,7 @@ export async function addShare(operation: (params: AxiosRequestConfig) => Promis
   }
 }
 
-export async function deleteShare(operation: (params: AxiosRequestConfig) => Promise<void>, invitationID: string, id: string) {
+export async function deleteShare(operation: (_params: AxiosRequestConfig) => Promise<void>, invitationID: string, id: string) {
   const token = localStorage.getItem("token");
   try {
     await operation({
@@ -289,7 +288,7 @@ export async function deleteShare(operation: (params: AxiosRequestConfig) => Pro
   }
 }
 
-export async function loginShare(operation: (params: AxiosRequestConfig) => Promise<void>, invitationID: string, password: string) {
+export async function loginShare(operation: (_params: AxiosRequestConfig) => Promise<void>, invitationID: string, password: string) {
   try {
     await operation({
       method: "POST",

@@ -4,7 +4,6 @@ import React, { useState } from "react";
 import styles from "./plans.module.css";
 import {
   LuArmchair,
-  LuArrowRight,
   LuClipboardList,
   LuLockKeyhole,
   LuLockOpen,
@@ -13,12 +12,11 @@ import {
   LuPencilRuler,
   LuSend,
   LuSmartphone,
-  LuStar,
   LuTicket,
 } from "react-icons/lu";
 import { FaStar } from "react-icons/fa";
 
-const cards = [
+const _cards = [
   {
     user: "Alberto",
     review:

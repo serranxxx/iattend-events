@@ -45,7 +45,7 @@ type invProps = {
   plan?: string;
   phone_number?: string | null;
   scrollToSection?: string | null;
-  onSectionChange?: (section: string) => void;
+  onSectionChange?: (_section: string) => void;
 };
 
 
@@ -118,10 +118,15 @@ export default function Invitation({ password, invitationID, ui, invitation, loa
       gallery: galleryRef,
     };
     const target = sectionRefs[scrollToSection]?.current;
-    if (!target) return;
+    const container = scrollableContentRef.current;
+    if (!target || !container) return;
     // Evita que el scrollspy reporte las secciones intermedias mientras dura el scroll animado
     programmaticScrollGuardRef.current = Date.now() + 700;
-    target.scrollIntoView({ behavior: "smooth", block: "start" });
+    // Scroll manual acotado al contenedor: scrollIntoView() puede propagar el
+    // "hacer visible" al documento padre (y hasta al padre del iframe cuando se
+    // embebe en el wizard/preview), causando un scroll indeseado fuera de aquí.
+    const targetTop = target.getBoundingClientRect().top - container.getBoundingClientRect().top + container.scrollTop;
+    container.scrollTo({ top: targetTop, behavior: "smooth" });
   }, [scrollToSection]);
 
   // Scrollspy: avisa al host qué sección está a la vista mientras el invitado navega libremente

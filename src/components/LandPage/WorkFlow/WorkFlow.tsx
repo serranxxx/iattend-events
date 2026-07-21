@@ -1,9 +1,5 @@
 import React from "react";
 import styles from "./work.module.css";
-import { Button } from "antd";
-import { FaBars } from "react-icons/fa";
-import Image from "next/image";
-import { PiFlowArrowBold } from "react-icons/pi";
 
 export const WorkFlow = () => {
   return (

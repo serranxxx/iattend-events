@@ -1,6 +1,5 @@
 import React from "react";
 import Head from "next/head";
-import { IoMdReturnLeft } from "react-icons/io";
 import BackButton from "@/components/BackButton/BackButton";
 
 export default function TableOrganizationPage() {

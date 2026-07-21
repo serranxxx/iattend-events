@@ -2,7 +2,6 @@ import BackButton from "@/components/BackButton/BackButton";
 import { faqs_list } from "@/helpers/SEO/faqs";
 import { Metadata } from "next";
 import Script from "next/script";
-import { IoMdReturnLeft } from "react-icons/io";
 
 /* =========================
    SEO METADATA

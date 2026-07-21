@@ -1,7 +1,7 @@
 import { AxiosRequestConfig } from "axios";
 
 export async function CurrentWeather(
-  operation: (params: AxiosRequestConfig) => Promise<void>,
+  operation: (_params: AxiosRequestConfig) => Promise<void>,
   zipCode: string,
   country: string
 ) {
@@ -16,7 +16,7 @@ export async function CurrentWeather(
 }
 
 export async function CurrentForecast(
-  operation: (params: AxiosRequestConfig) => Promise<void>,
+  operation: (_params: AxiosRequestConfig) => Promise<void>,
   zipCode: string,
   country: string
 ) {

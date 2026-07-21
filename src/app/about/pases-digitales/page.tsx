@@ -1,6 +1,6 @@
 import React from "react";
 import Head from "next/head";
-import { IoMdReturnLeft } from "react-icons/io";
+import Link from "next/link";
 import BackButton from "@/components/BackButton/BackButton";
 
 export default function DigitalPassesPage() {
@@ -114,7 +114,7 @@ export default function DigitalPassesPage() {
                     <p>
                         Los <strong>pases digitales de I attend</strong> son una forma moderna,
                         práctica y segura de controlar el acceso a tu evento.
-                        Al <a href="/about/guest-management">confirmar su asistencia</a>, cada invitado recibe automáticamente
+                        Al <Link href="/about/guest-management">confirmar su asistencia</Link>, cada invitado recibe automáticamente
                         un <strong>pase digital personalizado</strong> directamente desde la invitación.
                     </p>
 
@@ -127,7 +127,7 @@ export default function DigitalPassesPage() {
                     <h3>Pase digital generado automáticamente al confirmar asistencia</h3>
 
                     <p>
-                        Una vez que un invitado <a href="/about/guest-management">confirma su asistencia</a>,
+                        Una vez que un invitado <Link href="/about/guest-management">confirma su asistencia</Link>,
                         el sistema genera de forma automática un <strong>pase digital </strong>
                         con su información personal.
                         Esto garantiza que solo las personas confirmadas
@@ -142,7 +142,7 @@ export default function DigitalPassesPage() {
                     <h3>Pases digitales con mesa asignada</h3>
 
                     <p>
-                        Cuando utilizas el módulo de <strong><a href="/about/mapa-de-mesas">organización por mesas</a></strong>,
+                        Cuando utilizas el módulo de <strong><Link href="/about/mapa-de-mesas">organización por mesas</Link></strong>,
                         el pase digital muestra de forma clara la <strong>mesa asignada </strong>
                         a cada invitado.
                         De esta manera, tus invitados saben exactamente
@@ -165,7 +165,7 @@ export default function DigitalPassesPage() {
 
                     <p>
                         Todos los pases están organizados y disponibles
-                        dentro de la <a href="/about/invitacion-paperless">invitación</a>, facilitando su visualización
+                        dentro de la <Link href="/about/invitacion-paperless">invitación</Link>, facilitando su visualización
                         y uso el día del evento.
                     </p>
 

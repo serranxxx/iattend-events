@@ -2,10 +2,7 @@
 
 import React, { useState } from "react";
 import styles from "./customer.module.css";
-import { Button } from "antd";
-import { FaBars, FaHeart, FaPlus } from "react-icons/fa";
-import { BsPersonHearts } from "react-icons/bs";
-import { LuNotebook } from "react-icons/lu";
+import { FaHeart } from "react-icons/fa";
 import { FaCalendarDays, FaCircleNodes } from "react-icons/fa6";
 
 export type AudienceItem = {

@@ -4,7 +4,6 @@ import React, { useEffect, useRef, useState } from "react";
 import styles from "./wallet.module.css";
 import { GiftCard, InvitationUIBundle, NewInvitation } from "@/types/new_invitation";
 import { darker } from "@/helpers/functions";
-import Image from "next/image";
 import { classifyGiftCard } from "./classifyGiftCard";
 import { Button, message } from "antd";
 import { MdArrowOutward } from "react-icons/md";
@@ -12,7 +11,7 @@ import { FaCopy } from "react-icons/fa";
 import FadeIn from "@/components/Motion/FadeIn";
 import FadeDown from "@/components/Motion/FadeDown";
 import { useScreenWidth } from "@/hooks/useScreenWidth";
-import { Layers, Layers2, WalletCards, X } from "lucide-react";
+import { Layers2, X } from "lucide-react";
 
 type CardProps = {
   invitation: NewInvitation;
@@ -20,7 +19,7 @@ type CardProps = {
   ui: InvitationUIBundle;
 };
 
-export default function Wallet({ ui, invitation, dev = false }: CardProps) {
+export default function Wallet({ ui, invitation, dev: _dev = false }: CardProps) {
   const [base, setBase] = useState<number[]>([]);
   const baseRef = useRef<number[]>([]);
   const [bottoms, setBottoms] = useState<number[]>([]);

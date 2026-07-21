@@ -1,6 +1,6 @@
 import React from "react";
 import Head from "next/head";
-import { IoMdReturnLeft } from "react-icons/io";
+import Link from "next/link";
 import BackButton from "@/components/BackButton/BackButton";
 
 export default function WhatsAppDeliveryPage() {
@@ -131,7 +131,7 @@ export default function WhatsAppDeliveryPage() {
                         <strong>organizar eventos de forma clara, ordenada y sin estrés</strong>.
                         Ya sea una boda, un evento social o la gestión profesional de múltiples celebraciones,
                         la plataforma se adapta a distintos perfiles que comparten una misma necesidad:
-                        <strong>tener <a href="/about/guest-management">control total sobre sus invitados</a> y su evento</strong>.
+                        <strong>tener <Link href="/about/guest-management">control total sobre sus invitados</Link> y su evento</strong>.
                     </p>
 
                     <p>
@@ -145,7 +145,7 @@ export default function WhatsAppDeliveryPage() {
                         I attend es ideal para <strong>parejas que están planeando su boda</strong>
                         y desean tener el control completo desde el primer invitado hasta el gran día.
                         La plataforma les permite organizar su evento paso a paso,
-                        gestionando <a href="/about/invitaciones-paperless">invitaciones</a>, <a href="/about/guest-management">confirmaciones</a>, accesos y <a href="/about/mapa-de-mesas">acomodos</a>
+                        gestionando <Link href="/about/invitaciones-paperless">invitaciones</Link>, <Link href="/about/guest-management">confirmaciones</Link>, accesos y <Link href="/about/mapa-de-mesas">acomodos</Link>
                         de manera clara y sencilla.
                     </p>
 
@@ -167,7 +167,7 @@ export default function WhatsAppDeliveryPage() {
                     </p>
 
                     <p>
-                        El control de invitados, accesos, <a href="/about/guest-management">confirmaciones</a> y <a href="about/mapa-de-mesas">mesas</a>
+                        El control de invitados, accesos, <Link href="/about/guest-management">confirmaciones</Link> y <a href="about/mapa-de-mesas">mesas</a>
                         facilita el trabajo operativo y mejora la comunicación con los clientes.
                         Esto se traduce en una <strong>mejor experiencia tanto para el organizador
                             como para los asistentes</strong>, elevando el nivel del servicio ofrecido.

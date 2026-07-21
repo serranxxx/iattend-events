@@ -81,7 +81,7 @@ const labels: Record<Units, { singular: string; plural: string }> = {
   seconds: { singular: "segundo", plural: "segundos" },
 };
 
-export default function Countdown({ ui, cover, generals, dev, validated = true }: CountdownProps) {
+export default function Countdown({ ui: _ui, cover, generals, dev, validated = true }: CountdownProps) {
   const targetDate = useMemo(() => {
     const t = parseDateOnly(cover?.date?.value);
     return t && !isNaN(+t) ? t : null;

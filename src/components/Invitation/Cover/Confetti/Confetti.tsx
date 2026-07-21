@@ -15,7 +15,7 @@ type CountdownProps = {
 };
 
 
-export default function ConfettiButton({ cover, generals, validated = true }: CountdownProps) {
+export default function ConfettiButton({ cover: _cover, generals, validated = true }: CountdownProps) {
 
   const onClick = useCallback(() => {
     confetti({
@@ -38,8 +38,8 @@ export default function ConfettiButton({ cover, generals, validated = true }: Co
     icon={<PiConfetti />}
     className={`${styles.animate} ${styles.action_button}`}
     style={{
-      backgroundColor: generals?.colors.actions!,
-      borderBottom: `5px solid ${darker(generals?.colors.actions!, 0.8)}`
+      backgroundColor: generals?.colors.actions ?? undefined,
+      borderBottom: generals?.colors.actions ? `5px solid ${darker(generals.colors.actions, 0.8)}` : undefined
     }} 
       onClick={onClick}>
       ¡Es hoy!

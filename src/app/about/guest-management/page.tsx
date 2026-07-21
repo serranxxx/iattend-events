@@ -1,6 +1,6 @@
 import React from "react";
 import Head from "next/head";
-import { IoMdReturnLeft } from "react-icons/io";
+import Link from "next/link";
 import BackButton from "@/components/BackButton/BackButton";
 
 export default function GuestManagementPage() {
@@ -163,7 +163,7 @@ export default function GuestManagementPage() {
 
                     <p>
                         Cada invitado cuenta con un <strong>código de acceso único</strong>, el cual le permite
-                        ingresar a la <a href="/about/invitacion-paperless">invitación digital</a> de forma segura.
+                        ingresar a la <Link href="/about/invitacion-paperless">invitación digital</Link> de forma segura.
                         Además, I attend genera un <strong>link mágico personalizado</strong>,
                         que permite al invitado acceder directamente a la invitación
                         sin necesidad de ingresar manualmente su código.
@@ -178,9 +178,9 @@ export default function GuestManagementPage() {
 
                     <p>
                         Cuando decides invitar a alguien, puedes hacerlo con un solo clic usando el botón
-                        de <strong><a href="/about/envios-whatsapp">enviar invitación</a></strong> o marcándolo como invitado.
-                        Al hacerlo, la plataforma utiliza el <strong><a href="/about/envios-whatsapp">API de WhatsApp</a></strong>
-                        para enviar automáticamente la <a href="/about/invitacion-paperless">invitación digital</a> al número registrado del invitado.
+                        de <strong><Link href="/about/envios-whatsapp">enviar invitación</Link></strong> o marcándolo como invitado.
+                        Al hacerlo, la plataforma utiliza el <strong><Link href="/about/envios-whatsapp">API de WhatsApp</Link></strong>
+                        para enviar automáticamente la <Link href="/about/invitacion-paperless">invitación digital</Link> al número registrado del invitado.
                     </p>
 
                     <p>

@@ -1,6 +1,6 @@
 import React from "react";
 import Head from "next/head";
-import { IoMdReturnLeft } from "react-icons/io";
+import Link from "next/link";
 import BackButton from "@/components/BackButton/BackButton";
 
 export default function GuestManagementPage() {
@@ -111,16 +111,16 @@ export default function GuestManagementPage() {
                     <h2>Privacidad y control de acceso en tus invitaciones digitales</h2>
 
                     <p>
-                        Las <strong><a href="/about/invitacion-paperless">invitaciones digitales</a> de I attend</strong> cuentan con un sistema de
+                        Las <strong><Link href="/about/invitacion-paperless">invitaciones digitales</Link> de I attend</strong> cuentan con un sistema de
                         <strong>privacidad y control de acceso</strong> diseñado para adaptarse a las necesidades
                         de cada evento. Puedes elegir entre <strong>eventos públicos</strong> o
                         <strong>eventos privados</strong>, teniendo siempre el control total sobre
-                        quién puede ver y <a href="/about/guest-management">confirmar asistencia</a> a tu invitación.
+                        quién puede ver y <Link href="/about/guest-management">confirmar asistencia</Link> a tu invitación.
                     </p>
 
                     <p>
                         Esta flexibilidad te permite decidir si tu evento será abierto y fácil de compartir,
-                        o completamente privado y exclusivo para las <a href="/about/guest-management">personas que tú elijas</a>.
+                        o completamente privado y exclusivo para las <Link href="/about/guest-management">personas que tú elijas</Link>.
                     </p>
 
                     <h3>Eventos públicos: invitaciones abiertas y fáciles de compartir</h3>
@@ -128,7 +128,7 @@ export default function GuestManagementPage() {
                     <p>
                         Un <strong>evento público</strong> es una invitación digital abierta,
                         disponible para <strong>cualquier persona que tenga el enlace</strong>.
-                        Cualquier usuario puede ver la <a href="/about/invitacion-paperless">invitación</a> y <a href="/about/guest-management">confirmar su asistencia</a>,
+                        Cualquier usuario puede ver la <Link href="/about/invitacion-paperless">invitación</Link> y <Link href="/about/guest-management">confirmar su asistencia</Link>,
                         lo que la convierte en una opción ideal para eventos abiertos,
                         celebraciones grandes o invitaciones sin restricción de acceso.
                     </p>
@@ -143,8 +143,8 @@ export default function GuestManagementPage() {
                     <h3>Eventos privados: invitaciones seguras y exclusivas</h3>
 
                     <p>
-                        En un <strong>evento privado</strong>, la <a href="/about/invitacion-paperless">invitación</a> está
-                        <strong> restringida únicamente a tu <a href="/about/guest-management">lista de invitados</a></strong>.
+                        En un <strong>evento privado</strong>, la <Link href="/about/invitacion-paperless">invitación</Link> está
+                        <strong> restringida únicamente a tu <Link href="/about/guest-management">lista de invitados</Link></strong>.
                         Al abrir la invitación, se solicita una <strong>clave de acceso</strong>,
                         asegurando que solo las personas autorizadas puedan verla.
                     </p>
@@ -165,17 +165,17 @@ export default function GuestManagementPage() {
                     <h3>Invitaciones personalizadas para cada invitado</h3>
 
                     <p>
-                        La modalidad de <strong>evento privado</strong> permite que la <a href="/about/invitacion-paperless">invitación</a>
+                        La modalidad de <strong>evento privado</strong> permite que la <Link href="/about/invitacion-paperless">invitación</Link>
                         sea completamente <strong>personalizada</strong>.
-                        El sistema identifica quién está viendo la <a href="/about/invitacion-paperless">invitación</a> y puede mostrar
+                        El sistema identifica quién está viendo la <Link href="/about/invitacion-paperless">invitación</Link> y puede mostrar
                         información específica para cada invitado.
                     </p>
 
                     <p>
-                        Esto incluye detalles como la <strong>cantidad de <a href="/about/guest-management">pases disponibles</a></strong>,
+                        Esto incluye detalles como la <strong>cantidad de <Link href="/about/guest-management">pases disponibles</Link></strong>,
                         los <strong>acompañantes aprobados</strong>,
                         una <strong>bienvenida personalizada</strong> con su nombre
-                        y un <strong><a href="/about/pases-digitales">pase digital individual</a></strong> por cada asistente confirmado.
+                        y un <strong><Link href="/about/pases-digitales">pase digital individual</Link></strong> por cada asistente confirmado.
                     </p>
 
                     <p>
@@ -187,7 +187,7 @@ export default function GuestManagementPage() {
                     <h3>Cambia la privacidad de tu evento cuando lo necesites</h3>
 
                     <p>
-                        Desde el <strong><a href="/about/guest-management">dashboard de invitados</a></strong>, puedes
+                        Desde el <strong><Link href="/about/guest-management">dashboard de invitados</Link></strong>, puedes
                         <strong>cambiar la modalidad del evento</strong>
                         de público a privado, o de privado a público,
                         de forma rápida y sencilla.
@@ -203,7 +203,7 @@ export default function GuestManagementPage() {
 
                     <p>
                         Con el sistema de <strong>privacidad de I attend</strong>,
-                        tú decides cómo se comparte tu <a href="/about/invitacion-paperless">invitación</a>.
+                        tú decides cómo se comparte tu <Link href="/about/invitacion-paperless">invitación</Link>.
                         Ya sea un evento abierto o una celebración completamente privada,
                         tienes la seguridad de que el acceso y la experiencia
                         estarán siempre bajo tu control.

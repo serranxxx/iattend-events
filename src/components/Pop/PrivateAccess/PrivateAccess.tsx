@@ -7,7 +7,7 @@ import styles from "./private-access.module.css";
 
 type PrivateAccessProps = {
   validated: boolean;
-  onValidate: (code: string) => void;
+  onValidate: (_code: string) => void;
 };
 
 export function PrivateAccess({ validated, onValidate }: PrivateAccessProps) {

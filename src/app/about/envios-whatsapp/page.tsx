@@ -1,6 +1,6 @@
 import React from "react";
 import Head from "next/head";
-import { IoMdReturnLeft } from "react-icons/io";
+import Link from "next/link";
 import BackButton from "@/components/BackButton/BackButton";
 
 export default function WhatsAppDeliveryPage() {
@@ -114,7 +114,7 @@ export default function WhatsAppDeliveryPage() {
 
                     <p>
                         Los <strong>envíos por WhatsApp de I attend</strong> están diseñados para que puedas
-                        compartir tus <a href="/about/invitacion-paperless">invitaciones digitales</a> de manera
+                        compartir tus <Link href="/about/invitacion-paperless">invitaciones digitales</Link> de manera
                         <strong>rápida, automatizada y segura</strong>,
                         sin poner en riesgo tu cuenta personal de WhatsApp.
                     </p>
@@ -133,11 +133,11 @@ export default function WhatsAppDeliveryPage() {
                         el uso del <strong>API de WhatsApp</strong> evita bloqueos,
                         restricciones o sanciones en tu cuenta.
                         Esto garantiza que tus invitaciones lleguen correctamente
-                        a tus <a href="/about/guest-management">invitados</a> sin afectar tu número personal.
+                        a tus <Link href="/about/guest-management">invitados</Link> sin afectar tu número personal.
                     </p>
 
                     <p>
-                        Gracias a esta integración, puedes enviar <a href="/about/invitacion-paperless">invitaciones</a>
+                        Gracias a esta integración, puedes enviar <Link href="/about/invitacion-paperless">invitaciones</Link>
                         de forma masiva y ordenada,
                         manteniendo una experiencia confiable tanto para ti
                         como para tus invitados.

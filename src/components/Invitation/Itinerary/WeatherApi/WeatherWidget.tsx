@@ -4,6 +4,23 @@ import { useEffect, useState } from "react";
 import styles from "./weather.module.css";
 import { SideAddress, SideEventBody } from "@/types/side_event";
 
+interface WeatherForecastHour {
+  time: string;
+  temp_c: number;
+  condition: { icon: string; text: string };
+}
+
+interface WeatherResponse {
+  location: { name: string; localtime: string };
+  current: { temp_c: number; condition: { icon: string; text: string } };
+  forecast: {
+    forecastday: Array<{
+      day: { maxtemp_c: number; mintemp_c: number };
+      hour: WeatherForecastHour[];
+    }>;
+  };
+}
+
 type CardProps = {
   invitation?: NewInvitation;
   dev?: boolean;
@@ -18,7 +35,7 @@ type CardProps = {
 };
 
 export default function WeatherWidget({ invitation, item, isSide, color, radius }: CardProps) {
-  const [weather, setWeather] = useState<any>(null);
+  const [weather, setWeather] = useState<WeatherResponse | null>(null);
   const key = "fa4d2a7fce5841d5a51205220251009";
 
   useEffect(() => {
@@ -67,24 +84,24 @@ export default function WeatherWidget({ invitation, item, isSide, color, radius 
           <div className={styles.widget_row}>
             {weather.forecast.forecastday[0].hour
               // 1. Filtrar las 6 horas que quieres mostrar
-              .filter((hour: any, index: number, arr: any[]) => {
+              .filter((hour: WeatherForecastHour, index: number, arr: WeatherForecastHour[]) => {
                 const nowStr = weather.location.localtime; // "2025-09-11 09:01"
                 const currentHour = parseInt(nowStr.slice(11, 13), 10); // -> 9
 
-                const getHour = (h: any) => parseInt(h.time.slice(11, 13), 10);
+                const getHour = (h: WeatherForecastHour) => parseInt(h.time.slice(11, 13), 10);
 
                 if (currentHour >= 18) {
                   // últimas 6 horas del día
                   return index >= arr.length - 6;
                 } else {
                   // las siguientes 6 horas después de la actual
-                  const nextHours = arr.filter((h: any) => getHour(h) > currentHour);
-                  const limit = nextHours.slice(0, 6).map((h: any) => h.time);
+                  const nextHours = arr.filter((h: WeatherForecastHour) => getHour(h) > currentHour);
+                  const limit = nextHours.slice(0, 6).map((h: WeatherForecastHour) => h.time);
                   return limit.includes(hour.time);
                 }
               })
               // 2. Mapear esas 6 horas
-              .map((hour: any, index: number) => {
+              .map((hour: WeatherForecastHour, index: number) => {
                 // cortar la hora del string "YYYY-MM-DD HH:mm"
                 const hourOnly = hour.time.slice(11, 13); // "09", "10", etc.
                 // quitar el 0 inicial para que quede "9", "10", etc.

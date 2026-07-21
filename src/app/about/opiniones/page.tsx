@@ -2,7 +2,6 @@ import BackButton from "@/components/BackButton/BackButton";
 import { reviews_list } from "@/helpers/SEO/reviews";
 import { Metadata } from "next";
 import Script from "next/script";
-import { IoMdReturnLeft } from "react-icons/io";
 
 /* =========================
    SEO METADATA

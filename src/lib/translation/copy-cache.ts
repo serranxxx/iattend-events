@@ -4,7 +4,7 @@ import { translateInvitationObject } from "./deepl"; // ya la tienes, y sirve ig
 import crypto from "crypto";
 
 /** Calcula un hash del JSON original */
-function hashJSON(obj: any) {
+function hashJSON(obj: unknown) {
   return crypto.createHash("sha1").update(JSON.stringify(obj)).digest("hex");
 }
 
@@ -14,7 +14,7 @@ function hashJSON(obj: any) {
 export async function getTranslatedCopy(
   slug: string,
   lang: string,
-  sourceLang = "es"
+  _sourceLang = "es"
 ) {
   const supabase = await createClient();
 

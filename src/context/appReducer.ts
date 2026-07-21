@@ -1,7 +1,7 @@
 import { AppState } from "@/types/context";
 import { types } from "./types";
 
-export const authReducer = (state: AppState, action: any): AppState => {
+export const authReducer = (state: AppState, action: { type: string; payload?: unknown }): AppState => {
   switch (action.type) {
     case types.LOGIN:
       return { ...state, logged: true, user: action.payload };

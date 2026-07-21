@@ -3,13 +3,12 @@
 import React, { useState } from "react";
 import styles from "./cta.module.css";
 import { Button } from "antd";
-import { FaBars, FaPaperPlane } from "react-icons/fa";
 import { LuArrowUpRight } from "react-icons/lu";
 
 export const CTA = () => {
-  const [activeCard, setActiveCard] = useState<number | null>(null);
+  const [_activeCard, _setActiveCard] = useState<number | null>(null);
 
-  const questions = [1, 1, 1, 1, 1, 1];
+  const _questions = [1, 1, 1, 1, 1, 1];
 
   return (
     <div className={styles.key_cont}>

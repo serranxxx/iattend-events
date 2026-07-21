@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 // types/invitation.ts
 
 /** Utilidades */

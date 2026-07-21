@@ -20,7 +20,7 @@ export const HomeScroll = () => {
         const container = scrollRef.current;
         const speed = 2;
 
-        let animationFrame: any;
+        let animationFrame: number;
 
         const autoScroll = () => {
             if (container) {

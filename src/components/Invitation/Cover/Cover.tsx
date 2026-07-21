@@ -27,7 +27,7 @@ const toArray = (src: string | string[] | null | undefined): string[] => {
 };
 
 export const Cover = forwardRef<HTMLDivElement, CoverProps>(function Cover(
-  { ui, dev, invitation, height, validated = true },
+  { ui, dev, invitation, height: _height, validated = true },
   ref
 ) {
   const cover = invitation?.cover;
@@ -157,7 +157,7 @@ export const Cover = forwardRef<HTMLDivElement, CoverProps>(function Cover(
                 color: cover?.title.text.color ?? lighter(generals?.colors.accent ?? "#000000", 0.6) ?? "#FFFFFF",
                 width: "100%",
                 textAlign: cover?.title.position.align_x,
-                fontSize: `${cover?.title.text.size! + (isLargeScreen ? 30 : 0)}px`,
+                fontSize: `${(cover?.title.text.size ?? 0) + (isLargeScreen ? 30 : 0)}px`,
                 wordBreak: "break-word",
                 opacity: cover?.title.text.opacity,
                 fontFamily: cover?.title.text.typeFace,

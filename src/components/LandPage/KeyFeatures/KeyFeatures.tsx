@@ -139,7 +139,7 @@ const FEATURES: Feature[] = [
 
 export const KeyFeatures = () => {
   const [open, setOpen] = useState(false);
-  const [currentItem, setCurrentItem] = useState<any>(null);
+  const [currentItem, setCurrentItem] = useState<string | null>(null);
 
   return (
     <div className={styles.main_cont}>
@@ -231,7 +231,7 @@ export const KeyFeatures = () => {
           {KEY_FEATURES.find((k) => k.key === currentItem)?.type === "video" ? (
             <video
               // ref={videoRef}
-              src={KEY_FEATURES.find((k) => k.key === currentItem)?.image!}
+              src={KEY_FEATURES.find((k) => k.key === currentItem)?.image ?? ''}
               autoPlay
               loop
               muted
@@ -251,7 +251,7 @@ export const KeyFeatures = () => {
             />
           ) : (
             <Image
-              src={KEY_FEATURES.find((k) => k.key === currentItem)?.image!}
+              src={KEY_FEATURES.find((k) => k.key === currentItem)?.image ?? ''}
               fill
               alt=""
               style={{
@@ -265,7 +265,7 @@ export const KeyFeatures = () => {
           )}
 
           {/* <Image
-            src={KEY_FEATURES.find((k) => k.key === currentItem)?.image!}
+            src={KEY_FEATURES.find((k) => k.key === currentItem)?.image ?? ''}
             fill
             alt=""
             style={{

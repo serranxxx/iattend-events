@@ -2,7 +2,7 @@
 
 import { InvitationUIBundle, NewInvitation } from "@/types/new_invitation";
 import Image from "next/image";
-import React, { forwardRef, useState } from "react";
+import React, { forwardRef } from "react";
 import { Separador } from "../Separator/Separator";
 import styles from "./dresscode.module.css";
 import { Button } from "antd";

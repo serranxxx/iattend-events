@@ -1,5 +1,3 @@
-import dayjs from "dayjs";
-
 export function generateSimpleId() {
   const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
   const numbers = "0123456789";

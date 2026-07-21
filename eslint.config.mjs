@@ -16,11 +16,22 @@ const eslintConfig = [
   {
     rules: {
       // "@typescript-eslint/no-explicit-any": "error",
-      "no-unused-vars": ["error", { argsIgnorePattern: "^_", varsIgnorePattern: "^_" }],
+      "no-unused-vars": ["error", {
+        argsIgnorePattern: "^_",
+        varsIgnorePattern: "^_",
+        caughtErrorsIgnorePattern: "^_",
+        destructuredArrayIgnorePattern: "^_",
+      }],
+      "@typescript-eslint/no-unused-vars": ["error", {
+        argsIgnorePattern: "^_",
+        varsIgnorePattern: "^_",
+        caughtErrorsIgnorePattern: "^_",
+        destructuredArrayIgnorePattern: "^_",
+      }],
       "unused-imports/no-unused-imports": "error",
       "unused-imports/no-unused-vars": [
         "warn",
-        { vars: "all", varsIgnorePattern: "^_", args: "after-used", argsIgnorePattern: "^_" },
+        { vars: "all", varsIgnorePattern: "^_", args: "after-used", argsIgnorePattern: "^_", caughtErrorsIgnorePattern: "^_" },
       ],
     },
     plugins: {

@@ -14,16 +14,16 @@ export interface AppState {
 
 // Tipo del contexto
 export interface AppStateContextType extends AppState {
-  login: (user: AppUser) => void;
+  login: (_user: AppUser) => void;
   logout: () => void;
-  setMainColor: (color: string) => void;
-  setColorPalette: (colors: ColorPalette) => void;
-  setTheme: (theme: boolean) => void;
-  setFont: (font: string) => void;
-  setCover: (cover: boolean) => void;
-  setOnDate: (date: Date) => void;
-  setOnDesigning: (designing: boolean) => void;
-  setCurrentInvitation: (id: string | null) => void;
+  setMainColor: (_color: string) => void;
+  setColorPalette: (_colors: ColorPalette) => void;
+  setTheme: (_theme: boolean) => void;
+  setFont: (_font: string) => void;
+  setCover: (_cover: boolean) => void;
+  setOnDate: (_date: Date) => void;
+  setOnDesigning: (_designing: boolean) => void;
+  setCurrentInvitation: (_id: string | null) => void;
 }
 
 export interface AppUser {

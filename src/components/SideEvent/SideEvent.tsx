@@ -9,13 +9,13 @@ import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
 import "dayjs/locale/es";
 import { Button, Input, message } from "antd";
-import { LuCircleCheck, LuCircleHelp, LuCircleX } from "react-icons/lu";
+import { LuCircleCheck, LuCircleX } from "react-icons/lu";
 import { simpleaddress } from "../Invitation/Itinerary/OpenCard/OpenCard";
 import WeatherWidget from "../Invitation/Itinerary/WeatherApi/WeatherWidget";
 import { FooterLand } from "../LandPage/Footer/Footer";
 import { FaLock } from "react-icons/fa";
 import { createClient } from "@/lib/supabase/client";
-import { GuestSubabasePayload, SideGuestSubabasePayload } from "@/types/guests";
+import {  SideGuestSubabasePayload } from "@/types/guests";
 import { darker } from "@/helpers/functions";
 import confetti from "canvas-confetti";
 
@@ -93,7 +93,7 @@ export default function SideEvents({ info, password, preview }: invProps) {
 
 
     } catch (error) {
-
+      console.log(error)
     }
   };
 
@@ -230,7 +230,7 @@ export default function SideEvents({ info, password, preview }: invProps) {
             style={
               {
                 "--blur-color": `${info?.body.color ?? "#000000"}`,
-                "--blur-color--dark": `${darker(info?.body.color!, 0.8) ?? "#000000"}80`,
+                "--blur-color--dark": `${darker(info?.body.color ?? "#000", 0.8) ?? "#000000"}80`,
               } as React.CSSProperties
             }
           >
@@ -338,7 +338,7 @@ export default function SideEvents({ info, password, preview }: invProps) {
 
             {
               info?.body.address.city &&
-              <WeatherWidget item={info?.body} isSide={true} color={`${darker(info?.body.color!, 0.8) ?? "#000000"}80`} />
+              <WeatherWidget item={info?.body} isSide={true} color={`${darker(info?.body.color ?? '#000', 0.8) ?? "#000000"}80`} />
             }
           </div>
         }

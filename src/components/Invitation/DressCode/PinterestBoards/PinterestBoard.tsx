@@ -1,11 +1,13 @@
 "use client";
 import { useEffect, useRef } from "react";
 
+type PinWindow = Window & { PinUtils?: { build?: () => void } };
+
 type CardProps = {
     opacity: boolean
 };
 
-export default function PinterestBoard({ opacity }: CardProps) {
+export default function PinterestBoard({ opacity: _opacity }: CardProps) {
     const built = useRef(false);
 
     useEffect(() => {
@@ -13,8 +15,8 @@ export default function PinterestBoard({ opacity }: CardProps) {
         if (built.current) return;
         built.current = true;
 
-        // Cuando el SDK ya está cargado, “construye” los widgets del DOM actual
-        (window as any).PinUtils?.build?.();
+        // Cuando el SDK ya está cargado, "construye" los widgets del DOM actual
+        (window as PinWindow).PinUtils?.build?.();
     }, []);
     return (
 

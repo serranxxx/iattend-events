@@ -1,7 +1,6 @@
 import { InvitationUIBundle, NewInvitation } from "@/types/new_invitation";
-import React, { forwardRef, useState } from "react";
+import React, { forwardRef } from "react";
 import { Separador } from "../Separator/Separator";
-import Card from "./Cards/Cards";
 import styles from "./gifts.module.css";
 import Wallet from "./Wallet/Wallet";
 import FadeLeft from "@/components/Motion/FadeLeft";
@@ -38,19 +37,6 @@ export const Gifts = forwardRef<HTMLDivElement, DresscodeProps>(function Greetin
   }
 
 
-
-  // 👉 Guardamos las cards en estado local
-  const [cards, setCards] = useState(content.cards);
-
-  // 👉 Función para mover item a la posición 0
-  const moveToTop = (index: number) => {
-    setCards((prev) => {
-      const newArr = [...prev];
-      const [selected] = newArr.splice(index, 1);
-      newArr.unshift(selected);
-      return newArr;
-    });
-  };
 
   const renderTextWithStrong = (text: string) => {
     const parts = text.split(/(\*[^*]+\*)/g);

@@ -11,7 +11,7 @@ type peopleProps = {
   invitationID?: string;
 };
 
-export const People = forwardRef<HTMLDivElement, peopleProps>(function Greeting({ dev, invitation, invitationID }, ref) {
+export const People = forwardRef<HTMLDivElement, peopleProps>(function Greeting({ dev: _dev, invitation, invitationID }, ref) {
   const content = invitation?.people;
   const generals = invitation?.generals;
 

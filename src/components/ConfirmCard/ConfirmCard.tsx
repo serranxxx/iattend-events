@@ -1,25 +1,25 @@
 import React, { useEffect, useRef, useState } from 'react'
 import styles from './confirmcard.module.css'
 import { Button, Input, Select, Space } from 'antd'
-import { LuArrowLeft, LuCheck, LuPalette, LuType, LuX } from 'react-icons/lu'
+import { LuArrowLeft, LuPalette, LuType } from 'react-icons/lu'
 import { profiles, profilesMap } from './profiles'
-import { QuickEventGuest, QuickEventUser, SideGuestSubabasePayload } from '@/types/guests'
+import { QuickEventGuest, QuickEventUser } from '@/types/guests'
 import { BackgroundGaffette } from './BackgroundGaffette'
 import { createClient } from '@/lib/supabase/client'
-import { ChevronDown, HatGlasses, ScanFace, UserRoundPen } from 'lucide-react'
+import { ChevronDown, HatGlasses, ScanFace } from 'lucide-react'
 
 interface ConfirmCardProps {
     setOpenModal: React.Dispatch<React.SetStateAction<boolean>>
     openModal: boolean
-    confirmAssitance: (g: QuickEventUser, isAnonymous: boolean) => void;
+    confirmAssitance: (_g: QuickEventUser, _isAnonymous: boolean) => void;
     user: QuickEventUser
-    insertUSer: (g: QuickEventUser) => void;
+    insertUSer: (_g: QuickEventUser) => void;
     event: QuickEventGuest | null
-    getUser: (g: string) => void;
+    getUser: (_g: string) => void;
     setUser: React.Dispatch<React.SetStateAction<QuickEventUser>>
     setEvent: React.Dispatch<React.SetStateAction<QuickEventGuest>>
-    updateAnonymous: (anon: boolean) => void;
-    insertUserAndUpgradeGuest: (g: QuickEventUser) => void;
+    updateAnonymous: (_anon: boolean) => void;
+    insertUserAndUpgradeGuest: (_g: QuickEventUser) => void;
 }
 
 const CATEGORY_OPTIONS = [
@@ -67,7 +67,7 @@ export const ConfirmCard: React.FC<ConfirmCardProps> = ({
     const [onEmoji, setOnEmoji] = useState(false)
     const [isAnonymous, setIsAnonymous] = useState(false)
     const [onIssue, setOnIssue] = useState(false)
-    const [onUpdate, setOnUpdate] = useState(false)
+    const [_onUpdate, _setOnUpdate] = useState(false)
     const [customEmoji, setCustomEmoji] = useState<string>("")
 
     const [onBackToPublic, setOnBackToPublic] = useState(false)
@@ -131,7 +131,7 @@ export const ConfirmCard: React.FC<ConfirmCardProps> = ({
                 }
 
                 else {
-                    onBackToPublic ? insertUserAndUpgradeGuest(user) : confirmAssitance(user, true)
+                    if (onBackToPublic) { insertUserAndUpgradeGuest(user) } else { confirmAssitance(user, true) }
 
                 }
 
@@ -312,7 +312,7 @@ export const ConfirmCard: React.FC<ConfirmCardProps> = ({
                         </Button>
                     </div>
 
-                    <Button onClick={() => { onBackToPublic ? backToAnonymous() : setIsAnonymous(!isAnonymous) }} className={styles.anon_button_card} type="text">
+                    <Button onClick={() => { if (onBackToPublic) { backToAnonymous() } else { setIsAnonymous(!isAnonymous) } }} className={styles.anon_button_card} type="text">
                         {
                             isAnonymous ? 'Identificarse' : 'Confirmar anónimo'
                         }
@@ -462,8 +462,8 @@ export const ConfirmCard: React.FC<ConfirmCardProps> = ({
                         <div style={{
                             height: onEdit ? ON_EDIT_HEIGHT
                                 : user.id ? (!event || event.state !== 'confirmado') ? USER_NOT_CONFIRMED_HEIGHT : CONFIRMED_HEIGHT : NOT_USER_NOT_CONFIRMED_HEIGHT,
-                            ['--gradient' as any]: onEdit ? profilesMap[customData.profile].background : profilesMap[event?.anonymous ? 15 : user.profile].background
-                        }} className={styles.card_cont}>
+                            '--gradient': onEdit ? profilesMap[customData.profile].background : profilesMap[event?.anonymous ? 15 : user.profile].background
+                        } as React.CSSProperties} className={styles.card_cont}>
                             <div className={styles.confirm_card_cont}>
 
                                 <div
@@ -646,8 +646,8 @@ export const ConfirmCard: React.FC<ConfirmCardProps> = ({
                         <div style={{
                             height: onEdit ? ON_EDIT_HEIGHT
                                 : user.id ? !event ? USER_NOT_CONFIRMED_HEIGHT : CONFIRMED_HEIGHT : NOT_USER_NOT_CONFIRMED_HEIGHT,
-                            ['--gradient' as any]: onEdit ? profilesMap[customData.profile].background : profilesMap[event?.anonymous ? 15 : user.profile].background
-                        }} className={styles.card_cont}>
+                            '--gradient': onEdit ? profilesMap[customData.profile].background : profilesMap[event?.anonymous ? 15 : user.profile].background
+                        } as React.CSSProperties} className={styles.card_cont}>
 
                             <div style={{
                                 position: 'relative', height: '100%', width: '100%', opacity: '0.5',

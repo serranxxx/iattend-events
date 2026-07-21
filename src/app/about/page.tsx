@@ -9,7 +9,6 @@ import { FooterLand } from "@/components/LandPage/Footer/Footer";
 import { Reviews } from "@/components/LandPage/Reviews/Reviews";
 import Video from "@/components/LandPage/Video/Video";
 import type { Metadata } from "next";
-import { Drawer } from "antd";
 import { HomeScroll } from "@/components/HomeScroll/HomeScroll";
 
 export const metadata: Metadata = {

@@ -1,6 +1,6 @@
 import React from "react";
 import Head from "next/head";
-import { IoMdReturnLeft } from "react-icons/io";
+import Link from "next/link";
 import BackButton from "@/components/BackButton/BackButton";
 
 export default function WorkflowPage() {
@@ -112,7 +112,7 @@ export default function WorkflowPage() {
                     <p>
                         <strong>I attend</strong> está diseñada para que organizar tu evento
                         sea un proceso claro, intuitivo y sin estrés.
-                        Desde la <a href="/about/guest-mamagement">creación de tu lista de invitados</a> hasta el control final de confirmaciones,
+                        Desde la <Link href="/about/guest-mamagement">creación de tu lista de invitados</Link> hasta el control final de confirmaciones,
                         todo el flujo de trabajo está pensado para acompañarte
                         <strong>paso a paso</strong>, sin procesos complicados ni herramientas externas.
                     </p>
@@ -127,7 +127,7 @@ export default function WorkflowPage() {
 
                     <p>
                         El primer paso para organizar tu evento es crear tu
-                        <strong> <a href="/about/guest-mamagement">lista de invitados digital</a></strong>.
+                        <strong> <Link href="/about/guest-mamagement">lista de invitados digital</Link></strong>.
                         Desde I attend puedes agregar y organizar a tus invitados
                         en un solo lugar, clasificarlos por categorías
                         y definir acompañantes de forma sencilla.
@@ -143,7 +143,7 @@ export default function WorkflowPage() {
 
                     <p>
                         Una vez creada tu lista, puedes
-                        <strong><a href="/about/invitation-paperless"> diseñar tu invitación digital </a></strong>
+                        <strong><Link href="/about/invitation-paperless"> diseñar tu invitación digital </Link></strong>
                         de manera fácil y sin complicaciones.
                         Personaliza cada sección, agrega la información de tu evento
                         y adapta el diseño para que refleje tu estilo.
@@ -151,7 +151,7 @@ export default function WorkflowPage() {
 
                     <p>
                         No necesitas conocimientos de diseño.
-                        I attend te permite <a href="/about/invitation-paperless">crear una invitación</a> clara,
+                        I attend te permite <Link href="/about/invitation-paperless">crear una invitación</Link> clara,
                         visual y completamente editable en cualquier momento.
                     </p>
 
@@ -159,10 +159,10 @@ export default function WorkflowPage() {
 
                     <p>
                         Cuando tu invitación está lista,
-                        puedes <strong><a href="/about/envios-whatsapp">compartirla con tus invitados </a></strong>
+                        puedes <strong><Link href="/about/envios-whatsapp">compartirla con tus invitados </Link></strong>
                         de forma rápida y directa.
-                        Envía la invitación por <a href="/about/envios-whatsapp">WhatsApp</a>,
-                        utiliza <a href="/about/guest-mamagement">links personalizados</a> o <a href="/about/guest-mamagement">códigos de acceso</a>,
+                        Envía la invitación por <Link href="/about/envios-whatsapp">WhatsApp</Link>,
+                        utiliza <Link href="/about/guest-mamagement">links personalizados</Link> o <Link href="/about/guest-mamagement">códigos de acceso</Link>,
                         según la privacidad que elijas para tu evento.
                     </p>
 
@@ -176,15 +176,15 @@ export default function WorkflowPage() {
 
                     <p>
                         Conforme tus invitados responden,
-                        puedes <a href="/about/guest-mamagement">visualizar las confirmaciones en tiempo real</a>.
+                        puedes <Link href="/about/guest-mamagement">visualizar las confirmaciones en tiempo real</Link>.
                         I attend organiza automáticamente a tus invitados
                         en confirmados, cancelados o pendientes,
                         dándote una vista clara del estado de tu evento.
                     </p>
 
                     <p>
-                        Además, puedes <a href="/about/mapa-de-mesas">asignar mesas</a>,
-                        generar <a href="/about/pases-digitales">pases digitales</a> personalizados
+                        Además, puedes <Link href="/about/mapa-de-mesas">asignar mesas</Link>,
+                        generar <Link href="/about/pases-digitales">pases digitales</Link> personalizados
                         y mantener el control total del acomodo,
                         todo desde la misma plataforma.
                     </p>

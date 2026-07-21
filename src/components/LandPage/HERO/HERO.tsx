@@ -3,7 +3,6 @@
 import React from "react";
 import styles from "./hero.module.css";
 import { Button } from "antd";
-import { FaBars, FaPaperPlane } from "react-icons/fa";
 import Image from "next/image";
 import AnimatedPath from "@/components/Motion/AnimatedPath";
 import { LuArrowUpRight } from "react-icons/lu";

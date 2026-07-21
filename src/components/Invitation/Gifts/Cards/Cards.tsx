@@ -2,28 +2,26 @@ import { GiftCard, NewInvitation } from "@/types/new_invitation";
 import styles from "./cards.module.css";
 import { FaCopy } from "react-icons/fa6";
 import { message } from "antd";
-import { it } from "node:test";
-
 type CardProps = {
   invitation: NewInvitation;
   dev: boolean;
   GiftCard: GiftCard[];
-  onSelect?: (index: number) => void; // 👉 nuevo callback
+  onSelect?: (_index: number) => void; // 👉 nuevo callback
 };
 
-export default function Card({ invitation, dev, GiftCard, onSelect }: CardProps) {
+export default function Card({ invitation, dev: _dev, GiftCard, onSelect }: CardProps) {
   const content = invitation.gifts;
   const generals = invitation.generals;
   const font = generals.fonts.body?.typeFace;
 
   const primary = generals?.colors.primary ?? "#FFFFFF";
-  const secondary = generals?.colors.secondary ?? "#FFFFFF";
+  const _secondary = generals?.colors.secondary ?? "#FFFFFF";
   const accent = generals?.colors.accent ?? "#FFFFFF";
-  const actions = generals?.colors.actions ?? "#FFFFFF";
+  const _actions = generals?.colors.actions ?? "#FFFFFF";
 
   const [messageApi, contextHolder] = message.useMessage();
 
-  const copyToClipboard = async (textToCopy: string) => {
+  const _copyToClipboard = async (textToCopy: string) => {
     try {
       await navigator.clipboard.writeText(textToCopy);
       messageApi.info("Número de cuenta copiado");
@@ -89,7 +87,7 @@ export default function Card({ invitation, dev, GiftCard, onSelect }: CardProps)
       {contextHolder}
 
       {GiftCard?.slice().reverse().map((item, index) => {
-        const key = (item as any)?.id ?? index; // usa id si existe
+        const key = (item as Record<string, unknown>)?.id ?? index; // usa id si existe
         const color = content.background ? accent : content.inverted ? primary : accent;
         const baseClass = item.kind === "bank" ? styles.gift_card_bank : styles.gift_card_page;
         const composedClass = `${baseClass} ${styles[handleClass(item)]}`;
