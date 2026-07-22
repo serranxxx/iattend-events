@@ -18,6 +18,7 @@ import { createClient } from "@/lib/supabase/client";
 import {  SideGuestSubabasePayload } from "@/types/guests";
 import { darker } from "@/helpers/functions";
 import confetti from "canvas-confetti";
+import { AnimatePresence, motion } from "motion/react";
 
 type invProps = {
   info: SideEvent | null;
@@ -35,6 +36,11 @@ export default function SideEvents({ info, password, preview }: invProps) {
   const supabase = createClient();
   const [messageApi, contextHolder] = message.useMessage();
   const [guestInfo, setGuestInfo] = useState<SideGuestSubabasePayload | null>(null);
+  const [companions, setCompanions] = useState<SideGuestSubabasePayload[]>([]);
+  const [confirmStep, setConfirmStep] = useState<boolean>(false);
+  const [draftCompanions, setDraftCompanions] = useState<SideGuestSubabasePayload[]>([]);
+  const [draftMainName, setDraftMainName] = useState<string>("");
+  const [draftMainRejected, setDraftMainRejected] = useState<boolean>(false);
 
   interface CSSVars extends React.CSSProperties {
     ["--hover-color"]?: string;
@@ -48,6 +54,30 @@ export default function SideEvents({ info, password, preview }: invProps) {
     fontWeight: 600,
     letterSpacing: "2px",
     boxShadow: "0px 0px 12px rgba(0,0,0,0.2)",
+    fontFamily: 'Poppins',
+  };
+
+  const rejectButtonStyle: React.CSSProperties = {
+    color: "#FFFFFF",
+    backgroundColor: "#FFFFFF25",
+    border: "1px solid #FFFFFF55",
+    borderRadius: "10px",
+    fontSize: "12px",
+    height: "44px",
+    paddingInline: "12px",
+    whiteSpace: "nowrap",
+    fontFamily: 'Poppins',
+  };
+
+  const undoButtonStyle: React.CSSProperties = {
+    color: "#FFFFFF",
+    backgroundColor: "transparent",
+    border: "1px solid #FFFFFF40",
+    borderRadius: "10px",
+    fontSize: "12px",
+    height: "44px",
+    paddingInline: "12px",
+    whiteSpace: "nowrap",
     fontFamily: 'Poppins',
   };
 
@@ -88,6 +118,21 @@ export default function SideEvents({ info, password, preview }: invProps) {
         return
       }
 
+      if (data?.has_companion) {
+        const { data: companionsData, error: companionsError } = await supabase
+          .from("side_events_guests")
+          .select("*")
+          .eq("companion_id", data.id);
+
+        if (companionsError) {
+          console.log(companionsError, 'not found')
+        }
+
+        setCompanions(companionsData ?? [])
+      } else {
+        setCompanions([])
+      }
+
       setValidated(true);
       setGuestInfo(data)
 
@@ -116,6 +161,21 @@ export default function SideEvents({ info, password, preview }: invProps) {
       if (!data) {
         messageApi.error(`Código incorrecto`);
         return
+      }
+
+      if (data?.has_companion) {
+        const { data: companionsData, error: companionsError } = await supabase
+          .from("side_events_guests")
+          .select("*")
+          .eq("companion_id", data.id);
+
+        if (companionsError) {
+          console.log(companionsError, 'not found')
+        }
+
+        setCompanions(companionsData ?? [])
+      } else {
+        setCompanions([])
       }
 
       setValidated(true);
@@ -172,9 +232,77 @@ export default function SideEvents({ info, password, preview }: invProps) {
 
     if (guestInfo.state === 'confirmado') {
       updateGuestStatus('creado');
-    } else {
-      updateGuestStatus('confirmado');
-      onClick(); // si esto cierra modal, avanza paso, etc.
+      return;
+    }
+
+    if (guestInfo.has_companion && companions.length > 0) {
+      setDraftMainName(guestInfo.name ?? "");
+      setDraftMainRejected(false);
+      setDraftCompanions(companions);
+      setConfirmStep(true);
+      return;
+    }
+
+    updateGuestStatus('confirmado');
+    onClick(); // si esto cierra modal, avanza paso, etc.
+  };
+
+  const cancelConfirmStep = () => {
+    setDraftMainName(guestInfo?.name ?? "");
+    setDraftMainRejected(false);
+    setDraftCompanions(companions);
+    setConfirmStep(false);
+  };
+
+  const confirmWithCompanions = async () => {
+    if (!guestInfo) return;
+
+    try {
+      const results = await Promise.all(
+        draftCompanions.map((c) => {
+          const hasName = Boolean(c.name && c.name.trim() !== "");
+          const finalName = hasName ? c.name : `Acompañante de ${draftMainName || guestInfo.name}`;
+          const finalState = c.state === "rechazado" ? "rechazado" : "confirmado";
+          return supabase
+            .from("side_events_guests")
+            .update({ name: finalName, state: finalState })
+            .eq("id", c.id)
+            .select()
+            .maybeSingle();
+        })
+      );
+
+      const failed = results.find((r) => r.error);
+      if (failed?.error) {
+        console.log(failed.error, "error updating companions");
+        messageApi.error("No se pudo actualizar a tus acompañantes");
+        return;
+      }
+
+      const updatedCompanions = results
+        .map((r) => r.data)
+        .filter((d): d is SideGuestSubabasePayload => Boolean(d));
+
+      const { data, error } = await supabase
+        .from("side_events_guests")
+        .update({ state: draftMainRejected ? "rechazado" : "confirmado", name: draftMainName })
+        .eq("password", guestInfo.password)
+        .eq("side_events_id", info?.id)
+        .select()
+        .maybeSingle();
+
+      if (error || !data) {
+        console.log(error, "error updating status");
+        messageApi.error("No se pudo actualizar el estado");
+        return;
+      }
+
+      setCompanions(updatedCompanions);
+      setGuestInfo(data);
+      setConfirmStep(false);
+      onClick();
+    } catch (error) {
+      console.log(error);
     }
   };
 
@@ -211,6 +339,15 @@ export default function SideEvents({ info, password, preview }: invProps) {
 
 
   }, []);
+
+  const companionsLabel = (() => {
+    if (companions.length > 1) return `+${companions.length} acompañantes`;
+    if (companions.length === 1) {
+      const only = companions[0];
+      return only.name && only.name.trim() !== "" ? `+ ${only.name}` : "+1 acompañante";
+    }
+    return null;
+  })();
 
   return (
     <>
@@ -266,24 +403,205 @@ export default function SideEvents({ info, password, preview }: invProps) {
             </div>
 
 
-            <div className={styles.buttons_cont}>
-              {
-                guestInfo?.state !== 'rechazado' &&
-                <Button onClick={handleConfirmAttendance} style={{ height: '64px', borderRadius: guestInfo?.state === 'confirmado' ? '99px' : '99px 0px 0px 99px' }} icon={guestInfo?.state !== 'confirmado' && <LuCircleCheck size={18} style={{ opacity: "0.5" }} />} type="text" className={styles.side_buttons}>
-                  {
-                    guestInfo?.state === 'confirmado' ? 'Asistencia confirmada' : 'Asistiré'
-                  }
-                </Button>
-              }
-              {
-                guestInfo?.state !== 'confirmado' &&
-                <Button onClick={() => updateGuestStatus(guestInfo?.state === 'rechazado' ? 'creado' : 'rechazado')} style={{ height: '64px', borderRadius: guestInfo?.state === 'rechazado' ? '99px' : '0px 99px 99px 0px' }} icon={guestInfo?.state !== 'rechazado' && <LuCircleX size={18} style={{ opacity: "0.5" }} />} type="text" className={styles.side_buttons}>
-                  {guestInfo?.state === 'rechazado' ? 'Asistencia declinada' : 'No asistiré'}
-                </Button>
-              }
+            <AnimatePresence mode="wait">
+            {confirmStep ? (
+              <motion.div
+                key="confirm-step"
+                initial={{ opacity: 0, y: 12, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -12, scale: 0.98 }}
+                transition={{ duration: 0.25, ease: "easeInOut" }}
+                className={styles.mapa_container}
+                style={{ padding: "18px", gap: "12px" }}
+              >
+                <span
+                  style={{
+                    color: "#FFFFFF",
+                    textAlign: "center",
+                    fontFamily: "Poppins",
+                    fontSize: "12px",
+                    opacity: 0.7,
+                  }}
+                >
+                  Confirma tu asistencia
+                </span>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", width: "100%" }}>
+                  <Input
+                    value={draftMainName}
+                    disabled={draftMainRejected}
+                    onChange={(e) => setDraftMainName(e.target.value)}
+                    placeholder="Tu nombre"
+                    className={styles.locked_input}
+                    style={{
+                      backgroundColor: "#FFFFFF20",
+                      borderWidth: "1px",
+                      color: "#FFF",
+                      fontSize: "14px",
+                      fontWeight: 700,
+                      textAlign: "center",
+                      borderRadius: "12px",
+                      minHeight: "44px",
+                      fontFamily: 'Poppins',
+                      flex: 1,
+                      opacity: draftMainRejected ? 0.5 : 1,
+                    }}
+                  />
+                  {draftMainRejected ? (
+                    <Button onClick={() => setDraftMainRejected(false)} style={undoButtonStyle}>
+                      Deshacer
+                    </Button>
+                  ) : (
+                    <Button icon={<LuCircleX size={16} />} onClick={() => setDraftMainRejected(true)} style={rejectButtonStyle}>
+                      No asistirá
+                    </Button>
+                  )}
+                </div>
+                {draftCompanions.map((c, index) => {
+                  const isRejected = c.state === "rechazado";
 
-            </div>
+                  return (
+                    <div key={c.id ?? index} style={{ display: "flex", alignItems: "center", gap: "8px", width: "100%" }}>
+                      <Input
+                        value={c.name ?? ""}
+                        disabled={isRejected}
+                        onChange={(e) =>
+                          setDraftCompanions((prev) => prev.map((dc, i) => (i === index ? { ...dc, name: e.target.value } : dc)))
+                        }
+                        placeholder={`Acompañante de ${draftMainName || guestInfo?.name}`}
+                        className={styles.locked_input}
+                        style={{
+                          backgroundColor: "#FFFFFF20",
+                          borderWidth: "1px",
+                          color: "#FFF",
+                          fontSize: "14px",
+                          borderRadius: "12px",
+                          minHeight: "44px",
+                          fontFamily: 'Poppins',
+                          flex: 1,
+                          opacity: isRejected ? 0.5 : 1,
+                        }}
+                      />
+                      {isRejected ? (
+                        <Button
+                          onClick={() =>
+                            setDraftCompanions((prev) => prev.map((dc, i) => (i === index ? { ...dc, state: "esperando" } : dc)))
+                          }
+                          style={undoButtonStyle}
+                        >
+                          Deshacer
+                        </Button>
+                      ) : (
+                        <Button
+                          icon={<LuCircleX size={16} />}
+                          onClick={() =>
+                            setDraftCompanions((prev) => prev.map((dc, i) => (i === index ? { ...dc, state: "rechazado" } : dc)))
+                          }
+                          style={rejectButtonStyle}
+                        >
+                          No asistirá
+                        </Button>
+                      )}
+                    </div>
+                  );
+                })}
+                {draftCompanions.some((c) => !c.name || c.name.trim() === "") && (
+                  <span
+                    style={{
+                      color: "#FFFFFF",
+                      textAlign: "center",
+                      fontFamily: "Poppins",
+                      fontSize: "12px",
+                      fontStyle: "italic",
+                      opacity: 0.7,
+                    }}
+                  >
+                    A los acompañantes sin nombre se les asignará &quot;Acompañante de {draftMainName || guestInfo?.name}&quot;
+                  </span>
+                )}
+                <Button className={styles.locked_btn} style={{ ...btnStyle, width: "100%" }} onClick={confirmWithCompanions}>
+                  Confirmar
+                </Button>
+                <Button type="text" onClick={cancelConfirmStep} style={{ color: "#FFFFFF", opacity: 0.7 }}>
+                  Cancelar
+                </Button>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="buttons-step"
+                initial={{ opacity: 0, y: -12, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 12, scale: 0.98 }}
+                transition={{ duration: 0.25, ease: "easeInOut" }}
+                className={styles.buttons_cont}
+              >
+                {
+                  guestInfo?.state !== 'rechazado' &&
+                  <Button onClick={handleConfirmAttendance} style={{ height: '64px', borderRadius: guestInfo?.state === 'confirmado' ? '99px' : '99px 0px 0px 99px' }} icon={guestInfo?.state !== 'confirmado' && <LuCircleCheck size={18} style={{ opacity: "0.5" }} />} type="text" className={styles.side_buttons}>
+                    {
+                      guestInfo?.state === 'confirmado' ? 'Asistencia confirmada' : 'Asistiré'
+                    }
+                  </Button>
+                }
+                {
+                  guestInfo?.state !== 'confirmado' &&
+                  <Button onClick={() => updateGuestStatus(guestInfo?.state === 'rechazado' ? 'creado' : 'rechazado')} style={{ height: '64px', borderRadius: guestInfo?.state === 'rechazado' ? '99px' : '0px 99px 99px 0px' }} icon={guestInfo?.state !== 'rechazado' && <LuCircleX size={18} style={{ opacity: "0.5" }} />} type="text" className={styles.side_buttons}>
+                    {guestInfo?.state === 'rechazado' ? 'Asistencia declinada' : 'No asistiré'}
+                  </Button>
+                }
 
+              </motion.div>
+            )}
+            </AnimatePresence>
+
+            <AnimatePresence>
+              {!confirmStep && guestInfo?.name && (
+                <motion.div
+                  key="guest-name-card"
+                  initial={{ opacity: 0, y: 12, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -12, scale: 0.98 }}
+                  transition={{ duration: 0.25, ease: "easeInOut" }}
+                  className={styles.mapa_container}
+                  style={{ padding: "12px 18px" }}
+                >
+                  <span
+                    style={{
+                      color: "#FFFFFF",
+                      textAlign: "center",
+                      fontFamily: "Poppins",
+                      fontSize: "12px",
+                      opacity: 0.7,
+                    }}
+                  >
+                    Invitación dirigida a
+                  </span>
+                  <span
+                    style={{
+                      color: "#FFFFFF",
+                      textAlign: "center",
+                      fontFamily: "Poppins",
+                      fontSize: "16px",
+                      fontWeight: 700,
+                    }}
+                  >
+                    {guestInfo.name}
+                  </span>
+                  {guestInfo.has_companion && companionsLabel && (
+                    <span
+                      style={{
+                        color: "#FFFFFF",
+                        textAlign: "center",
+                        fontFamily: "Poppins",
+                        fontSize: "14px",
+                        opacity: 0.85,
+                      }}
+                    >
+                      {companionsLabel}
+                    </span>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {info?.body.extras && (
               <div className={styles.mapa_container} style={{ padding: "12px 18px" }}>
@@ -340,6 +658,10 @@ export default function SideEvents({ info, password, preview }: invProps) {
               info?.body.address.city &&
               <WeatherWidget item={info?.body} isSide={true} color={`${darker(info?.body.color ?? '#000', 0.8) ?? "#000000"}80`} />
             }
+
+            <div className={styles.mapa_container}>
+              <FooterLand bordered={false} light />
+            </div>
           </div>
         }
         <div
@@ -395,10 +717,6 @@ export default function SideEvents({ info, password, preview }: invProps) {
         </div>
 
       </div>
-      {
-        validated &&
-        <FooterLand></FooterLand>
-      }
     </>
   );
 }

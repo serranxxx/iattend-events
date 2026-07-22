@@ -10,11 +10,13 @@ import { File, Phone } from "lucide-react";
 
 type Props = {
   invitation?: NewInvitation;
+  bordered?: boolean;
+  light?: boolean;
 };
 
-export const FooterLand = ({ invitation }: Props) => {
+export const FooterLand = ({ invitation, bordered = true, light = false }: Props) => {
   const primary = invitation?.generals.colors.primary ?? "#0c171b";
-  const accent = invitation?.generals.colors.accent ?? "#EEE9DE";
+  const accent = light ? "#FFFFFF" : (invitation?.generals.colors.accent ?? "#EEE9DE");
 
   // const darkPrimary = darker(primary, 0.98) ?? "#071013";
 
@@ -27,7 +29,7 @@ export const FooterLand = ({ invitation }: Props) => {
   // )`;
 
   return (
-    <div className={styles.main_cont} style={{ background: 'transparent', borderTopColor: `${primary}20` }}>
+    <div className={styles.main_cont} style={{ background: 'transparent', borderTop: bordered ? `1.5px solid ${primary}20` : 'none' }}>
 
       <div className={styles.cta_section}>
 
