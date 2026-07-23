@@ -117,7 +117,7 @@ export default function CameraView({ invitation, invitationID, guestInfo, onClos
     await new Promise((res) => (img.onload = res));
     URL.revokeObjectURL(url);
 
-    const MAX = 1200;
+    const MAX = 1920;
     const scale = Math.min(1, MAX / Math.max(img.width, img.height));
     const canvas = document.createElement("canvas");
     canvas.width = img.width * scale;
@@ -125,7 +125,7 @@ export default function CameraView({ invitation, invitationID, guestInfo, onClos
     canvas.getContext("2d")!.drawImage(img, 0, 0, canvas.width, canvas.height);
 
     return new Promise((res) =>
-      canvas.toBlob((blob) => res(blob!), "image/webp", 0.82)
+      canvas.toBlob((blob) => res(blob!), "image/webp", 0.90)
     );
   };
 

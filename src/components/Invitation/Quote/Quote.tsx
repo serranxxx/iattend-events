@@ -54,7 +54,7 @@ export const Quote = forwardRef<HTMLDivElement, quoteProps>(function Greeting({ 
               <div className="background_image_quote_container" style={{
                 borderRadius: content?.dynamic_background?.border_radius,
               }}>
-                <div style={{ backgroundColor: primary, height: "100%", width: "100%" }}>
+                <div style={{ backgroundColor: 'transparent', height: "100%", width: "100%" }}>
                   {image_src && <Image fill style={{ objectFit: "cover" }} loading="lazy" decoding="async" alt="" src={image_src} />}
                 </div>
 
