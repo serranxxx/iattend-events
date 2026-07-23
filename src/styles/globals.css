@@ -2,3 +2,11 @@
 @import './modules.css';
 @import './seo.css';
 
+@font-face {
+  font-family: 'Chiro';
+  src: url('/fonts/Chiro-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
