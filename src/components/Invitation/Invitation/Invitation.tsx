@@ -14,7 +14,7 @@ import { Destinations } from "../Destinations/Destinations";
 import { Notices } from "../Notices/Notices";
 import { Gallery } from "../Gallery/Gallery";
 import Image from "next/image";
-import { textures } from "@/helpers/textures";
+import { Texture } from "@/lib/textures/cache";
 import { TextureOverlay } from "./TexturesOverlay";
 import { createPortal } from "react-dom";
 import { Button, Drawer, Input, message } from "antd";
@@ -46,13 +46,15 @@ type invProps = {
   phone_number?: string | null;
   scrollToSection?: string | null;
   onSectionChange?: (_section: string) => void;
+  textures?: Texture[];
+  textureOverride?: Texture | null;
 };
 
 
 
 
 
-export default function Invitation({ password, invitationID, ui, invitation, loader, type, mongoID, dev, plan, phone_number, scrollToSection, onSectionChange }: invProps) {
+export default function Invitation({ password, invitationID, ui, invitation, loader, type, mongoID, dev, plan, phone_number, scrollToSection, onSectionChange, textures = [], textureOverride = null }: invProps) {
   const coverRef = useRef<HTMLDivElement>(null);
   const greetingRef = useRef<HTMLDivElement>(null);
   const peopleRef = useRef<HTMLDivElement>(null);
@@ -451,7 +453,9 @@ export default function Invitation({ password, invitationID, ui, invitation, loa
     );
   }
 
-  const tex = textures[invitation.generals?.texture ?? 0];
+  const textureId = invitation.generals?.texture ?? textures[0]?.id;
+  const tex = textureOverride ?? textures.find((t) => t.id === textureId);
+  const showTexture = Boolean(textureOverride) || invitation.generals.texture !== null;
 
   return (
     <>
@@ -551,7 +555,7 @@ export default function Invitation({ password, invitationID, ui, invitation, loa
             {ui?.locked.access}
           </Button>
         </div>
-        {invitation.generals.texture !== null && tex && (
+        {showTexture && tex && (
           <TextureOverlay
             containerRef={scrollableContentRef as unknown as React.RefObject<HTMLElement>}
             coverHeightPx={heightSize}
