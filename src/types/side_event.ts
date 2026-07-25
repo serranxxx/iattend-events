@@ -1,6 +1,10 @@
 export type SideEventBody = {
   font: string;
   hour: string;
+  // Huso horario IANA del venue (ej. "America/Tijuana"), resuelto por
+  // iattend-vite a partir del estado de la dirección al guardar. Ausente
+  // en eventos guardados antes de este cambio.
+  timezone?: string | null;
   image: string;
   title: {
     font: string;
@@ -76,7 +80,8 @@ export type popContent = {
   information: {
     date: string,
     type: string,
-    address: SideAddress
+    address: SideAddress,
+    timezone?: string | null
   }
 };
 

@@ -379,7 +379,7 @@ export default function SideEvents({ info, password, preview }: invProps) {
                 zIndex: 99,
               }}
             >
-              <span>{formatEventDateTime(info?.body.hour, info?.body.address?.state)}</span>
+              <span>{formatEventDateTime(info?.body.hour, { state: info?.body.address?.state, timezone: info?.body.timezone })}</span>
               <span>
                 {info?.body.address.street} {info?.body.address.number},
               </span>

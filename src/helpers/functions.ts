@@ -105,28 +105,34 @@ export function getTimezoneForState(state?: string | null): string {
   return STATE_TIMEZONES[normalizeStateKey(state)] ?? "America/Mexico_City";
 }
 
-// Convierte un string de fecha que llega de Supabase a un Date válido.
-// Safari/iOS no puede parsear "YYYY-MM-DD HH:MM:SS" (con espacio, sin "T"),
-// así que lo normalizamos antes de construir el Date. Si además no trae
-// zona horaria explícita (Z u offset), asumimos UTC igual que Postgres.
-function parseSupabaseDate(raw: string): Date {
-  const normalized = raw.trim().replace(" ", "T");
-  const hasOffset = /[Zz]$|[+-]\d{2}:?\d{2}$/.test(normalized);
-  return new Date(hasOffset ? normalized : `${normalized}Z`);
+// Un valor de fecha/hora "absoluto" (instante UTC real) trae Z u offset
+// explícito, ej. "2026-09-19T20:00:00.000Z". Formato legado: lo guardó
+// iattend-vite convirtiendo la hora de pared del organizador con LA ZONA
+// HORARIA DE SU NAVEGADOR en ese momento, no la del venue — por eso hay
+// que reconvertirlo con la zona horaria correcta al mostrarlo.
+function isAbsoluteInstant(raw: string): boolean {
+  return /[Zz]$|[+-]\d{2}:?\d{2}$/.test(raw.trim());
 }
 
-// Formatea fecha + hora de un evento en el huso horario que corresponde
-// a su estado (no siempre es el de Ciudad de México). Usa Intl.DateTimeFormat
-// directamente en vez del plugin `timezone` de dayjs: ese plugin calcula el
-// offset re-parseando el resultado de `toLocaleString` con `new Date(...)`,
-// y ese round-trip falla ("Invalid Date") en Safari/iOS.
-export function formatEventDateTime(
-  isoString: string | null | undefined,
-  state?: string | null
-): string {
-  if (!isoString) return "";
+// Da nombre de día de la semana y de mes para una fecha (Y, M, D) sin
+// depender de ninguna zona horaria: se ancla en UTC solo para poder usar
+// Intl, nunca para convertir un instante real.
+function getWeekdayAndMonth(y: number, m: number, d: number) {
+  const anchor = new Date(Date.UTC(y, m - 1, d));
+  return {
+    weekday: new Intl.DateTimeFormat("es-MX", { weekday: "short", timeZone: "UTC" }).format(anchor),
+    month: new Intl.DateTimeFormat("es-MX", { month: "long", timeZone: "UTC" }).format(anchor),
+  };
+}
 
-  const date = parseSupabaseDate(isoString);
+// Formatea un instante UTC real (formato legado) en la zona horaria que le
+// corresponde. Usa Intl.DateTimeFormat directo en vez del plugin `timezone`
+// de dayjs: ese plugin calcula el offset re-parseando el resultado de
+// `toLocaleString` con `new Date(...)`, y ese round-trip falla
+// ("Invalid Date") en Safari/iOS.
+function formatAbsoluteInstant(raw: string, timeZone: string): string {
+  const normalized = raw.trim().replace(" ", "T");
+  const date = new Date(/[Zz]$|[+-]\d{2}:?\d{2}$/.test(normalized) ? normalized : `${normalized}Z`);
   if (isNaN(date.getTime())) return "";
 
   const parts = new Intl.DateTimeFormat("es-MX", {
@@ -136,13 +142,46 @@ export function formatEventDateTime(
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
-    timeZone: getTimezoneForState(state),
+    timeZone,
   }).formatToParts(date);
 
   const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
   const hour = get("hour") === "24" ? "00" : get("hour");
 
   return `${get("weekday")}. ${get("day")} de ${get("month")}, ${hour}:${get("minute")}`;
+}
+
+// Formatea una hora de pared "absoluta" (formato nuevo): el string
+// "YYYY-MM-DD HH:mm[:ss]" tal como lo escribió el organizador, sin ninguna
+// zona horaria adjunta. No se convierte nunca — se muestra tal cual, por
+// eso no hay bug de timezone posible en este camino.
+function formatWallClock(raw: string): string {
+  const match = raw.trim().match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/);
+  if (!match) return "";
+
+  const [, yStr, mStr, dStr, hh, mm] = match;
+  const { weekday, month } = getWeekdayAndMonth(Number(yStr), Number(mStr), Number(dStr));
+
+  return `${weekday}. ${Number(dStr)} de ${month}, ${hh}:${mm}`;
+}
+
+// Formatea fecha + hora de un evento (side event / pop event) para mostrarla
+// al invitado. Soporta dos formatos, para convivir con datos ya guardados
+// mientras se migran:
+//  - Nuevo (hora de pared absoluta): se muestra tal cual, sin conversión.
+//  - Legado (instante UTC): se reconvierte con `timezone` (si ya se guardó
+//    explícito) o, si no, adivinando por el estado de la dirección.
+export function formatEventDateTime(
+  raw: string | null | undefined,
+  opts?: { state?: string | null; timezone?: string | null }
+): string {
+  if (!raw) return "";
+
+  if (isAbsoluteInstant(raw)) {
+    return formatAbsoluteInstant(raw, opts?.timezone || getTimezoneForState(opts?.state));
+  }
+
+  return formatWallClock(raw);
 }
 
 export function buttonsColorText(hex: string) {

@@ -31,7 +31,7 @@ export function Cover({ titleCfg, eventInfo, event, onConfirmClick }: CoverProps
       </span>
 
       <div className={styles.col} style={{ fontFamily: "Poppins", zIndex: 99 }}>
-        <span>{formatEventDateTime(eventInfo?.date, eventInfo?.address?.state)}</span>
+        <span>{formatEventDateTime(eventInfo?.date, { state: eventInfo?.address?.state, timezone: eventInfo?.timezone })}</span>
         <span>{address?.street} {address?.number},</span>
         <span>{address?.state} {address?.country}</span>
       </div>
