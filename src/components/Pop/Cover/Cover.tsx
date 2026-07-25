@@ -1,16 +1,10 @@
 "use client";
-import dayjs from "dayjs";
-import utc from "dayjs/plugin/utc";
-import timezone from "dayjs/plugin/timezone";
-import "dayjs/locale/es";
 import { Button } from "antd";
 import { CircleCheck } from "lucide-react";
 import { popContent } from "@/types/side_event";
 import { QuickEventGuest } from "@/types/guests";
+import { formatEventDateTime } from "@/helpers/functions";
 import styles from "./cover.module.css";
-
-dayjs.extend(utc);
-dayjs.extend(timezone);
 
 type CoverProps = {
   titleCfg: popContent["title"];
@@ -18,11 +12,6 @@ type CoverProps = {
   event: QuickEventGuest;
   onConfirmClick: () => void;
 };
-
-function formatDateMexico(isoString: string | null | undefined): string {
-  if (!isoString) return "";
-  return dayjs.utc(isoString).tz("America/Mexico_City").locale("es").format("ddd D [de] MMMM, HH:mm");
-}
 
 export function Cover({ titleCfg, eventInfo, event, onConfirmClick }: CoverProps) {
   const { address } = eventInfo;
@@ -42,7 +31,7 @@ export function Cover({ titleCfg, eventInfo, event, onConfirmClick }: CoverProps
       </span>
 
       <div className={styles.col} style={{ fontFamily: "Poppins", zIndex: 99 }}>
-        <span>{formatDateMexico(eventInfo?.date)}</span>
+        <span>{formatEventDateTime(eventInfo?.date, eventInfo?.address?.state)}</span>
         <span>{address?.street} {address?.number},</span>
         <span>{address?.state} {address?.country}</span>
       </div>

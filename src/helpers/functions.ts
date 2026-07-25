@@ -80,32 +80,69 @@ export function lighter(hex: string | null, factor: number) {
   return `#${(r < 16 ? "0" : "") + r.toString(16)}${(g < 16 ? "0" : "") + g.toString(16)}${(b < 16 ? "0" : "") + b.toString(16)}`;
 }
 
-export function formatDate(dateString: string) {
-  if (!dateString) return "";
+// Estados cuyo huso horario real difiere del de Ciudad de México.
+// Baja California sigue el horario de verano de EU (America/Tijuana),
+// por lo que su diferencia con Ciudad de México varía entre 1 y 2 horas
+// según la época del año.
+const STATE_TIMEZONES: Record<string, string> = {
+  "baja california": "America/Tijuana",
+  "baja california sur": "America/Mazatlan",
+  "sonora": "America/Hermosillo",
+  "sinaloa": "America/Mazatlan",
+  "quintana roo": "America/Cancun",
+};
 
-  // Nos quedamos solo con YYYY-MM-DD
-  const ymd = dateString.slice(0, 10); // "2026-04-04"
-  const [y, m, d] = ymd.split("-").map(Number);
-
-  // Creamos fecha en UTC (no se mueve por timezone del usuario)
-  const utcDate = new Date(Date.UTC(y, m - 1, d));
-
-  return utcDate.toLocaleDateString("es-ES", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    timeZone: "UTC", // clave
-  });
+function normalizeStateKey(state: string): string {
+  return state
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase();
 }
 
-export function getMexicoHour(utcString: string): string {
-  const date = new Date(utcString);
+export function getTimezoneForState(state?: string | null): string {
+  if (!state) return "America/Mexico_City";
+  return STATE_TIMEZONES[normalizeStateKey(state)] ?? "America/Mexico_City";
+}
 
-  // Usa la hora "local" del objeto Date (sin aplicar TZ manual)
-  const hours = date.getHours().toString().padStart(2, "0");
-  const minutes = date.getMinutes().toString().padStart(2, "0");
+// Convierte un string de fecha que llega de Supabase a un Date válido.
+// Safari/iOS no puede parsear "YYYY-MM-DD HH:MM:SS" (con espacio, sin "T"),
+// así que lo normalizamos antes de construir el Date. Si además no trae
+// zona horaria explícita (Z u offset), asumimos UTC igual que Postgres.
+function parseSupabaseDate(raw: string): Date {
+  const normalized = raw.trim().replace(" ", "T");
+  const hasOffset = /[Zz]$|[+-]\d{2}:?\d{2}$/.test(normalized);
+  return new Date(hasOffset ? normalized : `${normalized}Z`);
+}
 
-  return `${hours}:${minutes}`;
+// Formatea fecha + hora de un evento en el huso horario que corresponde
+// a su estado (no siempre es el de Ciudad de México). Usa Intl.DateTimeFormat
+// directamente en vez del plugin `timezone` de dayjs: ese plugin calcula el
+// offset re-parseando el resultado de `toLocaleString` con `new Date(...)`,
+// y ese round-trip falla ("Invalid Date") en Safari/iOS.
+export function formatEventDateTime(
+  isoString: string | null | undefined,
+  state?: string | null
+): string {
+  if (!isoString) return "";
+
+  const date = parseSupabaseDate(isoString);
+  if (isNaN(date.getTime())) return "";
+
+  const parts = new Intl.DateTimeFormat("es-MX", {
+    weekday: "short",
+    day: "numeric",
+    month: "long",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: getTimezoneForState(state),
+  }).formatToParts(date);
+
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
+  const hour = get("hour") === "24" ? "00" : get("hour");
+
+  return `${get("weekday")}. ${get("day")} de ${get("month")}, ${hour}:${get("minute")}`;
 }
 
 export function buttonsColorText(hex: string) {

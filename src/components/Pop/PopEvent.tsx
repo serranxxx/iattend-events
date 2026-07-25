@@ -3,10 +3,6 @@
 import { PopEvent } from "@/types/side_event";
 import React, { useEffect, useRef, useState } from "react";
 import styles from "./quick-events.module.css";
-import dayjs from "dayjs";
-import utc from "dayjs/plugin/utc";
-import timezone from "dayjs/plugin/timezone";
-import "dayjs/locale/es";
 import { message } from "antd";
 import { createClient } from "@/lib/supabase/client";
 import { ParticipansType, QuickEventGuest, QuickEventUser } from "@/types/guests";
@@ -19,9 +15,6 @@ import { ExtraInfo } from "./ExtraInfo/ExtraInfo";
 import { EventMap } from "./Map/Map";
 import { Attendees } from "./Attendees/Attendees";
 import { PrivateAccess } from "./PrivateAccess/PrivateAccess";
-
-dayjs.extend(utc);
-dayjs.extend(timezone);
 
 type invProps = {
   info: PopEvent | null;
@@ -38,8 +31,6 @@ interface CSSVars extends React.CSSProperties {
 }
 
 export default function PopEvents({ info, preview, password }: invProps) {
-  dayjs.locale("es");
-
   const participantIdsRef = useRef<Set<string | null>>(new Set());
 
   // ── Aliases ────────────────────────────────────────────────────────────────

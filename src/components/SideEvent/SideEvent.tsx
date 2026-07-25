@@ -4,10 +4,6 @@ import { SideEvent } from "@/types/side_event";
 import React, { useCallback, useEffect, useState } from "react";
 import styles from "./side-event.module.css";
 import Image from "next/image";
-import dayjs from "dayjs";
-import utc from "dayjs/plugin/utc";
-import timezone from "dayjs/plugin/timezone";
-import "dayjs/locale/es";
 import { Button, Input, message } from "antd";
 import { LuCircleCheck, LuCircleX } from "react-icons/lu";
 import { simpleaddress } from "../Invitation/Itinerary/OpenCard/OpenCard";
@@ -16,7 +12,7 @@ import { FooterLand } from "../LandPage/Footer/Footer";
 import { FaLock } from "react-icons/fa";
 import { createClient } from "@/lib/supabase/client";
 import {  SideGuestSubabasePayload } from "@/types/guests";
-import { darker } from "@/helpers/functions";
+import { darker, formatEventDateTime } from "@/helpers/functions";
 import confetti from "canvas-confetti";
 import { AnimatePresence, motion } from "motion/react";
 
@@ -27,10 +23,6 @@ type invProps = {
 };
 
 export default function SideEvents({ info, password, preview }: invProps) {
-  dayjs.extend(utc);
-  dayjs.extend(timezone);
-  dayjs.locale("es");
-
   const [validated, setValidated] = useState<boolean>(false);
   const [guestCode, setGuestCode] = useState<string>("");
   const supabase = createClient();
@@ -79,12 +71,6 @@ export default function SideEvents({ info, password, preview }: invProps) {
     paddingInline: "12px",
     whiteSpace: "nowrap",
     fontFamily: 'Poppins',
-  };
-
-  const formatDateMexico = (isoString: string | null | undefined): string => {
-    if (!isoString) return "";
-
-    return dayjs.utc(isoString).tz("America/Mexico_City").format("ddd D [de] MMMM, HH:mm");
   };
 
   const renderTextWithStrong = (text: string) => {
@@ -393,7 +379,7 @@ export default function SideEvents({ info, password, preview }: invProps) {
                 zIndex: 99,
               }}
             >
-              <span>{formatDateMexico(info?.body.hour)}</span>
+              <span>{formatEventDateTime(info?.body.hour, info?.body.address?.state)}</span>
               <span>
                 {info?.body.address.street} {info?.body.address.number},
               </span>
