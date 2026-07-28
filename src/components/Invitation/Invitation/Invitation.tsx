@@ -99,19 +99,20 @@ export default function Invitation({ password, invitationID, ui, lang, available
   // independientes y en iOS el gesto de swipe hacia arriba se puede "perder"
   // entre uno y otro sin llegar al tope real. Se bloquea solo mientras esta
   // página está montada, y se revierte al salir para no afectar otras rutas.
+  //
+  // Solo overflow, sin forzar height: el min-height:100dvh ya definido en
+  // main.css sigue mandando (y sí sigue la animación de la barra de Safari
+  // en tiempo real); forzar un height:100dvh por JS aquí competía con ese
+  // recálculo dinámico y dejaba un margen abajo en Safari.
   useEffect(() => {
     const html = document.documentElement;
     const body = document.body;
-    const prevHtml = { height: html.style.height, overflow: html.style.overflow };
-    const prevBody = { height: body.style.height, overflow: body.style.overflow };
-    html.style.height = "100dvh";
+    const prevHtml = { overflow: html.style.overflow };
+    const prevBody = { overflow: body.style.overflow };
     html.style.overflow = "hidden";
-    body.style.height = "100dvh";
     body.style.overflow = "hidden";
     return () => {
-      html.style.height = prevHtml.height;
       html.style.overflow = prevHtml.overflow;
-      body.style.height = prevBody.height;
       body.style.overflow = prevBody.overflow;
     };
   }, []);
