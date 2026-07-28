@@ -16,12 +16,12 @@ import { Gallery } from "../Gallery/Gallery";
 import Image from "next/image";
 import { Texture } from "@/lib/textures/cache";
 import { TextureOverlay } from "./TexturesOverlay";
-import { createPortal } from "react-dom";
-import { Button, Drawer, Input, message } from "antd";
+import { Button, Input, message } from "antd";
 import Confirm from "../Confirm/Confirm";
 import { FaLock } from "react-icons/fa";
+import { IoClose } from "react-icons/io5";
+import SlideOverlay from "@/components/SlideOverlay/SlideOverlay";
 import { GuestSubabasePayload } from "@/types/guests";
-import { useScreenWidth } from "@/hooks/useScreenWidth";
 import { createClient } from "@/lib/supabase/client";
 import AnimatedPath from "@/components/Motion/AnimatedPath";
 import { FooterLand } from "@/components/LandPage/Footer/Footer";
@@ -123,9 +123,6 @@ export default function Invitation({ password, invitationID, ui, lang, available
   const actions = invitation?.generals?.colors.actions ?? "#FFFFFF";
   const font = invitation?.generals.fonts.body?.typeFace ?? "Poppins";
   const coverSong = (invitation?.cover as unknown as Record<string, unknown>)?.song as { id: string; name: string; artist: string; albumArt?: string } | null | undefined;
-
-  const width = useScreenWidth();
-  const isLargeScreen = width >= 768;
 
   // const scrollableContentRef = useRef<HTMLDivElement | null>(null);
 
@@ -619,15 +616,17 @@ export default function Invitation({ password, invitationID, ui, lang, available
         />
       )}
 
-      {showLia && invitationID && (
-        <LiaGuest
-          invitationID={invitationID}
-          guestName={guestInfo?.name ?? undefined}
-          accentColor={'#000'}
-          ui={ui}
-          onClose={() => setShowLia(false)}
-        />
-      )}
+      <SlideOverlay open={showLia && !!invitationID}>
+        {invitationID && (
+          <LiaGuest
+            invitationID={invitationID}
+            guestName={guestInfo?.name ?? undefined}
+            accentColor={'#000'}
+            ui={ui}
+            onClose={() => setShowLia(false)}
+          />
+        )}
+      </SlideOverlay>
 
       {showCamera && guestInfo && invitationID && (
         <CameraView
@@ -640,16 +639,17 @@ export default function Invitation({ password, invitationID, ui, lang, available
         />
       )}
 
-      {showPhotoWall && mounted && invitationID && createPortal(
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999, background: '#0a0a0a' }}>
-          <PhotoWall
-            eventId={invitationID}
-            eventTitle={invitation?.cover?.title?.text?.value ?? ""}
-            onClose={() => setShowPhotoWall(false)}
-          />
-        </div>,
-        document.body
-      )}
+      <SlideOverlay open={showPhotoWall && mounted && !!invitationID}>
+        <div style={{ width: '100%', height: '100%', background: '#0a0a0a' }}>
+          {invitationID && (
+            <PhotoWall
+              eventId={invitationID}
+              eventTitle={invitation?.cover?.title?.text?.value ?? ""}
+              onClose={() => setShowPhotoWall(false)}
+            />
+          )}
+        </div>
+      </SlideOverlay>
 
       <div style={{ opacity: animation ? 1 : 0 }} className={styles.animation_cont}>
         {animation && (
@@ -682,47 +682,43 @@ export default function Invitation({ password, invitationID, ui, lang, available
         ))}
       </div>
 
-      <Drawer
-        placement={isLargeScreen ? "left" : "top"}
-        onClose={() => setOpen(false)}
-        open={open}
-        title={
+      <SlideOverlay open={open}>
+        <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", backgroundColor: primary }}>
           <div
             style={{
               display: "flex",
               alignItems: "center",
-              justifyContent: "flex-start",
+              justifyContent: "space-between",
               gap: "6px",
-              fontFamily: invitation.generals.fonts.body?.typeFace,
-              fontSize: "20px",
-              color: accent,
+              padding: "16px 20px",
+              flexShrink: 0,
             }}
           >
-            {" "}
-            {ui?.confirm.drawerTitle}
+            <span
+              style={{
+                fontFamily: invitation.generals.fonts.body?.typeFace,
+                fontSize: "20px",
+                color: accent,
+              }}
+            >
+              {ui?.confirm.drawerTitle}
+            </span>
+            <button
+              onClick={() => setOpen(false)}
+              aria-label={ui?.liaGuest.close ?? "Cerrar"}
+              style={{ background: "transparent", border: "none", cursor: "pointer", color: accent, padding: "4px" }}
+            >
+              <IoClose size={24} />
+            </button>
           </div>
-        }
-        height={isLargeScreen ? "100%" : "80%"}
-        closeIcon={false}
-        style={{
-          maxHeight: isLargeScreen ? "1010vh" : "800px",
-          borderRadius: isLargeScreen ? "0px 32px 32px 0px" : "0px 0px 32px 32px",
-          backgroundColor: primary,
-        }}
-        styles={{
-          header: {
-            backgroundColor: primary,
-          },
-          body: {
-            backgroundColor: primary,
-            paddingTop: "12px",
-          },
-        }}
-      >
-        {(guestInfo || type === "open") && (
-          <Confirm invitationID={invitationID} ui={ui} invitation={invitation} guestInfo={guestInfo} refreshGuest={refreshGuest} />
-        )}
-      </Drawer>
+
+          <div style={{ flex: 1, overflowY: "auto", padding: "0 20px 20px" }}>
+            {(guestInfo || type === "open") && (
+              <Confirm invitationID={invitationID} ui={ui} invitation={invitation} guestInfo={guestInfo} refreshGuest={refreshGuest} />
+            )}
+          </div>
+        </div>
+      </SlideOverlay>
     </>
   );
 }

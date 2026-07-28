@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
 import { X, Sparkles } from "lucide-react";
 import { InvitationUIBundle } from "@/types/new_invitation";
 import styles from "./lia-guest.module.css";
@@ -162,22 +161,13 @@ export default function LiaGuest({ invitationID, guestName, accentColor, ui, onC
     }
   };
 
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => { setMounted(true); }, []);
-
   const isEmpty = messages.length === 0;
 
-  if (!mounted) return null;
-
-  return createPortal(
+  return (
     <div
       style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        zIndex: 9999,
+        width: '100%',
+        height: '100%',
         display: 'flex',
         flexDirection: 'column',
         background: accentColor ? hexToRgba(accentColor, 0.8) : 'rgba(0,0,0,0.72)',
@@ -256,7 +246,6 @@ export default function LiaGuest({ invitationID, guestName, accentColor, ui, onC
           ))}
         </div>
       </div>}
-    </div>,
-    document.body
+    </div>
   );
 }
