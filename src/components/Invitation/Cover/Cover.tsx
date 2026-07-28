@@ -57,7 +57,7 @@ export const Cover = forwardRef<HTMLDivElement, CoverProps>(function Cover(
   const isLargeScreen = width >= 768;
 
   return (
-    <div ref={ref} className={styles.module_cover_container} style={{ position: "relative", zIndex: 4 }}>
+    <div ref={ref} className={styles.module_cover_container} style={{ position: "relative", zIndex: 10 }}>
       <div
         className={!dev ? styles.cover_container : styles.cover_container_dev}
         style={{ padding: "0", background: generals?.colors.primary ?? "#FFFFFF", position: "relative" }}

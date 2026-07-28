@@ -683,7 +683,7 @@ export default function Invitation({ password, invitationID, ui, lang, available
       </div>
 
       <Drawer
-        placement={isLargeScreen ? "left" : "bottom"}
+        placement={isLargeScreen ? "left" : "top"}
         onClose={() => setOpen(false)}
         open={open}
         title={
@@ -706,7 +706,7 @@ export default function Invitation({ password, invitationID, ui, lang, available
         closeIcon={false}
         style={{
           maxHeight: isLargeScreen ? "1010vh" : "800px",
-          borderRadius: isLargeScreen ? "0px 32px 32px 0px" : "32px 32px 0px 0px",
+          borderRadius: isLargeScreen ? "0px 32px 32px 0px" : "0px 0px 32px 32px",
           backgroundColor: primary,
         }}
         styles={{
