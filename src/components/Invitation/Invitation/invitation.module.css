@@ -141,36 +141,6 @@
   opacity: 1;
 }
 
-.ticket_cont {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 12px;
-  max-width: 100%;
-  overflow-x: scroll;
-  position: fixed;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 0px 24px;
-  z-index: 101;
-}
-
-.ticket_bg {
-  inset: 0;
-  background-color: rgba(0, 0, 0, 0.32);
-  backdrop-filter: blur(2px);
-  position: fixed;
-  z-index: 100;
-  cursor: pointer;
-  animation: fadeInOverlay 0.25s ease;
-}
-
-@keyframes fadeInOverlay {
-  from { opacity: 0; }
-  to   { opacity: 1; }
-}
-
 .glow_button {
   position: relative;
   padding: 14px 28px;

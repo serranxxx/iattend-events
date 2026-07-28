@@ -667,20 +667,25 @@ export default function Invitation({ password, invitationID, ui, lang, available
         <span style={{ marginRight: '8px' }}>{ui.confirm.hello}</span>
         <b translate="no" className="notranslate" style={{ color: '#FFF', textAlign: 'left' }}>{guestInfo?.name}</b>
       </div>
-      {onShowTicket && (
-        <div onClick={() => setOnShowTicket(false)} className={styles.ticket_bg} />
-      )}
-      <div
-        className={`${styles.ticket_cont} scroll-invitation`}
-        style={{ bottom: onShowTicket ? '0px' : '-80vh', transition: 'all 0.3s ease', justifyContent: companions.length === 0 ? 'center' : 'flex-start', padding: '12px 24px', gap: '12px' }}
-      >
-        {guestInfo && (
-          <Ticket id={invitationID} guest={guestInfo} invitation={invitation} ui={ui} colors={{ primary, secondary, accent }} onClose={() => setOnShowTicket(false)} />
-        )}
-        {companions?.map((companion) => (
-          <Ticket id={invitationID} key={companion.id} guest={companion} invitation={invitation} ui={ui} colors={{ primary, secondary, accent }} onClose={() => setOnShowTicket(false)} />
-        ))}
-      </div>
+      <SlideOverlay open={onShowTicket}>
+        <div
+          onClick={() => setOnShowTicket(false)}
+          className="scroll-invitation"
+          style={{
+            width: '100%', height: '100%', display: 'flex', alignItems: 'flex-end',
+            justifyContent: companions.length === 0 ? 'center' : 'flex-start',
+            overflowX: 'auto', gap: '12px', padding: '24px',
+            background: 'rgba(0, 0, 0, 0.32)', backdropFilter: 'blur(2px)', WebkitBackdropFilter: 'blur(2px)',
+          }}
+        >
+          {guestInfo && (
+            <Ticket id={invitationID} guest={guestInfo} invitation={invitation} ui={ui} colors={{ primary, secondary, accent }} onClose={() => setOnShowTicket(false)} />
+          )}
+          {companions?.map((companion) => (
+            <Ticket id={invitationID} key={companion.id} guest={companion} invitation={invitation} ui={ui} colors={{ primary, secondary, accent }} onClose={() => setOnShowTicket(false)} />
+          ))}
+        </div>
+      </SlideOverlay>
 
       <SlideOverlay open={open}>
         <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", backgroundColor: primary }}>
