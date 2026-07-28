@@ -16,7 +16,7 @@ App Next.js (`i-attend-next`) que sirve tres cosas distintas bajo el mismo domin
 
 ## Cómo se conecta con el resto de I attend
 - **iattend--backend**: se consume vía `NEXT_PUBLIC_IATTEND_API_URL` solo para el flujo de fotos del Photo Wall (`POST /photos/upload`, `GET /photos/:eventId`, `GET /photos/likes/event/:id`, `POST /photos/:id/like`) desde `CameraView.tsx` y `PhotoWall.tsx`. También existen servicios más antiguos (`src/services/apiInvitation.ts`, `apiGuests.ts`, `apiLogin.ts`) que hablan con el backend vía Axios + JWT en header `token`, pero parecen resabios de una arquitectura anterior — las páginas activas hoy leen Supabase directo.
-- **Supabase**: lectura/escritura directa desde el frontend (no todo pasa por el backend). Tablas/vistas usadas: `invitations`, `guests`, `event_photos`, `invitation_translations`, `pop_events`, `side_events`. Realtime por canal `event_photos_{eventId}` para el Photo Wall. Hay tres variantes de cliente en `src/lib/supabase/`: `client.ts` (browser), `server.ts` (server component, atado a cookies para sesión autenticada) y `public-server.ts` (server, sin sesión — usado en páginas públicas de invitación).
+- **Supabase**: lectura/escritura directa desde el frontend (no todo pasa por el backend). Tablas/vistas usadas: `invitations`, `guests`, `event_photos`, `invitation_translations`, `copy_bundles`, `copy_translations`, `pop_events`, `side_events`. Realtime por canal `event_photos_{eventId}` para el Photo Wall. Hay tres variantes de cliente en `src/lib/supabase/`: `client.ts` (browser), `server.ts` (server component, atado a cookies para sesión autenticada) y `public-server.ts` (server, sin sesión — usado en páginas públicas de invitación). Nota: el pipeline de traducción (`cache.ts`/`copy-cache.ts`) usa `server.ts` (con cookies) aunque se invoca desde la página pública de invitación sin sesión de organizador — revisar si esto afecta políticas RLS para invitados anónimos.
 - **iattend-vite**: la app del organizador embebe la ruta `/host` de este repo en un iframe y se comunica por `postMessage` (`REMOTE_READY`, `HOST_PROPS`, `REMOTE_HEIGHT`) para previsualizar la invitación mientras se edita, sin ida y vuelta a la base de datos.
 
 ## Estructura de carpetas clave
@@ -41,7 +41,10 @@ src/
     Pop/, SideEvent/, LandPage/                        ← componentes específicos de cada tipo de página
   context/            ← AppContext/AppProvider (useReducer) — sesión, tema, colores del organizador logueado
   lib/supabase/        ← los tres clientes de Supabase
-  lib/translation/      ← pipeline de traducción con DeepL + cache en Supabase
+  lib/translation/
+    deepl.ts             ← llamada al SDK deepl-node (server-only), con allow/blocklist recursivo de qué strings del JSON de la invitación se traducen
+    cache.ts             ← cache de la traducción del CONTENIDO de una invitación puntual, tabla invitation_translations (invitation_id+lang)
+    copy-cache.ts        ← cache de la traducción del COPY FIJO de la UI (botones, labels), tabla copy_translations sobre un bundle base en copy_bundles (bundle_id+lang); slug usado hoy: "invitation_ui_v1"
   services/            ← llamadas Axios legadas al backend (apiInvitation, apiGuests, apiLogin)
   types/               ← new_invitation.ts (modelo vigente) convive con invitation.ts (más viejo, ver deuda técnica)
 ```
@@ -53,6 +56,7 @@ src/
 - Páginas públicas usan `getPublicServerClient()` (sin sesión); todo lo que requiera sesión de organizador usa `createClient()` de `server.ts`
 - Estado de sesión/tema del organizador vive en `AppContext` + `AppProvider` (patrón reducer en `src/context/appReducer.ts`), persistido en `localStorage`
 - El identificador del invitado en el navegador (para fotos, likes) se guarda en `localStorage` como `guest_${invitationID}` — no hay JWT de invitado, es confianza en el cliente
+- Horas de side events/pop events (`getTimezoneForState`, `formatEventDateTime` en `src/helpers/functions.ts`) leen el formato "wall-clock" (`YYYY-MM-DD HH:mm:00`, sin conversión) que escribe `iattend-vite` (`src/helpers/assets/eventDateTime.js`) — son contraparte una de la otra, no tocar una sin revisar la otra. Datos legados (instante UTC real) se reconvierten con `STATE_TIMEZONES` (BC, BCS, Sonora, Sinaloa, Quintana Roo tienen huso distinto al de CDMX)
 - ESLint fuerza `unused-imports/no-unused-imports` como error; variables/args con prefijo `_` están exentos
 
 ## Rutas / páginas principales
@@ -99,13 +103,16 @@ npm run lint
 - La cámara y el Photo Wall solo se habilitan el día del evento y el día siguiente, calculado en el cliente a partir de `invitation.cover.date.value` (`CameraView.tsx`) — si se toca esa ventana, revisar también el mensaje de "muy temprano / ya cerró"
 - El Photo Wall de este repo **sí permite interacción** (like, ver quién dio like) vía Realtime — no es de solo lectura como en otros repos hermanos de I attend; no asumir lo contrario
 - El pipeline de traducción (`lib/translation/deepl.ts`) tiene un allow/blocklist de rutas del JSON de la invitación escrito a mano (`BLOCKED_SUBTREES`, `DONT_TRANSLATE_PATHS`, `DONT_TRANSLATE_KEYS`). Si se agrega un campo nuevo al modelo de invitación (`types/new_invitation.ts`), hay que decidir explícitamente si se traduce o no, o se cuela/bloquea por accidente
-- Las traducciones se cachean en `invitation_translations` con hash SHA1 del JSON fuente (`lib/translation/cache.ts`) — no hay invalidación activa más allá de que el hash cambie
+- Las traducciones se cachean en dos tablas con comportamiento **distinto** de invalidación, aunque ambas calculan un `source_hash` SHA1 sobre `JSON.stringify` del contenido fuente:
+  - `copy_translations` (`copy-cache.ts`, copy fijo de UI): SÍ compara `existing.source_hash === sourceHash` antes de servir cache — si el bundle base cambió, retraduce.
+  - `invitation_translations` (`cache.ts`, contenido de la invitación del usuario): **NO compara `source_hash` antes de devolver la fila cacheada** — solo verifica que exista una traducción para ese `invitation_id`+`lang`. El campo se calcula y se guarda, pero nunca se usa para invalidar. Si el organizador edita su invitación después de que ya se generó una traducción, el invitado sigue viendo la traducción vieja aunque el español haya cambiado. Bug conocido, no arreglado — ver Pendientes.
 - `/host` valida el origen del `postMessage` contra una lista fija `ALLOWED_ORIGINS` en `src/app/host/page.tsx` — agregar un nuevo entorno de preview (staging, etc.) requiere tocar esa lista
 - `next.config.ts` usa la API vieja `images.domains` (no `remotePatterns`) y además tiene `eslint.ignoreDuringBuilds: true` — un error de lint **no** rompe el build de producción
 - Los servicios legados (`apiInvitation.ts`, `apiGuests.ts`) todavía importan `firebase/storage` y `firebase/vertexai` pese a que el resto del repo migró a Supabase — no asumir que están en uso activo sin verificar quién los llama
 - No existe autenticación real de invitado: el nombre del invitado en `localStorage` (`guest_${invitationID}`) es lo único que identifica quién sube una foto o da like
 
 ## Pendientes / deuda técnica conocida
+- **Bug de cache de traducciones**: `lib/translation/cache.ts` (`getTranslatedInvitationFromCache`) no invalida por `source_hash` — sirve la traducción cacheada de `invitation_translations` aunque el contenido en español ya haya cambiado. `copy-cache.ts` sí lo hace bien para el copy de UI; falta replicar esa comparación en `cache.ts`.
 - Conviven dos sistemas de tipos para el modelo de invitación: `types/new_invitation.ts` (vigente, usado por las páginas activas) y `types/invitation.ts` (más viejo) — falta decidir cuándo se elimina el segundo
 - Los servicios Axios legados hacia `iattend--backend` (`apiInvitation.ts`, `apiGuests.ts`, `apiLogin.ts`) coexisten con llamadas directas a Supabase; no está claro cuál es la fuente de verdad para el flujo de organizador
 - Uso de `any` en varios puntos (`Guests.tables: any[]`, `translateInvitationObject`) pese a que otros repos de I attend imponen "sin any"

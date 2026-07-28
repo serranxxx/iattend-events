@@ -11,6 +11,8 @@ const translator = new deepl.Translator(apiKey);
 const BLOCKED_SUBTREES = new Set<string>([
   "generals",                       // todo generals
   "cover.title.position",           // position del cover
+  "cover.date",                     // fecha ISO del countdown (value/type/color/active) — nunca es texto traducible
+  "cover.song",                     // nombre de canción/artista — no son texto de usuario
   "quote.text",                     // bloqueamos y re-abrimos selectivo abajo
   "gifts.cards",                    // los objetos de cards no se tocan
 ]);
@@ -29,9 +31,17 @@ const DONT_TRANSLATE_PATHS = new Set<string>([
 const ADDRESS_ALLOW_ONLY = new Set(["street", "city", "country"]);
 
 // Claves (último segmento) que NO se traducen nunca
+// Todas en minúsculas: shouldTranslateString compara contra keyPath en
+// lowercase, así que una entrada con mayúsculas (ej. "typeFace") nunca
+// coincide y esa clave se cuela al traductor sin que nada avise el error.
 const DONT_TRANSLATE_KEYS = new Set([
-  "url","prod","dev","image","brand","bank","zip","state","city","country",
-  "street","number","neighborhood","code","id","slug","typeFace",
+  "url","prod","dev","image","icon","brand","bank","zip","state","city","country",
+  "street","number","neighborhood","code","id","slug","typeface",
+  // enums de layout (no son texto de usuario): dynamic_separator.type,
+  // dynamic_background.shape, itinerary.type, destinations.cards[*].type...
+  "type","shape",
+  // horas del itinerario ("7:00 pm") — DeepL las reformatea sin necesidad
+  "time",
 ]);
 
 // Patrones que NO se traducen

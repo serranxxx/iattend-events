@@ -115,6 +115,12 @@ export interface CoverSection {
     color: string; // hex (#fff/#ffffff)
     type: number | null; // define enum si tienes catálogo
   };
+  song?: {
+    id: string;
+    name: string;
+    artist: string;
+    albumArt?: string;
+  } | null;
   image: {
     prod: string | string[] | null;
     dev: string | string[] | null;
@@ -305,6 +311,7 @@ export interface Generals {
   separator: number;
   positions: number[];
   texture: number | null;
+  languages?: string[];
 }
 
 // export interface InvitationMeta {
@@ -373,6 +380,37 @@ export interface InvitationUIBundle {
     details: string;
     directions: string;
     inspiration: string;
+  };
+
+  controlBar: {
+    editResponse: string;
+    updateStatus: string;
+    digitalPass: string;
+    photoWall: string;
+    askLia: string;
+    whatsappConfirmMessage: string;
+  };
+
+  liaGuest: {
+    close: string;
+    introLine: string;
+    connectionError: string;
+    prompts: string[];
+  };
+
+  camera: {
+    noName: string;
+    tooEarly: string;
+    unavailable: string;
+    discard: string;
+    sendToWall: string;
+    shotsRemaining: string;
+    switchCamera: string;
+    permissionDenied: string;
+    maxPhotosReached: string;
+    uploadFromGallery: string;
+    takePhoto: string;
+    viewPhotoWall: string;
   };
 
   confirm: {

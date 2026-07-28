@@ -3,20 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { X, Sparkles } from "lucide-react";
+import { InvitationUIBundle } from "@/types/new_invitation";
 import styles from "./lia-guest.module.css";
 
 const API_URL = process.env.NEXT_PUBLIC_IATTEND_API_URL;
-
-const PROMPTS = [
-  "¿A qué hora y dónde empieza la ceremonia?",
-  "¿Dónde es la recepción y cómo llego?",
-  "¿Cuál es el itinerario del día?",
-  "¿Cuál es el dresscode?",
-  "¿Hay mesa de regalos?",
-  "¿Hay avisos importantes que deba saber?",
-  "¿Hay lugares recomendados para hospedarse?",
-  "¿Cuándo es el evento?",
-];
 
 interface Message {
   role: "user" | "assistant";
@@ -28,6 +18,7 @@ interface LiaGuestProps {
   invitationID: string;
   guestName?: string;
   accentColor?: string;
+  ui?: InvitationUIBundle | null;
   onClose: () => void;
 }
 
@@ -82,7 +73,8 @@ function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-export default function LiaGuest({ invitationID, guestName, accentColor, onClose }: LiaGuestProps) {
+export default function LiaGuest({ invitationID, guestName, accentColor, ui, onClose }: LiaGuestProps) {
+  const prompts = ui?.liaGuest.prompts ?? [];
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -162,7 +154,7 @@ export default function LiaGuest({ invitationID, guestName, accentColor, onClose
         const next = [...prev];
         const last = next[next.length - 1];
         if (last?.streaming)
-          next[next.length - 1] = { role: "assistant", content: "Hubo un error al conectarme. Intenta de nuevo." };
+          next[next.length - 1] = { role: "assistant", content: ui?.liaGuest.connectionError ?? "Hubo un error al conectarme. Intenta de nuevo." };
         return next;
       });
     } finally {
@@ -200,7 +192,7 @@ export default function LiaGuest({ invitationID, guestName, accentColor, onClose
           <Sparkles size={18} className={styles.headerIcon} />
           <span>Lia</span>
         </div>
-        <button className={styles.closeBtn} onClick={onClose} aria-label="Cerrar">
+        <button className={styles.closeBtn} onClick={onClose} aria-label={ui?.liaGuest.close ?? "Cerrar"}>
           <X size={20} />
         </button>
       </div>
@@ -213,10 +205,10 @@ export default function LiaGuest({ invitationID, guestName, accentColor, onClose
               <Sparkles size={24} />
             </div>
             <p className={styles.emptyText}>
-              Hola{guestName ? `, ${guestName}` : ""}! Soy Lia. Puedo ayudarte a resolver tus dudas.
+              {ui?.confirm.hello ?? "Hola"}{guestName ? `, ${guestName}` : ""}! {ui?.liaGuest.introLine ?? "Soy Lia. Puedo ayudarte a resolver tus dudas."}
             </p>
             <div className={styles.suggestions}>
-              {PROMPTS.map((p) => (
+              {prompts.map((p) => (
                 <button
                   key={p}
                   className={styles.suggestionChip}
@@ -252,7 +244,7 @@ export default function LiaGuest({ invitationID, guestName, accentColor, onClose
       {/* Horizontal prompt chips — only once conversation started */}
       {!isEmpty && <div className={styles.promptBar}>
         <div className={styles.promptTrack}>
-          {PROMPTS.map((p) => (
+          {prompts.map((p) => (
             <button
               key={p}
               className={styles.promptChip}

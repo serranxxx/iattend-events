@@ -49,7 +49,7 @@ export default function InvitationControlBar({
   // --- Paperless plan ---
   if (plan === 'paperless') {
     if (!phone_number) return null;
-    const messagePaperless = encodeURIComponent("¡Hola! Confirmo mi asistencia.");
+    const messagePaperless = encodeURIComponent(ui?.controlBar.whatsappConfirmMessage);
     return (
       <div className={wrapperClass}>
         <Link
@@ -74,10 +74,10 @@ export default function InvitationControlBar({
             className={styles.liaBtn}
             style={{ color: accent }}
             onClick={!dev ? onOpenConfirm : undefined}
-            aria-label="Editar respuesta"
+            aria-label={ui?.controlBar.editResponse}
           >
             <SquarePen size={18} />
-            <span>Editar respuesta</span>
+            <span>{ui?.controlBar.editResponse}</span>
           </button>
         </div>
       </div>
@@ -87,13 +87,15 @@ export default function InvitationControlBar({
   // --- Pro plan: icon pill completo ---
   if (showPill) {
     return (
-      <div className={wrapperClass}>
+      <div className={wrapperClass} style={{
+        background: `${actions}70`, borderRadius: '99px'
+      }}>
         <div className={styles.pill}>
           <button
             className={styles.iconBtn}
-            style={{ color: accent }}
+            style={{ color: primary }}
             onClick={!dev ? onOpenConfirm : undefined}
-            aria-label="Actualizar estado"
+            aria-label={ui?.controlBar.updateStatus}
           >
             <SquarePen size={18} />
           </button>
@@ -102,9 +104,9 @@ export default function InvitationControlBar({
 
           <button
             className={styles.iconBtn}
-            style={{ color: accent }}
+            style={{ color: primary }}
             onClick={onShowTicket}
-            aria-label="Pase digital"
+            aria-label={ui?.controlBar.digitalPass}
           >
             <QrCode size={20} />
           </button>
@@ -114,9 +116,9 @@ export default function InvitationControlBar({
               <span className={styles.divider} />
               <button
                 className={styles.iconBtn}
-                style={{ color: accent }}
+                style={{ color: primary }}
                 onClick={onShowCamera}
-                aria-label="Photo Wall"
+                aria-label={ui?.controlBar.photoWall}
               >
                 <Camera size={20} />
               </button>
@@ -127,12 +129,12 @@ export default function InvitationControlBar({
 
           <button
             className={styles.liaBtn}
-            style={{ color: accent, gap:'12px' }}
+            style={{ color: primary, gap: '12px' }}
             onClick={onAskLia}
-            aria-label="Ask Lia"
+            aria-label={ui?.controlBar.askLia}
           >
             <Sparkles size={18} />
-            <span>¿Dudas?</span>
+            <span>{ui?.controlBar.askLia}</span>
           </button>
         </div>
       </div>
@@ -142,11 +144,11 @@ export default function InvitationControlBar({
   // --- Not confirmed: big confirm button ---
   return (
     <div className={wrapperClass} style={{
-      background: `${actions}70`, borderRadius:'99px'
+      background: `${actions}70`, borderRadius: '99px'
     }}>
       <button
         className={styles.confirmBtn}
-        style={{ color: primary,}}
+        style={{ color: primary, }}
         onClick={!dev ? onOpenConfirm : undefined}
       >
         {ui?.buttons.confirm}

@@ -18,6 +18,27 @@ type SongPlayerProps = {
   accent: string;
 };
 
+// Módulo-scope, no estado de React: un cambio de idioma hace que page.tsx
+// (server component) vuelva a renderizar todo el árbol de <Invitation>, lo
+// que remonta SongPlayer. Si el <audio> viviera solo en un ref de este
+// componente, cada remount lo recreaba desde cero y la canción se
+// reiniciaba/cortaba. Al vivir en el módulo, sobrevive al remount.
+//
+// El cleanup no pausa de inmediato: agenda una pausa diferida. Si el
+// remount pasa antes de que se cumpla, se cancela y la música sigue sin
+// cortes. `notifyLanguageChanging()` (llamado por LanguageToggle justo antes
+// de navegar) extiende esa espera lo suficiente para cubrir el roundtrip
+// real al servidor (Supabase + caché de traducción), que puede tardar mucho
+// más que un remount normal de React.
+let sharedAudio: HTMLAudioElement | null = null;
+let sharedAudioSongId: string | null = null;
+let pendingStopTimeout: ReturnType<typeof setTimeout> | null = null;
+let languageChangeInFlight = false;
+
+export function notifyLanguageChanging() {
+  languageChangeInFlight = true;
+}
+
 export default function SongPlayer({ song, accent = "#000000", dev = false }: SongPlayerProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [playing, setPlaying] = useState(false);
@@ -32,10 +53,27 @@ export default function SongPlayer({ song, accent = "#000000", dev = false }: So
 
   useEffect(() => {
     if (!previewUrl) return;
+
+    if (pendingStopTimeout) {
+      clearTimeout(pendingStopTimeout);
+      pendingStopTimeout = null;
+    }
+
+    // Misma canción ya sonando (remount por cambio de idioma) — reusar en
+    // vez de crear un <audio> nuevo y cortar la reproducción.
+    if (sharedAudio && sharedAudioSongId === song.id) {
+      audioRef.current = sharedAudio;
+      setPlaying(!sharedAudio.paused);
+      return;
+    }
+
+    sharedAudio?.pause();
     const audio = new Audio(previewUrl);
     audio.loop = true;
     audio.volume = 0.4;
     audioRef.current = audio;
+    sharedAudio = audio;
+    sharedAudioSongId = song.id;
 
     if (!dev) {
       audio.play()
@@ -50,10 +88,17 @@ export default function SongPlayer({ song, accent = "#000000", dev = false }: So
     }
 
     return () => {
-      audio.pause();
-      audioRef.current = null;
+      const grace = languageChangeInFlight ? 8000 : 300;
+      languageChangeInFlight = false;
+      pendingStopTimeout = setTimeout(() => {
+        if (sharedAudioSongId === song.id) {
+          sharedAudio?.pause();
+          sharedAudio = null;
+          sharedAudioSongId = null;
+        }
+      }, grace);
     };
-  }, [previewUrl]);
+  }, [previewUrl, song.id, dev]);
 
   const toggleAudio = () => {
     if (!audioRef.current) return;

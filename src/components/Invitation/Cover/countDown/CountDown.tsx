@@ -22,6 +22,7 @@ type CountdownProps = {
   dev: boolean;
   validated?: boolean;
   ui?: InvitationUIBundle | null;
+  locale?: string | null;
 };
 
 type Units = "days" | "hours" | "minutes" | "seconds";
@@ -40,7 +41,7 @@ function parseDateOnly(dateString?: string | null): Date | null {
  * Formatea la fecha para mostrar SIEMPRE el mismo día
  * sin importar timezone.
  */
-export function formatDate(dateString: string) {
+export function formatDate(dateString: string, locale?: string | null) {
   if (!dateString) return "";
 
   const ymd = dateString.slice(0, 10);
@@ -50,7 +51,7 @@ export function formatDate(dateString: string) {
 
   const utcDate = new Date(Date.UTC(y, m - 1, d));
 
-  return utcDate.toLocaleDateString("es-ES", {
+  return utcDate.toLocaleDateString(locale || "es-ES", {
     year: "numeric",
     month: "long",
     day: "numeric",
@@ -81,7 +82,7 @@ const labels: Record<Units, { singular: string; plural: string }> = {
   seconds: { singular: "segundo", plural: "segundos" },
 };
 
-export default function Countdown({ ui: _ui, cover, generals, dev, validated = true }: CountdownProps) {
+export default function Countdown({ ui, cover, generals, dev, validated = true, locale }: CountdownProps) {
   const targetDate = useMemo(() => {
     const t = parseDateOnly(cover?.date?.value);
     return t && !isNaN(+t) ? t : null;
@@ -114,7 +115,7 @@ export default function Countdown({ ui: _ui, cover, generals, dev, validated = t
     return (
       <div className={styles.date_container}>
         <span className={styles.date_date} style={{ color, fontFamily: font }}>
-          {cover?.date?.value ? formatDate(cover.date.value) : "Fecha por definir"}
+          {cover?.date?.value ? formatDate(cover.date.value, locale) : "Fecha por definir"}
         </span>
       </div>
     );
@@ -123,7 +124,7 @@ export default function Countdown({ ui: _ui, cover, generals, dev, validated = t
   return (
     <div className={styles.date_container}>
       <span className={styles.date_date} style={{ color, fontFamily: font }}>
-        {formatDate(cover.date.value)}
+        {formatDate(cover.date.value, locale)}
       </span>
 
       {isToday ? (
@@ -139,7 +140,7 @@ export default function Countdown({ ui: _ui, cover, generals, dev, validated = t
                   {timeLeft[u]}
                 </span>
                 <span className={styles.date_unit} style={{ color, fontFamily: font }}>
-                  {timeLeft[u] === 1 ? labels[u].singular : labels[u].plural}
+                  {ui?.cover?.countdown?.[u] ?? (timeLeft[u] === 1 ? labels[u].singular : labels[u].plural)}
                 </span>
               </Col>
             ))}

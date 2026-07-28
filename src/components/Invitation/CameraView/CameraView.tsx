@@ -1,6 +1,6 @@
 "use client";
 
-import { NewInvitation } from "@/types/new_invitation";
+import { InvitationUIBundle, NewInvitation } from "@/types/new_invitation";
 import { GuestSubabasePayload } from "@/types/guests";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -17,11 +17,12 @@ interface CameraViewProps {
   invitation: NewInvitation;
   invitationID: string;
   guestInfo: GuestSubabasePayload;
+  ui?: InvitationUIBundle | null;
   onClose: () => void;
   onOpenPhotoWall?: () => void;
 }
 
-export default function CameraView({ invitation, invitationID, guestInfo, onClose, onOpenPhotoWall }: CameraViewProps) {
+export default function CameraView({ invitation, invitationID, guestInfo, ui, onClose, onOpenPhotoWall }: CameraViewProps) {
   const router = useRouter();
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -220,7 +221,7 @@ export default function CameraView({ invitation, invitationID, guestInfo, onClos
       <div className={styles.fullscreen}>
         <div className={styles.message}>
           <CameraOff size={48} color="#fff" />
-          <p>No podemos identificar tu nombre. Contacta al organizador del evento.</p>
+          <p>{ui?.camera.noName ?? "No podemos identificar tu nombre. Contacta al organizador del evento."}</p>
         </div>
       </div>,
       document.body
@@ -237,8 +238,8 @@ export default function CameraView({ invitation, invitationID, guestInfo, onClos
           <Camera size={48} color="#fff" />
           <p>
             {isTooEarly
-              ? "La cámara estará disponible el día del evento"
-              : "El Photo Wall ya no está disponible"}
+              ? (ui?.camera.tooEarly ?? "La cámara estará disponible el día del evento")
+              : (ui?.camera.unavailable ?? "El Photo Wall ya no está disponible")}
           </p>
         </div>
       </div>,
@@ -269,20 +270,20 @@ export default function CameraView({ invitation, invitationID, guestInfo, onClos
               className={styles.discardBtn}
               onClick={handleDiscard}
               disabled={uploading}
-              aria-label="Descartar"
+              aria-label={ui?.camera.discard ?? "Descartar"}
             >
               <Trash2 size={24} />
-              <span>Descartar</span>
+              <span>{ui?.camera.discard ?? "Descartar"}</span>
             </button>
 
             <button
               className={styles.confirmBtn}
               onClick={handleConfirmUpload}
               disabled={uploading}
-              aria-label="Enviar al Wall"
+              aria-label={ui?.camera.sendToWall ?? "Enviar al Wall"}
             >
               <Check size={24} />
-              <span>Enviar al Wall</span>
+              <span>{ui?.camera.sendToWall ?? "Enviar al Wall"}</span>
             </button>
           </div>
         </div>
@@ -319,14 +320,14 @@ export default function CameraView({ invitation, invitationID, guestInfo, onClos
             </text>
           </svg>
           <span className={styles.counterLabel}>
-            {remaining === 1 ? "shot restante" : "shots restantes"}
+            {ui?.camera.shotsRemaining ?? "shots restantes"}
           </span>
         </div>
 
         <button
           className={styles.closeBtn}
           onClick={switchCamera}
-          aria-label="Cambiar cámara"
+          aria-label={ui?.camera.switchCamera ?? "Cambiar cámara"}
         >
           <SwitchCamera size={22} />
         </button>
@@ -335,7 +336,7 @@ export default function CameraView({ invitation, invitationID, guestInfo, onClos
       {permissionDenied ? (
         <div className={styles.message}>
           <CameraOff size={48} color="#fff" />
-          <p>Permiso de cámara denegado. Habilítalo en la configuración de tu dispositivo.</p>
+          <p>{ui?.camera.permissionDenied ?? "Permiso de cámara denegado. Habilítalo en la configuración de tu dispositivo."}</p>
         </div>
       ) : (
         <video
@@ -350,7 +351,9 @@ export default function CameraView({ invitation, invitationID, guestInfo, onClos
       {uploadSuccess && <div className={styles.successFlash} />}
 
       {maxPhotos && (
-        <div className={styles.maxPhotosMsg}>Ya subiste el máximo de {MAX_PHOTOS} fotos</div>
+        <div className={styles.maxPhotosMsg}>
+          {(ui?.camera.maxPhotosReached ?? "Ya subiste el máximo de {max} fotos").replace("{max}", String(MAX_PHOTOS))}
+        </div>
       )}
 
       <div className={styles.bottomBar}>
@@ -366,7 +369,7 @@ export default function CameraView({ invitation, invitationID, guestInfo, onClos
           className={styles.iconBtn}
           onClick={() => fileInputRef.current?.click()}
           disabled={uploading || maxPhotos}
-          aria-label="Subir desde galería"
+          aria-label={ui?.camera.uploadFromGallery ?? "Subir desde galería"}
         >
           <ImagePlus size={28} />
         </button>
@@ -375,13 +378,13 @@ export default function CameraView({ invitation, invitationID, guestInfo, onClos
           className={styles.shutterBtn}
           onClick={handleCapture}
           disabled={uploading || maxPhotos || !streamStarted || permissionDenied}
-          aria-label="Tomar foto"
+          aria-label={ui?.camera.takePhoto ?? "Tomar foto"}
         />
 
         <button
           className={styles.iconBtn}
           onClick={() => onOpenPhotoWall ? onOpenPhotoWall() : router.push(`/event/${invitationID}/photowall?title=${encodeURIComponent(invitation.cover?.title?.text?.value ?? '')}`)}
-          aria-label="Ver Photo Wall"
+          aria-label={ui?.camera.viewPhotoWall ?? "Ver Photo Wall"}
         >
           <Images size={28} />
         </button>

@@ -24,7 +24,28 @@ export default function HostClient({ textures }: Props) {
   const [textureOverride, setTextureOverride] = useState<Texture | null>(null);
   const [hostOrigin, setHostOrigin] = useState<string | null>(null);
   const [scrollToSection, setScrollToSection] = useState<string | null>(null);
+  const [lang, setLang] = useState<string | null>(null);
+  const [ui, setUi] = useState<InvitationUIBundle>(uiES as InvitationUIBundle);
   const rootRef = useRef<HTMLDivElement>(null);
+
+  // Copy de UI (botones, contador) según el idioma que se esté previsualizando
+  // en el builder — sin esto el preview siempre mostraba español fijo.
+  useEffect(() => {
+    if (!lang) {
+      setUi(uiES as InvitationUIBundle);
+      return;
+    }
+    let cancelled = false;
+    fetch(`/api/translation/ui-copy?lang=${encodeURIComponent(lang)}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (!cancelled && data?.ui) setUi(data.ui as InvitationUIBundle);
+      })
+      .catch(() => {
+        if (!cancelled) setUi(uiES as InvitationUIBundle);
+      });
+    return () => { cancelled = true; };
+  }, [lang]);
 
   // Handshake inicial
   useEffect(() => {
@@ -42,6 +63,7 @@ export default function HostClient({ textures }: Props) {
       if (type === "HOST_PROPS" && payload?.invitationConfig) {
         setInvitation(payload.invitationConfig as NewInvitation);
         setTextureOverride((payload.textureOverride as Texture) ?? null);
+        setLang((payload.lang as string) ?? null);
       }
       if (type === "HOST_SCROLL_TO" && payload?.section) {
         setScrollToSection(payload.section as string);
@@ -84,7 +106,8 @@ export default function HostClient({ textures }: Props) {
         loader={false}
         type={"open" as InvitationType}
         mongoID={null}
-        ui={uiES as InvitationUIBundle}
+        ui={ui}
+        lang={lang}
         scrollToSection={scrollToSection}
         onSectionChange={handleSectionChange}
         textures={textures}

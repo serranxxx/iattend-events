@@ -28,6 +28,7 @@ import { FooterLand } from "@/components/LandPage/Footer/Footer";
 import { Ticket } from "../Ticket/Ticket";
 import SongPlayer from "../SongPlayer/SongPlayer";
 import InvitationControlBar from "../InvitationControlBar/InvitationControlBar";
+import LanguageToggle from "../LanguageToggle/LanguageToggle";
 import CameraView from "../CameraView/CameraView";
 import LiaGuest from "../LiaGuest/LiaGuest";
 import { PhotoWall } from "@/components/PhotoWall/PhotoWall";
@@ -40,6 +41,8 @@ type invProps = {
   dev: boolean;
   height: number | string | null;
   ui: InvitationUIBundle;
+  lang?: string | null;
+  availableLanguages?: string[] | null;
   invitationID?: string;
   password?: string;
   plan?: string;
@@ -54,7 +57,7 @@ type invProps = {
 
 
 
-export default function Invitation({ password, invitationID, ui, invitation, loader, type, mongoID, dev, plan, phone_number, scrollToSection, onSectionChange, textures = [], textureOverride = null }: invProps) {
+export default function Invitation({ password, invitationID, ui, lang, availableLanguages, invitation, loader, type, mongoID, dev, plan, phone_number, scrollToSection, onSectionChange, textures = [], textureOverride = null }: invProps) {
   const coverRef = useRef<HTMLDivElement>(null);
   const greetingRef = useRef<HTMLDivElement>(null);
   const peopleRef = useRef<HTMLDivElement>(null);
@@ -88,6 +91,30 @@ export default function Invitation({ password, invitationID, ui, invitation, loa
   const [guestInfo, setGuestInfo] = useState<GuestSubabasePayload | null>(null);
   const [companions, setCompanions] = useState<GuestSubabasePayload[]>([])
 
+  // html/body solo tienen min-height (sin overflow:hidden) porque otras rutas
+  // (pop, side-event) sí dependen del scroll normal del documento. Acá el
+  // scroll real vive únicamente en .invitation_main_cont (scrollableContentRef,
+  // con overscroll-behavior-y: contain) — si body también termina siendo
+  // scrolleable por un pixel de más, quedan dos contenedores de scroll
+  // independientes y en iOS el gesto de swipe hacia arriba se puede "perder"
+  // entre uno y otro sin llegar al tope real. Se bloquea solo mientras esta
+  // página está montada, y se revierte al salir para no afectar otras rutas.
+  useEffect(() => {
+    const html = document.documentElement;
+    const body = document.body;
+    const prevHtml = { height: html.style.height, overflow: html.style.overflow };
+    const prevBody = { height: body.style.height, overflow: body.style.overflow };
+    html.style.height = "100dvh";
+    html.style.overflow = "hidden";
+    body.style.height = "100dvh";
+    body.style.overflow = "hidden";
+    return () => {
+      html.style.height = prevHtml.height;
+      html.style.overflow = prevHtml.overflow;
+      body.style.height = prevBody.height;
+      body.style.overflow = prevBody.overflow;
+    };
+  }, []);
 
   const primary = invitation?.generals?.colors.primary ?? "#FFFFFF";
   const secondary = invitation?.generals?.colors.secondary ?? "#FFFFFF";
@@ -461,7 +488,7 @@ export default function Invitation({ password, invitationID, ui, invitation, loa
     <>
       {contextHolder}
 
-
+      {!dev && <LanguageToggle languages={availableLanguages} currentLang={lang} />}
 
       <div
         ref={scrollableContentRef}
@@ -474,7 +501,7 @@ export default function Invitation({ password, invitationID, ui, invitation, loa
         }}
       >
 
-        <Cover ui={ui} ref={coverRef} dev={dev} invitation={invitation} height={"100vh"} validated={validated} />
+        <Cover ui={ui} lang={lang} ref={coverRef} dev={dev} invitation={invitation} height={"100vh"} validated={validated} />
         {validated && coverSong && (
           <SongPlayer song={coverSong} accent={accent} secondary={secondary} dev={dev} />
         )}
@@ -596,6 +623,7 @@ export default function Invitation({ password, invitationID, ui, invitation, loa
           invitationID={invitationID}
           guestName={guestInfo?.name ?? undefined}
           accentColor={'#000'}
+          ui={ui}
           onClose={() => setShowLia(false)}
         />
       )}
@@ -605,6 +633,7 @@ export default function Invitation({ password, invitationID, ui, invitation, loa
           invitation={invitation}
           invitationID={invitationID}
           guestInfo={guestInfo}
+          ui={ui}
           onClose={() => setShowCamera(false)}
           onOpenPhotoWall={() => { setShowCamera(false); setShowPhotoWall(true); }}
         />

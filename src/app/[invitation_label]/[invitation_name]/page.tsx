@@ -159,7 +159,9 @@ export default async function InvitationDynamicPage({ params, searchParams }: Pa
       height={null}
       dev={false}
       ui={ui}
+      lang={lang}
       invitation={invitationForRender}
+      availableLanguages={invitation.generals?.languages}
       password={password}
       invitationID={invitationID}
       loader={false}

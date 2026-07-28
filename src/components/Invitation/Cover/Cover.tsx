@@ -15,6 +15,7 @@ type CoverProps = {
   height: string | number;
   validated?: boolean;
   ui?: InvitationUIBundle | null;
+  lang?: string | null;
 };
 
 const isVideo = (url: string) => /\.(mp4|webm|mov|m4v)(\?|$)/i.test(url);
@@ -27,7 +28,7 @@ const toArray = (src: string | string[] | null | undefined): string[] => {
 };
 
 export const Cover = forwardRef<HTMLDivElement, CoverProps>(function Cover(
-  { ui, dev, invitation, height: _height, validated = true },
+  { ui, lang, dev, invitation, height: _height, validated = true },
   ref
 ) {
   const cover = invitation?.cover;
@@ -184,7 +185,7 @@ export const Cover = forwardRef<HTMLDivElement, CoverProps>(function Cover(
                 minWidth: "250px",
               }}
             >
-              <Countdown ui={ui} cover={cover} generals={generals} dev={dev} validated={validated} />
+              <Countdown ui={ui} locale={lang} cover={cover} generals={generals} dev={dev} validated={validated} />
             </div>
           )}
         </div>
