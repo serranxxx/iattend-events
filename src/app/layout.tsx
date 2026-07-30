@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { AppProvider } from "@/context/AppProvider";
 import "@/styles/globals.css";
 import { AntdProvider } from "@/context/AntdProvider";
+import { GoogleFontsLoader } from "@/components/GoogleFontsLoader";
 
 
 export const metadata: Metadata = {
@@ -34,6 +35,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className="scroll-invitation">
+        <GoogleFontsLoader />
         <AppProvider>
           <AntdProvider>
             {children}

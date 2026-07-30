@@ -90,6 +90,7 @@ export default function Invitation({ password, invitationID, ui, lang, available
   const [messageApi, contextHolder] = message.useMessage();
   const [guestInfo, setGuestInfo] = useState<GuestSubabasePayload | null>(null);
   const [companions, setCompanions] = useState<GuestSubabasePayload[]>([])
+  const [allCompanions, setAllCompanions] = useState<GuestSubabasePayload[]>([])
 
   // html/body solo tienen min-height (sin overflow:hidden) porque otras rutas
   // (pop, side-event) sí dependen del scroll normal del documento. Acá el
@@ -286,6 +287,7 @@ export default function Invitation({ password, invitationID, ui, lang, available
           console.log(isErr, 'not found')
         }
         setCompanions(companions?.filter(c => c.state === 'confirmado' || c.state === 'asistente') ?? [])
+        setAllCompanions(companions ?? [])
       }
 
       // messageApi.success(`Bienvenido ${data.name}`);
@@ -329,6 +331,7 @@ export default function Invitation({ password, invitationID, ui, lang, available
         }
 
         setCompanions(companions?.filter(c => c.state === 'confirmado' || c.state === 'asistente') ?? [])
+        setAllCompanions(companions ?? [])
       }
 
 
@@ -366,6 +369,7 @@ export default function Invitation({ password, invitationID, ui, lang, available
         }
 
         setCompanions(companions?.filter(c => c.state === 'confirmado' || c.state === 'asistente') ?? [])
+        setAllCompanions(companions ?? [])
       }
 
       setGuestInfo(data)
@@ -636,6 +640,7 @@ export default function Invitation({ password, invitationID, ui, lang, available
           ui={ui}
           onClose={() => setShowCamera(false)}
           onOpenPhotoWall={() => { setShowCamera(false); setShowPhotoWall(true); }}
+          shareCompanions={allCompanions.map(c => ({ name: c.name ?? '', password: c.password }))}
         />
       )}
 
@@ -644,8 +649,14 @@ export default function Invitation({ password, invitationID, ui, lang, available
           {invitationID && (
             <PhotoWall
               eventId={invitationID}
-              eventTitle={invitation?.cover?.title?.text?.value ?? ""}
               onClose={() => setShowPhotoWall(false)}
+              onOpenCamera={() => { setShowPhotoWall(false); setShowCamera(true); }}
+              invitation={invitation}
+              companionShareUrl={
+                allCompanions.length > 0 && invitation?.generals?.event?.label && invitation?.generals?.event?.name
+                  ? `${window.location.origin}/${invitation.generals.event.label}/${invitation.generals.event.name}?password=${allCompanions[0].password}`
+                  : undefined
+              }
             />
           )}
         </div>

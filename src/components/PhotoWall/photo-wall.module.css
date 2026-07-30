@@ -1,91 +1,206 @@
+/* ── Root container ──────────────────────────────────────── */
+
 .container {
-  height: 100dvh;
-  overflow-y: auto;
-  background-color: #0a0a0a;
-  padding: 12px;
-  padding-top: 80px;
-  box-sizing: border-box;
+  position: fixed;
+  inset: 0;
+  background: #000;
+  overflow: hidden;
 }
 
+/* ── Cover image background ──────────────────────────────── */
+
+.coverBg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.coverImg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  /* height: 65%; */
+  max-height: 100vh;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.8s ease;
+}
+
+.coverImgActive {
+  opacity: 1;
+}
+
+.carouselDots {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 6px;
+  z-index: 2;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.dotActive {
+  background: #fff;
+}
+
+/* ── Top bar ─────────────────────────────────────────────── */
+
 .topBar {
-  position: fixed;
+  position: absolute;
   top: 0;
   left: 0;
   right: 0;
-  height: 64px;
+  padding: 12px 20px;
+  padding-top: max(12px, env(safe-area-inset-top));
+  z-index: 20;
   display: flex;
   align-items: center;
-  padding: 0 16px;
-  z-index: 10;
-  background: linear-gradient(to bottom, rgba(10,10,10,0.85) 0%, transparent 100%);
+  justify-content: space-between;
 }
 
-.topBarTitle {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  color: #fff;
-  font-size: 15px;
-  font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 55%;
-  text-shadow: 0 1px 4px rgba(0,0,0,0.5);
-}
-
-.backBtn {
-  background: rgba(255, 255, 255, 0.12);
-  border: none;
-  border-radius: 50%;
+.navBtn {
   width: 40px;
   height: 40px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.42);
+  backdrop-filter: blur(28px) saturate(200%);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.14),
+    0 2px 8px rgba(0, 0, 0, 0.08),
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.65),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.15);
   display: flex;
   align-items: center;
   justify-content: center;
   color: #fff;
   cursor: pointer;
-  backdrop-filter: blur(8px);
+  flex-shrink: 0;
 }
+
+/* ── Draggable sheet ─────────────────────────────────────── */
+
+.sheet {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10;
+  background: rgba(0, 0, 0, 0.22);
+  backdrop-filter: blur(28px) saturate(200%);
+  border-top: 1px solid rgba(255, 255, 255, 0.45);
+  box-shadow:
+    0 -8px 32px rgba(0, 0, 0, 0.14),
+    0 -2px 8px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.65);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.handleArea {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: center;
+  padding: 12px 0 8px;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.handleArea:active {
+  cursor: grabbing;
+}
+
+.handleBar {
+  width: 36px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 99px;
+}
+
+/* ── Sheet content ───────────────────────────────────────── */
+
+.sheetContent {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px 20px 40px;
+}
+
+.eventTitle {
+  font-size: 38px;
+  line-height: 1.2;
+  margin: 0 0 20px;
+}
+
+.statsRow {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.stat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0px;
+}
+
+.statNum {
+  color: #fff;
+  font-size: 36px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.statLabel {
+  color: #555;
+  font-size: 13px;
+}
+
+.statDivider {
+  width: 1px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.12);
+  margin: 0 24px;
+}
+
+.separator {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.1);
+  margin-bottom: 16px;
+}
+
+/* ── Photo grid ──────────────────────────────────────────── */
 
 .empty {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 60dvh;
+  min-height: 30dvh;
   color: #555;
   font-size: 15px;
   text-align: center;
   padding: 32px;
 }
 
-.masonry {
+.grid {
   columns: 2;
   column-gap: 8px;
-}
-
-@media (min-width: 640px) {
-  .masonry {
-    columns: 3;
-  }
-}
-
-@media (min-width: 1024px) {
-  .masonry {
-    columns: 4;
-    column-gap: 12px;
-  }
-
-  .container {
-    padding: 16px;
-    padding-top: 88px;
-  }
 }
 
 .card {
   break-inside: avoid;
   margin-bottom: 8px;
-  border-radius: 8px;
+  border-radius: 16px;
   overflow: hidden;
   background-color: #1a1a1a;
   animation: fadeSlideIn 0.4s ease;
@@ -93,12 +208,13 @@
   cursor: pointer;
   -webkit-user-select: none;
   user-select: none;
+  box-shadow: 0px 0px 12px rgba(0, 0, 0, 0.22);
 }
 
 @keyframes fadeSlideIn {
   from {
     opacity: 0;
-    transform: translateY(12px);
+    transform: translateY(10px);
   }
   to {
     opacity: 1;
@@ -113,7 +229,7 @@
   pointer-events: none;
 }
 
-/* ── Heart burst animation on double-tap ──────────────── */
+/* ── Heart burst ─────────────────────────────────────────── */
 
 @keyframes heartBurst {
   0%   { transform: translate(-50%, -50%) scale(0);   opacity: 1; }
@@ -130,10 +246,10 @@
   pointer-events: none;
   z-index: 5;
   animation: heartBurst 0.7s ease-out forwards;
-  filter: drop-shadow(0 2px 6px rgba(0,0,0,0.4));
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.4));
 }
 
-/* ── Info row ─────────────────────────────────────────── */
+/* ── Card info row ───────────────────────────────────────── */
 
 .info {
   padding: 7px 10px 9px;
@@ -165,8 +281,6 @@
   font-size: 10px;
   line-height: 1;
 }
-
-/* ── Like button ──────────────────────────────────────── */
 
 .likeRow {
   display: flex;
@@ -207,7 +321,7 @@
   padding: 4px 2px;
 }
 
-/* ── Likers bottom sheet ──────────────────────────────── */
+/* ── Bottom sheets (likers / QR) ─────────────────────────── */
 
 .sheetOverlay {
   position: fixed;
@@ -224,7 +338,7 @@
   to   { opacity: 1; }
 }
 
-.sheet {
+.bottomSheet {
   width: 100%;
   background: #1c1c1e;
   border-radius: 18px 18px 0 0;
@@ -311,4 +425,21 @@
   font-size: 14px;
   color: #e0e0e0;
   font-weight: 500;
+}
+
+.qrContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 0 16px;
+}
+
+.qrHint {
+  color: #aaa;
+  font-size: 13px;
+  text-align: center;
+  line-height: 1.5;
+  max-width: 260px;
+  margin: 0;
 }

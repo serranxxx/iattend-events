@@ -5,13 +5,18 @@ import { GuestSubabasePayload } from "@/types/guests";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
-import { X, Camera, CameraOff, ImagePlus, Images, Check, Trash2, SwitchCamera } from "lucide-react";
+import { X, Camera, CameraOff, ImagePlus, Check, Trash2, SwitchCamera, Share, ChevronLeft, LayoutGrid, Users, ChevronDown } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 import { createClient } from "@/lib/supabase/client";
 import styles from "./camera-view.module.css";
 
 const API_URL = process.env.NEXT_PUBLIC_IATTEND_API_URL;
 const MAX_PHOTOS = 10;
-const RADIUS = 20;
+
+interface ShareCompanion {
+  name: string;
+  password: string;
+}
 
 interface CameraViewProps {
   invitation: NewInvitation;
@@ -20,9 +25,10 @@ interface CameraViewProps {
   ui?: InvitationUIBundle | null;
   onClose: () => void;
   onOpenPhotoWall?: () => void;
+  shareCompanions?: ShareCompanion[];
 }
 
-export default function CameraView({ invitation, invitationID, guestInfo, ui, onClose, onOpenPhotoWall }: CameraViewProps) {
+export default function CameraView({ invitation, invitationID, guestInfo, ui, onClose, onOpenPhotoWall, shareCompanions }: CameraViewProps) {
   const router = useRouter();
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -35,6 +41,10 @@ export default function CameraView({ invitation, invitationID, guestInfo, ui, on
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [streamStarted, setStreamStarted] = useState(false);
   const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment');
+
+  // Share companion state
+  const [shareState, setShareState] = useState<'closed' | 'list' | 'qr'>('closed');
+  const [selectedCompanion, setSelectedCompanion] = useState<ShareCompanion | null>(null);
 
   // Preview state
   const [previewBlob, setPreviewBlob] = useState<Blob | null>(null);
@@ -248,8 +258,8 @@ export default function CameraView({ invitation, invitationID, guestInfo, ui, on
   }
 
   const remaining = MAX_PHOTOS - photoCount;
-  const circumference = 2 * Math.PI * RADIUS;
-  const offset = circumference - (remaining / MAX_PHOTOS) * circumference;
+  const RADIUS = 20;
+  const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
   return createPortal(
     <div className={styles.fullscreen}>
@@ -289,73 +299,66 @@ export default function CameraView({ invitation, invitationID, guestInfo, ui, on
         </div>
       )}
 
-      {/* --- Camera view --- */}
+      {uploadSuccess && <div className={styles.successFlash} />}
+
+      {/* --- Top bar --- */}
       <div className={styles.topBar}>
-        <button className={styles.closeBtn} onClick={onClose}>
-          <X size={24} />
+        <button className={styles.iconCircleBtn} onClick={onClose} aria-label="Cerrar">
+          <X size={22} />
         </button>
 
-        <div className={styles.counterWrapper}>
-          <svg width="56" height="56" viewBox="0 0 56 56">
-            <circle cx="28" cy="28" r={RADIUS} fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth="4" />
+        <div className={styles.circularCounter}>
+          <svg width="48" height="48" viewBox="0 0 48 48" aria-hidden="true">
+            <circle cx="24" cy="24" r={RADIUS} className={styles.counterTrack} />
             <circle
-              cx="28" cy="28" r={RADIUS}
-              fill="none"
-              stroke={remaining === 0 ? "#ff4d4d" : "#fff"}
-              strokeWidth="4"
-              strokeDasharray={circumference}
-              strokeDashoffset={offset}
-              strokeLinecap="round"
-              transform="rotate(-90 28 28)"
-              style={{ transition: "stroke-dashoffset 0.4s ease" }}
+              cx="24" cy="24" r={RADIUS}
+              className={styles.counterProgress}
+              style={{
+                strokeDasharray: CIRCUMFERENCE,
+                strokeDashoffset: CIRCUMFERENCE * (photoCount / MAX_PHOTOS),
+                stroke: remaining === 0 ? '#ff4d4d' : '#fff',
+              }}
             />
-            <text
-              x="28" y="33"
-              textAnchor="middle"
-              fill={remaining === 0 ? "#ff4d4d" : "#fff"}
-              fontSize="15"
-              fontWeight="700"
-            >
-              {remaining}
-            </text>
           </svg>
-          <span className={styles.counterLabel}>
-            {ui?.camera.shotsRemaining ?? "shots restantes"}
+          <span className={remaining === 0 ? styles.counterNumRed : styles.counterNum}>
+            {remaining}
           </span>
         </div>
 
         <button
-          className={styles.closeBtn}
-          onClick={switchCamera}
-          aria-label={ui?.camera.switchCamera ?? "Cambiar cámara"}
+          className={styles.iconCircleBtn}
+          onClick={() => onOpenPhotoWall ? onOpenPhotoWall() : router.push(`/event/${invitationID}/photowall?title=${encodeURIComponent(invitation.cover?.title?.text?.value ?? '')}`)}
+          aria-label={ui?.camera.viewPhotoWall ?? "Ver Photo Wall"}
         >
-          <SwitchCamera size={22} />
+          <LayoutGrid size={22} />
         </button>
       </div>
 
-      {permissionDenied ? (
-        <div className={styles.message}>
-          <CameraOff size={48} color="#fff" />
-          <p>{ui?.camera.permissionDenied ?? "Permiso de cámara denegado. Habilítalo en la configuración de tu dispositivo."}</p>
-        </div>
-      ) : (
-        <video
-          ref={videoRef}
-          autoPlay
-          playsInline
-          muted
-          className={`${styles.video} ${facingMode === 'user' ? styles.videoMirrored : ''}`}
-        />
-      )}
+      {/* --- Camera container --- */}
+      <div className={styles.cameraContainer}>
+        {permissionDenied ? (
+          <div className={styles.message}>
+            <CameraOff size={48} color="#fff" />
+            <p>{ui?.camera.permissionDenied ?? "Permiso de cámara denegado. Habilítalo en la configuración de tu dispositivo."}</p>
+          </div>
+        ) : (
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted
+            className={`${styles.video} ${facingMode === 'user' ? styles.videoMirrored : ''}`}
+          />
+        )}
 
-      {uploadSuccess && <div className={styles.successFlash} />}
+        {maxPhotos && (
+          <div className={styles.maxPhotosMsg}>
+            {(ui?.camera.maxPhotosReached ?? "Ya subiste el máximo de {max} fotos").replace("{max}", String(MAX_PHOTOS))}
+          </div>
+        )}
+      </div>
 
-      {maxPhotos && (
-        <div className={styles.maxPhotosMsg}>
-          {(ui?.camera.maxPhotosReached ?? "Ya subiste el máximo de {max} fotos").replace("{max}", String(MAX_PHOTOS))}
-        </div>
-      )}
-
+      {/* --- Bottom controls --- */}
       <div className={styles.bottomBar}>
         <input
           ref={fileInputRef}
@@ -371,7 +374,7 @@ export default function CameraView({ invitation, invitationID, guestInfo, ui, on
           disabled={uploading || maxPhotos}
           aria-label={ui?.camera.uploadFromGallery ?? "Subir desde galería"}
         >
-          <ImagePlus size={28} />
+          <ImagePlus size={26} />
         </button>
 
         <button
@@ -383,12 +386,97 @@ export default function CameraView({ invitation, invitationID, guestInfo, ui, on
 
         <button
           className={styles.iconBtn}
-          onClick={() => onOpenPhotoWall ? onOpenPhotoWall() : router.push(`/event/${invitationID}/photowall?title=${encodeURIComponent(invitation.cover?.title?.text?.value ?? '')}`)}
-          aria-label={ui?.camera.viewPhotoWall ?? "Ver Photo Wall"}
+          onClick={switchCamera}
+          aria-label={ui?.camera.switchCamera ?? "Cambiar cámara"}
         >
-          <Images size={28} />
+          <SwitchCamera size={24} />
         </button>
       </div>
+
+      {/* --- Share companion pill --- */}
+      {shareCompanions && shareCompanions.length > 0 && (
+        <div className={styles.shareRow}>
+          <button
+            className={styles.shareCompanionPill}
+            onClick={() => {
+              if (shareCompanions.length === 1) {
+                setSelectedCompanion(shareCompanions[0]);
+                setShareState('qr');
+              } else {
+                setShareState('list');
+              }
+            }}
+          >
+            <span className={styles.pillAvatar}>
+              <Users size={14} />
+            </span>
+            <span>Acompañantes</span>
+            <ChevronDown size={16} />
+          </button>
+        </div>
+      )}
+
+      {/* --- Share companion sheet --- */}
+      {shareState !== 'closed' && (
+        <div className={styles.shareOverlay} onClick={() => setShareState('closed')}>
+          <div className={styles.shareSheet} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.sheetHandle} />
+
+            {shareState === 'list' && (
+              <>
+                <div className={styles.sheetHeader}>
+                  <Share size={16} style={{ color: '#fff', flexShrink: 0 }} />
+                  <span className={styles.sheetTitle}>Compartir con acompañante</span>
+                  <button className={styles.sheetClose} onClick={() => setShareState('closed')}>
+                    <X size={18} />
+                  </button>
+                </div>
+                <ul className={styles.companionList}>
+                  {shareCompanions!.map((c) => (
+                    <li
+                      key={c.password}
+                      className={styles.companionItem}
+                      onClick={() => { setSelectedCompanion(c); setShareState('qr'); }}
+                    >
+                      <span className={styles.companionAvatar}>{c.name[0]?.toUpperCase()}</span>
+                      <span className={styles.companionName}>{c.name || 'Acompañante'}</span>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+
+            {shareState === 'qr' && selectedCompanion && (
+              <>
+                <div className={styles.sheetHeader}>
+                  {shareCompanions && shareCompanions.length > 1 && (
+                    <button className={styles.sheetBack} onClick={() => setShareState('list')}>
+                      <ChevronLeft size={18} />
+                    </button>
+                  )}
+                  <span className={styles.sheetTitle}>{selectedCompanion.name || 'Acompañante'}</span>
+                  <button className={styles.sheetClose} onClick={() => setShareState('closed')}>
+                    <X size={18} />
+                  </button>
+                </div>
+                <div className={styles.qrContainer}>
+                  <QRCodeSVG
+                    value={
+                      invitation.generals?.event?.label && invitation.generals?.event?.name
+                        ? `${window.location.origin}/${invitation.generals.event.label}/${invitation.generals.event.name}?password=${selectedCompanion.password}`
+                        : `${window.location.origin}?password=${selectedCompanion.password}`
+                    }
+                    size={220}
+                  />
+                  <p className={styles.qrHint}>
+                    Tu acompañante escanea este código para acceder a la invitación y subir sus fotos
+                  </p>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>,
     document.body
   );

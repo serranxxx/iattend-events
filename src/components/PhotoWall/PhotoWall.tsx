@@ -1,12 +1,16 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Heart, X } from "lucide-react";
+import { ArrowLeft, Camera, Heart, Share, X } from "lucide-react";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
+import { QRCodeSVG } from "qrcode.react";
+import { NewInvitation } from "@/types/new_invitation";
 import styles from "./photo-wall.module.css";
 
 const API_URL = process.env.NEXT_PUBLIC_IATTEND_API_URL;
+const INITIAL_FRACTION = 0.42;
 
 interface EventPhoto {
   id: string;
@@ -26,6 +30,9 @@ interface PhotoWallProps {
   eventId: string;
   eventTitle?: string;
   onClose?: () => void;
+  onOpenCamera?: () => void;
+  companionShareUrl?: string;
+  invitation?: NewInvitation | null;
 }
 
 const formatTime = (dateStr: string) => {
@@ -37,15 +44,53 @@ const formatTime = (dateStr: string) => {
   });
 };
 
-export function PhotoWall({ eventId, eventTitle, onClose }: PhotoWallProps) {
+export function PhotoWall({ eventId, eventTitle, onClose, onOpenCamera, companionShareUrl, invitation }: PhotoWallProps) {
   const router = useRouter();
   const [photos, setPhotos] = useState<EventPhoto[]>([]);
   const [likesMap, setLikesMap] = useState<Record<string, string[]>>({});
   const [heartBurst, setHeartBurst] = useState<string | null>(null);
   const [likersSheet, setLikersSheet] = useState<{ photoId: string; names: string[] } | null>(null);
+  const [qrOpen, setQrOpen] = useState(false);
+  const [coverIdx, setCoverIdx] = useState(0);
+  const [sheetFraction, setSheetFraction] = useState(INITIAL_FRACTION);
+
   const guestNameRef = useRef("");
   const lastTapRef = useRef<{ id: string; time: number } | null>(null);
+  const dragging = useRef<{ startY: number; startFraction: number } | null>(null);
+  const sheetFractionRef = useRef(INITIAL_FRACTION);
+  const sheetRef = useRef<HTMLDivElement>(null);
   const supabase = createClient();
+
+  const setFraction = (f: number) => {
+    sheetFractionRef.current = f;
+    setSheetFraction(f);
+  };
+
+  // Cover images from invitation
+  const coverImages: string[] = useMemo(() => {
+    const raw = invitation?.cover?.image?.prod;
+    if (!raw) return [];
+    if (Array.isArray(raw)) return (raw as string[]).filter(Boolean);
+    return [raw as string];
+  }, [invitation]);
+
+  const titleText = invitation?.cover?.title?.text?.value ?? eventTitle ?? "";
+  const titleFace = invitation?.cover?.title?.text?.typeFace;
+  const titleWeight = invitation?.cover?.title?.text?.weight;
+  const primaryColor = invitation?.generals?.colors?.primary ?? "#0a0a0a";
+
+  const photoCount = photos.length;
+  const participantCount = useMemo(
+    () => new Set(photos.map((p) => p.guest_name)).size,
+    [photos]
+  );
+
+  // Carousel auto-advance
+  useEffect(() => {
+    if (coverImages.length <= 1) return;
+    const t = setInterval(() => setCoverIdx((i) => (i + 1) % coverImages.length), 3000);
+    return () => clearInterval(t);
+  }, [coverImages.length]);
 
   useEffect(() => {
     guestNameRef.current = localStorage.getItem(`guest_${eventId}`) ?? "";
@@ -120,7 +165,6 @@ export function PhotoWall({ eventId, eventTitle, onClose }: PhotoWallProps) {
     const currentLikers = likesMap[photoId] ?? [];
     const alreadyLiked = currentLikers.includes(guestName);
 
-    // Optimistic update
     setLikesMap((prev) => {
       const next = { ...prev };
       if (alreadyLiked) {
@@ -141,7 +185,6 @@ export function PhotoWall({ eventId, eventTitle, onClose }: PhotoWallProps) {
       });
     } catch (err) {
       console.error("Error al dar like:", err);
-      // Roll back on error
       setLikesMap((prev) => {
         const next = { ...prev };
         if (alreadyLiked) {
@@ -160,70 +203,201 @@ export function PhotoWall({ eventId, eventTitle, onClose }: PhotoWallProps) {
     setLikersSheet({ photoId, names });
   };
 
+  // Drag — window listeners so move/up always fire regardless of DOM structure
+  useEffect(() => {
+    const onMove = (e: PointerEvent) => {
+      if (!dragging.current) return;
+      const dy = e.clientY - dragging.current.startY;
+      const newFrac = dragging.current.startFraction + dy / window.innerHeight;
+      setFraction(Math.max(0, Math.min(INITIAL_FRACTION, newFrac)));
+    };
+
+    const onEnd = () => {
+      if (!dragging.current) return;
+      const snap = sheetFractionRef.current < INITIAL_FRACTION / 2 ? 0 : INITIAL_FRACTION;
+      dragging.current = null;
+      setFraction(snap);
+    };
+
+    window.addEventListener("pointermove", onMove, { passive: true });
+    window.addEventListener("pointerup", onEnd);
+    window.addEventListener("pointercancel", onEnd);
+    return () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onEnd);
+      window.removeEventListener("pointercancel", onEnd);
+    };
+  }, []);
+
+  const handleDragStart = (e: React.PointerEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    dragging.current = { startY: e.clientY, startFraction: sheetFractionRef.current };
+  };
+
   return (
     <div className={styles.container}>
+
+      {/* Cover image background */}
+      {coverImages.length > 0 && (
+        <div className={styles.coverBg}>
+          {coverImages.map((src, i) => (
+            <div
+              key={src}
+              className={`${styles.coverImg} ${i === coverIdx ? styles.coverImgActive : ""}`}
+            >
+              <Image src={src} alt="" fill sizes="100vw" style={{ objectFit: "cover" }} unoptimized />
+            </div>
+          ))}
+          {coverImages.length > 1 && (
+            <div className={styles.carouselDots}>
+              {coverImages.map((_, i) => (
+                <span key={i} className={`${styles.dot} ${i === coverIdx ? styles.dotActive : ""}`} />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Top bar */}
       <div className={styles.topBar}>
-        <button className={styles.backBtn} onClick={() => onClose ? onClose() : router.back()} aria-label="Regresar">
-          <ArrowLeft size={22} />
+        <button
+          className={styles.navBtn}
+          onClick={() => (onClose ? onClose() : router.back())}
+          aria-label="Regresar"
+        >
+          <ArrowLeft size={14} />
         </button>
-        {eventTitle && <span className={styles.topBarTitle}>{eventTitle}</span>}
+        {onOpenCamera && (
+          <button className={styles.navBtn} onClick={onOpenCamera} aria-label="Abrir cámara">
+            <Camera size={14} />
+          </button>
+        )}
       </div>
 
-      {photos.length === 0 ? (
-        <div className={styles.empty}>
-          <p>Las fotos aparecerán aquí en tiempo real</p>
+      {/* Draggable sheet */}
+      <div
+        ref={sheetRef}
+        className={styles.sheet}
+        style={{
+          top: `${(sheetFraction * 100).toFixed(2)}dvh`,
+          borderRadius: `${Math.round((sheetFraction / INITIAL_FRACTION) * 64)}px ${Math.round((sheetFraction / INITIAL_FRACTION) * 64)}px 0 0`,
+          transition: dragging.current ? "none" : "all 0.3s ease",
+        }}
+      >
+        {/* Drag handle */}
+        <div
+          className={styles.handleArea}
+          onPointerDown={handleDragStart}
+        >
+          <div className={styles.handleBar} />
         </div>
-      ) : (
-        <div className={styles.masonry}>
-          {photos.map((photo) => {
-            const likers = likesMap[photo.id] ?? [];
-            const liked = likers.includes(guestNameRef.current);
-            const count = likers.length;
 
-            return (
-              <div key={photo.id} className={styles.card} onClick={() => handleCardTap(photo.id)}>
-                <img
-                  src={photo.public_url}
-                  alt={photo.guest_name}
-                  className={styles.img}
-                  loading="lazy"
-                />
-                {heartBurst === photo.id && (
-                  <div className={styles.heartBurst}>❤</div>
-                )}
-                <div className={styles.info}>
-                  <div className={styles.infoTop}>
-                    <span className={styles.name}>{photo.guest_name}</span>
-                    <span className={styles.time}>{formatTime(photo.taken_at ?? photo.uploaded_at)}</span>
+        {/* Scrollable content */}
+        <div className={styles.sheetContent}>
+          {titleText && (
+            <h1
+              className={styles.eventTitle}
+              style={{
+                fontFamily: titleFace ?? undefined,
+                fontWeight: titleWeight ?? 700,
+                color: primaryColor,
+                textAlign: "center",
+              }}
+            >
+              {titleText}
+            </h1>
+          )}
+
+          <div className={styles.statsRow}>
+            <div className={styles.stat}>
+              <span className={styles.statNum} style={{ color: primaryColor, fontFamily: titleFace ?? undefined, }}>{photoCount.toLocaleString("es-MX")}</span>
+              <span className={styles.statLabel} style={{ color: primaryColor,  }}>Fotos</span>
+            </div>
+            <div className={styles.statDivider} />
+            <div className={styles.stat}>
+              <span className={styles.statNum} style={{ color: primaryColor, fontFamily: titleFace ?? undefined, }}>{participantCount.toLocaleString("es-MX")}</span>
+              <span className={styles.statLabel} style={{ color: primaryColor,  }}>Participantes</span>
+            </div>
+          </div>
+
+          <div className={styles.separator} />
+
+          {photos.length === 0 ? (
+            <div className={styles.empty}>
+              <p>Las fotos aparecerán aquí en tiempo real</p>
+            </div>
+          ) : (
+            <div className={styles.grid}>
+              {photos.map((photo) => {
+                const likers = likesMap[photo.id] ?? [];
+                const liked = likers.includes(guestNameRef.current);
+                const count = likers.length;
+
+                return (
+                  <div key={photo.id} style={{backgroundColor: `${primaryColor}40`}} className={styles.card} onClick={() => handleCardTap(photo.id)}>
+                    <Image
+                      src={photo.public_url}
+                      alt={photo.guest_name}
+                      width={0}
+                      height={0}
+                      sizes="50vw"
+                      className={styles.img}
+                      style={{ width: "100%", height: "auto" }}
+                      unoptimized
+                    />
+                    {heartBurst === photo.id && <div className={styles.heartBurst}>❤</div>}
+                    <div className={styles.info}>
+                      <div className={styles.infoTop}>
+                        <span className={styles.name} style={{color: primaryColor}}>{photo.guest_name}</span>
+                        <span className={styles.time} style={{color: primaryColor}}>{formatTime(photo.taken_at ?? photo.uploaded_at)}</span>
+                      </div>
+                      <div className={styles.likeRow}>
+                        <button
+                          className={`${styles.likeBtn} ${liked ? styles.likeBtnActive : ""}`}
+                          onClick={(e) => { e.stopPropagation(); toggleLike(photo.id); }}
+                          aria-label="Like"
+                        >
+                          <Heart size={13} fill={liked ? "currentColor" : "none"} color={primaryColor} />
+                        </button>
+                        {count > 0 && (
+                          <button className={styles.likeCount} onClick={(e) => openLikersSheet(photo.id, e)}>
+                            {count}
+                          </button>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  <div className={styles.likeRow}>
-                    <button
-                      className={`${styles.likeBtn} ${liked ? styles.likeBtnActive : ""}`}
-                      onClick={(e) => { e.stopPropagation(); toggleLike(photo.id); }}
-                      aria-label="Like"
-                    >
-                      <Heart size={13} fill={liked ? "currentColor" : "none"} />
-                    </button>
-                    {count > 0 && (
-                      <button
-                        className={styles.likeCount}
-                        onClick={(e) => openLikersSheet(photo.id, e)}
-                      >
-                        {count}
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* QR acompañante bottom sheet */}
+      {qrOpen && companionShareUrl && (
+        <div className={styles.sheetOverlay} onClick={() => setQrOpen(false)}>
+          <div className={styles.bottomSheet} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.sheetHandle} />
+            <div className={styles.sheetHeader}>
+              <Share size={16} className={styles.sheetHeart} />
+              <span className={styles.sheetTitle}>Compartir con acompañante</span>
+              <button className={styles.sheetClose} onClick={() => setQrOpen(false)}>
+                <X size={18} />
+              </button>
+            </div>
+            <div className={styles.qrContainer}>
+              <QRCodeSVG value={companionShareUrl} size={220} />
+              <p className={styles.qrHint}>Tu acompañante escanea este código para acceder a la invitación y subir sus fotos</p>
+            </div>
+          </div>
         </div>
       )}
 
       {/* Likers bottom sheet */}
       {likersSheet && (
         <div className={styles.sheetOverlay} onClick={() => setLikersSheet(null)}>
-          <div className={styles.sheet} onClick={(e) => e.stopPropagation()}>
+          <div className={styles.bottomSheet} onClick={(e) => e.stopPropagation()}>
             <div className={styles.sheetHandle} />
             <div className={styles.sheetHeader}>
               <Heart size={16} fill="currentColor" className={styles.sheetHeart} />
