@@ -41,6 +41,8 @@ export default function CameraView({ invitation, invitationID, guestInfo, ui, on
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [streamStarted, setStreamStarted] = useState(false);
   const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment');
+  const [zoomLevel, setZoomLevel] = useState(1);
+  const lastPinchDist = useRef<number | null>(null);
 
   // Share companion state
   const [shareState, setShareState] = useState<'closed' | 'list' | 'qr'>('closed');
@@ -99,6 +101,7 @@ export default function CameraView({ invitation, invitationID, guestInfo, ui, on
   const switchCamera = async () => {
     stopStream();
     setStreamStarted(false);
+    setZoomLevel(1);
     const newMode = facingMode === 'environment' ? 'user' : 'environment';
     setFacingMode(newMode);
     await startCamera(newMode);
@@ -335,7 +338,25 @@ export default function CameraView({ invitation, invitationID, guestInfo, ui, on
       </div>
 
       {/* --- Camera container --- */}
-      <div className={styles.cameraContainer}>
+      <div
+        className={styles.cameraContainer}
+        onTouchStart={(e) => {
+          if (e.touches.length === 2) {
+            const dx = e.touches[0].clientX - e.touches[1].clientX;
+            const dy = e.touches[0].clientY - e.touches[1].clientY;
+            lastPinchDist.current = Math.sqrt(dx * dx + dy * dy);
+          }
+        }}
+        onTouchMove={(e) => {
+          if (e.touches.length !== 2 || lastPinchDist.current === null) return;
+          const dx = e.touches[0].clientX - e.touches[1].clientX;
+          const dy = e.touches[0].clientY - e.touches[1].clientY;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          setZoomLevel(z => Math.max(1, Math.min(4, z * dist / lastPinchDist.current!)));
+          lastPinchDist.current = dist;
+        }}
+        onTouchEnd={() => { lastPinchDist.current = null; }}
+      >
         {permissionDenied ? (
           <div className={styles.message}>
             <CameraOff size={48} color="#fff" />
@@ -347,7 +368,11 @@ export default function CameraView({ invitation, invitationID, guestInfo, ui, on
             autoPlay
             playsInline
             muted
-            className={`${styles.video} ${facingMode === 'user' ? styles.videoMirrored : ''}`}
+            className={styles.video}
+            style={{
+              transform: `${facingMode === 'user' ? 'scaleX(-1) ' : ''}scale(${zoomLevel})`,
+              transformOrigin: 'center',
+            }}
           />
         )}
 
@@ -361,6 +386,7 @@ export default function CameraView({ invitation, invitationID, guestInfo, ui, on
       {/* --- Bottom controls --- */}
       <div className={styles.bottomBar}>
         <input
+          id="gallery-file-input"
           ref={fileInputRef}
           type="file"
           accept="image/*"
@@ -368,14 +394,13 @@ export default function CameraView({ invitation, invitationID, guestInfo, ui, on
           onChange={handleFileSelect}
         />
 
-        <button
-          className={styles.iconBtn}
-          onClick={() => fileInputRef.current?.click()}
-          disabled={uploading || maxPhotos}
+        <label
+          htmlFor={(!uploading && !maxPhotos) ? "gallery-file-input" : undefined}
+          className={`${styles.iconBtn} ${(uploading || maxPhotos) ? styles.iconBtnDisabled : ''}`}
           aria-label={ui?.camera.uploadFromGallery ?? "Subir desde galería"}
         >
           <ImagePlus size={26} />
-        </button>
+        </label>
 
         <button
           className={styles.shutterBtn}

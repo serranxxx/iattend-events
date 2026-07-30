@@ -47,6 +47,7 @@ const formatTime = (dateStr: string) => {
 export function PhotoWall({ eventId, eventTitle, onClose, onOpenCamera, companionShareUrl, invitation }: PhotoWallProps) {
   const router = useRouter();
   const [photos, setPhotos] = useState<EventPhoto[]>([]);
+  const [loading, setLoading] = useState(true);
   const [likesMap, setLikesMap] = useState<Record<string, string[]>>({});
   const [heartBurst, setHeartBurst] = useState<string | null>(null);
   const [likersSheet, setLikersSheet] = useState<{ photoId: string; names: string[] } | null>(null);
@@ -59,6 +60,8 @@ export function PhotoWall({ eventId, eventTitle, onClose, onOpenCamera, companio
   const dragging = useRef<{ startY: number; startFraction: number } | null>(null);
   const sheetFractionRef = useRef(INITIAL_FRACTION);
   const sheetRef = useRef<HTMLDivElement>(null);
+  const sheetContentRef = useRef<HTMLDivElement>(null);
+  const scrollExpandRef = useRef<{ startY: number; startFrac: number } | null>(null);
   const supabase = createClient();
 
   const setFraction = (f: number) => {
@@ -105,6 +108,8 @@ export function PhotoWall({ eventId, eventTitle, onClose, onOpenCamera, companio
         setPhotos(data);
       } catch (err) {
         console.error("Error al cargar fotos:", err);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -234,6 +239,52 @@ export function PhotoWall({ eventId, eventTitle, onClose, onOpenCamera, companio
     dragging.current = { startY: e.clientY, startFraction: sheetFractionRef.current };
   };
 
+  // Scroll-up in content expands sheet (touch devices)
+  useEffect(() => {
+    const el = sheetContentRef.current;
+    if (!el) return;
+
+    const onTouchStart = (e: TouchEvent) => {
+      if (el.scrollTop === 0 && sheetFractionRef.current > 0) {
+        scrollExpandRef.current = { startY: e.touches[0].clientY, startFrac: sheetFractionRef.current };
+      }
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      if (!scrollExpandRef.current) return;
+      if (el.scrollTop !== 0) { scrollExpandRef.current = null; return; }
+      const dy = e.touches[0].clientY - scrollExpandRef.current.startY;
+      if (dy >= 0) { scrollExpandRef.current = null; return; }
+      e.preventDefault();
+      const newFrac = scrollExpandRef.current.startFrac + dy / window.innerHeight;
+      setFraction(Math.max(0, Math.min(INITIAL_FRACTION, newFrac)));
+    };
+
+    const onTouchEnd = () => {
+      if (!scrollExpandRef.current) return;
+      const snap = sheetFractionRef.current < INITIAL_FRACTION / 2 ? 0 : INITIAL_FRACTION;
+      setFraction(snap);
+      scrollExpandRef.current = null;
+    };
+
+    el.addEventListener("touchstart", onTouchStart, { passive: true });
+    el.addEventListener("touchmove", onTouchMove, { passive: false });
+    el.addEventListener("touchend", onTouchEnd);
+
+    return () => {
+      el.removeEventListener("touchstart", onTouchStart);
+      el.removeEventListener("touchmove", onTouchMove);
+      el.removeEventListener("touchend", onTouchEnd);
+    };
+  }, []);
+
+  const handleContentWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    const el = e.currentTarget;
+    if (el.scrollTop === 0 && e.deltaY < 0 && sheetFractionRef.current > 0) {
+      setFraction(0);
+    }
+  };
+
   return (
     <div className={styles.container}>
 
@@ -293,7 +344,7 @@ export function PhotoWall({ eventId, eventTitle, onClose, onOpenCamera, companio
         </div>
 
         {/* Scrollable content */}
-        <div className={styles.sheetContent}>
+        <div ref={sheetContentRef} className={styles.sheetContent} onWheel={handleContentWheel}>
           {titleText && (
             <h1
               className={styles.eventTitle}
@@ -322,7 +373,13 @@ export function PhotoWall({ eventId, eventTitle, onClose, onOpenCamera, companio
 
           <div className={styles.separator} />
 
-          {photos.length === 0 ? (
+          {loading ? (
+            <div className={styles.grid}>
+              {Array.from({ length: 6 }, (_, i) => (
+                <div key={i} className={`${styles.card} ${styles.skeleton}`} />
+              ))}
+            </div>
+          ) : photos.length === 0 ? (
             <div className={styles.empty}>
               <p>Las fotos aparecerán aquí en tiempo real</p>
             </div>
