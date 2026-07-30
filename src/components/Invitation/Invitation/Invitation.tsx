@@ -615,7 +615,7 @@ export default function Invitation({ password, invitationID, ui, lang, available
           hidden={showLia || footerVisible}
           onOpenConfirm={() => setOpen(true)}
           onShowTicket={() => setOnShowTicket(true)}
-          onShowCamera={(guestInfo?.state === 'confirmado' || guestInfo?.state === 'asistente') ? () => setShowCamera(true) : undefined}
+          onShowCamera={(guestInfo?.state === 'confirmado' || guestInfo?.state === 'asistente') ? () => setShowPhotoWall(true) : undefined}
           onAskLia={() => setShowLia(true)}
         />
       )}
@@ -652,11 +652,7 @@ export default function Invitation({ password, invitationID, ui, lang, available
               onClose={() => setShowPhotoWall(false)}
               onOpenCamera={() => { setShowPhotoWall(false); setShowCamera(true); }}
               invitation={invitation}
-              companionShareUrl={
-                allCompanions.length > 0 && invitation?.generals?.event?.label && invitation?.generals?.event?.name
-                  ? `${window.location.origin}/${invitation.generals.event.label}/${invitation.generals.event.name}?password=${allCompanions[0].password}`
-                  : undefined
-              }
+              shareCompanions={allCompanions.map(c => ({ name: c.name ?? '', password: c.password }))}
             />
           )}
         </div>
