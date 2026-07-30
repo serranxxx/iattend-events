@@ -100,6 +100,16 @@ export function PhotoWall({ eventId, eventTitle, onClose, onOpenCamera, companio
     guestNameRef.current = localStorage.getItem(`guest_${eventId}`) ?? "";
   }, [eventId]);
 
+  // El body es blanco por default: si Safari deja un margen transitorio abajo
+  // (barra de navegación animándose), que se vea negro y no blanco.
+  useEffect(() => {
+    const prevBg = document.body.style.backgroundColor;
+    document.body.style.backgroundColor = "#000";
+    return () => {
+      document.body.style.backgroundColor = prevBg;
+    };
+  }, []);
+
   useEffect(() => {
     const fetchPhotos = async () => {
       try {

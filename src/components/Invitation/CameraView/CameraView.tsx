@@ -51,6 +51,7 @@ export default function CameraView({ invitation, invitationID, guestInfo, ui, on
 
   // Preview state
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewBlob, setPreviewBlob] = useState<Blob | null>(null);
   const [previewTakenAt, setPreviewTakenAt] = useState<Date | null>(null);
   const [mounted, setMounted] = useState(false);
 
@@ -124,8 +125,10 @@ export default function CameraView({ invitation, invitationID, guestInfo, ui, on
     };
   }, [previewUrl]);
 
-  const compressImage = (sourceUrl: string): Promise<Blob> =>
-    new Promise((resolve, reject) => {
+  // Safari (desktop y iOS) no puede codificar WebP vía canvas.toBlob — solo lo decodifica.
+  // Ahí el blob sale null o corrupto y falla el flujo de subida. jpeg sí es universal.
+  const compressImage = (sourceUrl: string, originalBlob: Blob): Promise<Blob> =>
+    new Promise((resolve) => {
       const img = new Image();
       img.onload = () => {
         const MAX = 1920;
@@ -135,18 +138,19 @@ export default function CameraView({ invitation, invitationID, guestInfo, ui, on
         canvas.height = img.height * scale;
         canvas.getContext("2d")!.drawImage(img, 0, 0, canvas.width, canvas.height);
         canvas.toBlob(
-          (blob) => (blob ? resolve(blob) : reject(new Error("canvas.toBlob failed"))),
-          "image/webp",
+          (blob) => resolve(blob ?? originalBlob),
+          "image/jpeg",
           0.90,
         );
       };
-      img.onerror = () => reject(new Error("Failed to decode image"));
+      // Si el navegador no puede decodificar el archivo (formato raro), sube el original sin comprimir.
+      img.onerror = () => resolve(originalBlob);
       img.src = sourceUrl;
     });
 
   const uploadPhoto = async (imageBlob: Blob, takenAt: Date) => {
     const form = new FormData();
-    form.append("image", imageBlob, "photo.webp");
+    form.append("image", imageBlob, "photo.jpg");
     form.append("event_id", invitationID);
     form.append("guest_name", guestInfo.name!);
     form.append("taken_at", takenAt.toISOString());
@@ -162,21 +166,23 @@ export default function CameraView({ invitation, invitationID, guestInfo, ui, on
   const showPreview = (blob: Blob, takenAt: Date) => {
     const url = URL.createObjectURL(blob);
     setPreviewUrl(url);
+    setPreviewBlob(blob);
     setPreviewTakenAt(takenAt);
   };
 
   const handleDiscard = () => {
     if (previewUrl) URL.revokeObjectURL(previewUrl);
     setPreviewUrl(null);
+    setPreviewBlob(null);
     setPreviewTakenAt(null);
   };
 
   const handleConfirmUpload = async () => {
-    if (!previewUrl || !previewTakenAt) return;
+    if (!previewUrl || !previewBlob || !previewTakenAt) return;
     setUploading(true);
     setUploadError(false);
     try {
-      const compressed = await compressImage(previewUrl);
+      const compressed = await compressImage(previewUrl, previewBlob);
       await uploadPhoto(compressed, previewTakenAt);
       setPhotoCount((c) => c + 1);
       handleDiscard();
@@ -377,8 +383,11 @@ export default function CameraView({ invitation, invitationID, guestInfo, ui, on
             onPlaying={() => setStreamStarted(true)}
             style={{
               opacity: streamStarted ? 1 : 0,
-              transition: 'opacity 0.4s ease',
-              transform: `${facingMode === 'user' ? 'scaleX(-1) ' : ''}scale(${zoomLevel})`,
+              // Arranca ligeramente más cerca y se asienta a su tamaño real —
+              // así el arranque de la cámara (autofoco/exposición) se siente
+              // como una transición intencional en vez de un salto de tamaño.
+              transition: 'opacity 0.5s ease, transform 0.5s ease',
+              transform: `${facingMode === 'user' ? 'scaleX(-1) ' : ''}scale(${zoomLevel * (streamStarted ? 1 : 1.08)})`,
               transformOrigin: 'center',
             }}
           />
