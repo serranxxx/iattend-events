@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useMemo } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Camera, Heart, Share, X } from "lucide-react";
 import Image from "next/image";
@@ -46,6 +47,7 @@ const formatTime = (dateStr: string) => {
 
 export function PhotoWall({ eventId, eventTitle, onClose, onOpenCamera, companionShareUrl, invitation }: PhotoWallProps) {
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
   const [photos, setPhotos] = useState<EventPhoto[]>([]);
   const [loading, setLoading] = useState(true);
   const [likesMap, setLikesMap] = useState<Record<string, string[]>>({});
@@ -87,6 +89,8 @@ export function PhotoWall({ eventId, eventTitle, onClose, onOpenCamera, companio
     () => new Set(photos.map((p) => p.guest_name)).size,
     [photos]
   );
+
+  useEffect(() => { setMounted(true); }, []);
 
   // Carousel auto-advance
   useEffect(() => {
@@ -276,7 +280,7 @@ export function PhotoWall({ eventId, eventTitle, onClose, onOpenCamera, companio
       el.removeEventListener("touchmove", onTouchMove);
       el.removeEventListener("touchend", onTouchEnd);
     };
-  }, []);
+  }, [mounted]);
 
   const handleContentWheel = (e: React.WheelEvent<HTMLDivElement>) => {
     const el = e.currentTarget;
@@ -285,7 +289,9 @@ export function PhotoWall({ eventId, eventTitle, onClose, onOpenCamera, companio
     }
   };
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <div className={styles.container}>
 
       {/* Cover image background */}
@@ -476,6 +482,7 @@ export function PhotoWall({ eventId, eventTitle, onClose, onOpenCamera, companio
           </div>
         </div>
       )}
-    </div>
+    </div>,
+    document.body
   );
 }

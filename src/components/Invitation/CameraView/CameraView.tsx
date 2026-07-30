@@ -39,6 +39,7 @@ export default function CameraView({ invitation, invitationID, guestInfo, ui, on
   const [photoCount, setPhotoCount] = useState(0);
   const [uploading, setUploading] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [uploadError, setUploadError] = useState(false);
   const [streamStarted, setStreamStarted] = useState(false);
   const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment');
   const [zoomLevel, setZoomLevel] = useState(1);
@@ -91,7 +92,7 @@ export default function CameraView({ invitation, invitationID, guestInfo, ui, on
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        setStreamStarted(true);
+        // streamStarted is set via onCanPlay on the <video> element
       }
     } catch {
       setPermissionDenied(true);
@@ -124,24 +125,30 @@ export default function CameraView({ invitation, invitationID, guestInfo, ui, on
     };
   }, [previewUrl]);
 
-  const compressImage = async (file: File | Blob): Promise<Blob> => {
-    const img = new Image();
-    const url = URL.createObjectURL(file);
-    img.src = url;
-    await new Promise((res) => (img.onload = res));
-    URL.revokeObjectURL(url);
-
-    const MAX = 1920;
-    const scale = Math.min(1, MAX / Math.max(img.width, img.height));
-    const canvas = document.createElement("canvas");
-    canvas.width = img.width * scale;
-    canvas.height = img.height * scale;
-    canvas.getContext("2d")!.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-    return new Promise((res) =>
-      canvas.toBlob((blob) => res(blob!), "image/webp", 0.90)
-    );
-  };
+  const compressImage = (file: File | Blob): Promise<Blob> =>
+    new Promise((resolve, reject) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        const MAX = 1920;
+        const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+        const canvas = document.createElement("canvas");
+        canvas.width = img.width * scale;
+        canvas.height = img.height * scale;
+        canvas.getContext("2d")!.drawImage(img, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob(
+          (blob) => (blob ? resolve(blob) : reject(new Error("canvas.toBlob failed"))),
+          "image/webp",
+          0.90,
+        );
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        reject(new Error("Failed to decode image"));
+      };
+      img.src = url;
+    });
 
   const uploadPhoto = async (imageBlob: Blob, takenAt: Date) => {
     const form = new FormData();
@@ -175,6 +182,7 @@ export default function CameraView({ invitation, invitationID, guestInfo, ui, on
   const handleConfirmUpload = async () => {
     if (!previewBlob || !previewTakenAt) return;
     setUploading(true);
+    setUploadError(false);
     try {
       const compressed = await compressImage(previewBlob);
       await uploadPhoto(compressed, previewTakenAt);
@@ -184,6 +192,7 @@ export default function CameraView({ invitation, invitationID, guestInfo, ui, on
       setTimeout(() => setUploadSuccess(false), 1200);
     } catch (err) {
       console.error(err);
+      setUploadError(true);
     } finally {
       setUploading(false);
     }
@@ -278,6 +287,10 @@ export default function CameraView({ invitation, invitationID, guestInfo, ui, on
             </div>
           )}
 
+          {uploadError && (
+            <p className={styles.uploadErrorMsg}>Error al subir. Intenta de nuevo.</p>
+          )}
+
           <div className={styles.previewBar}>
             <button
               className={styles.discardBtn}
@@ -369,7 +382,10 @@ export default function CameraView({ invitation, invitationID, guestInfo, ui, on
             playsInline
             muted
             className={styles.video}
+            onCanPlay={() => setStreamStarted(true)}
             style={{
+              opacity: streamStarted ? 1 : 0,
+              transition: 'opacity 0.4s ease',
               transform: `${facingMode === 'user' ? 'scaleX(-1) ' : ''}scale(${zoomLevel})`,
               transformOrigin: 'center',
             }}
