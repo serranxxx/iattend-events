@@ -50,7 +50,6 @@ export default function CameraView({ invitation, invitationID, guestInfo, ui, on
   const [selectedCompanion, setSelectedCompanion] = useState<ShareCompanion | null>(null);
 
   // Preview state
-  const [previewBlob, setPreviewBlob] = useState<Blob | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewTakenAt, setPreviewTakenAt] = useState<Date | null>(null);
   const [mounted, setMounted] = useState(false);
@@ -125,12 +124,10 @@ export default function CameraView({ invitation, invitationID, guestInfo, ui, on
     };
   }, [previewUrl]);
 
-  const compressImage = (file: File | Blob): Promise<Blob> =>
+  const compressImage = (sourceUrl: string): Promise<Blob> =>
     new Promise((resolve, reject) => {
       const img = new Image();
-      const url = URL.createObjectURL(file);
       img.onload = () => {
-        URL.revokeObjectURL(url);
         const MAX = 1920;
         const scale = Math.min(1, MAX / Math.max(img.width, img.height));
         const canvas = document.createElement("canvas");
@@ -143,11 +140,8 @@ export default function CameraView({ invitation, invitationID, guestInfo, ui, on
           0.90,
         );
       };
-      img.onerror = () => {
-        URL.revokeObjectURL(url);
-        reject(new Error("Failed to decode image"));
-      };
-      img.src = url;
+      img.onerror = () => reject(new Error("Failed to decode image"));
+      img.src = sourceUrl;
     });
 
   const uploadPhoto = async (imageBlob: Blob, takenAt: Date) => {
@@ -167,24 +161,22 @@ export default function CameraView({ invitation, invitationID, guestInfo, ui, on
 
   const showPreview = (blob: Blob, takenAt: Date) => {
     const url = URL.createObjectURL(blob);
-    setPreviewBlob(blob);
     setPreviewUrl(url);
     setPreviewTakenAt(takenAt);
   };
 
   const handleDiscard = () => {
     if (previewUrl) URL.revokeObjectURL(previewUrl);
-    setPreviewBlob(null);
     setPreviewUrl(null);
     setPreviewTakenAt(null);
   };
 
   const handleConfirmUpload = async () => {
-    if (!previewBlob || !previewTakenAt) return;
+    if (!previewUrl || !previewTakenAt) return;
     setUploading(true);
     setUploadError(false);
     try {
-      const compressed = await compressImage(previewBlob);
+      const compressed = await compressImage(previewUrl);
       await uploadPhoto(compressed, previewTakenAt);
       setPhotoCount((c) => c + 1);
       handleDiscard();
@@ -382,7 +374,7 @@ export default function CameraView({ invitation, invitationID, guestInfo, ui, on
             playsInline
             muted
             className={styles.video}
-            onCanPlay={() => setStreamStarted(true)}
+            onPlaying={() => setStreamStarted(true)}
             style={{
               opacity: streamStarted ? 1 : 0,
               transition: 'opacity 0.4s ease',
