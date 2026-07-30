@@ -87,60 +87,45 @@
   flex-shrink: 0;
 }
 
-/* ── Draggable sheet ─────────────────────────────────────── */
+/* ── Full-screen scroll area ─────────────────────────────── */
 
-.sheet {
+.scrollArea {
   position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 10;
-  background: rgba(0, 0, 0, 0.22);
-  backdrop-filter: blur(28px) saturate(200%);
+  inset: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  z-index: 5;
+  -webkit-overflow-scrolling: touch;
+  
+}
+
+/* Initial spacer so cover image shows above the content card */
+.scrollSpacer {
+  height: 42dvh;
+  flex-shrink: 0;
+  
+}
+
+/* Glass content card — starts at 42dvh and fills the rest */
+.contentCard {
+  background: rgba(0, 0, 0, 0.62);
+  backdrop-filter: blur(12px) saturate(200%);
   border-top: 1px solid rgba(255, 255, 255, 0.45);
   box-shadow:
     0 -8px 32px rgba(0, 0, 0, 0.14),
     0 -2px 8px rgba(0, 0, 0, 0.08),
     inset 0 1px 0 rgba(255, 255, 255, 0.65);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  padding-top: 24px;
-}
-
-.handleArea {
-  flex-shrink: 0;
-  display: flex;
-  justify-content: center;
-  padding: 12px 0 8px;
-  cursor: grab;
-  touch-action: none;
-  user-select: none;
-}
-
-.handleArea:active {
-  cursor: grabbing;
-}
-
-.handleBar {
-  width: 36px;
-  height: 4px;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 99px;
-}
-
-/* ── Sheet content ───────────────────────────────────────── */
-
-.sheetContent {
-  flex: 1;
-  overflow-y: auto;
-  padding: 4px 20px calc(40px + env(safe-area-inset-bottom));
+  border-radius: 52px 52px 0 0;
+  padding: 20px 20px calc(40px + env(safe-area-inset-bottom));
+  min-height: 100dvh;
+  
 }
 
 .eventTitle {
   font-size: 38px;
   line-height: 1.2;
   margin: 0 0 20px;
+  margin-bottom: 12px;
 }
 
 .statsRow {

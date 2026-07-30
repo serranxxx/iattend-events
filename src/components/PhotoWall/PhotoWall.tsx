@@ -10,7 +10,6 @@ import { NewInvitation } from "@/types/new_invitation";
 import styles from "./photo-wall.module.css";
 
 const API_URL = process.env.NEXT_PUBLIC_IATTEND_API_URL;
-const INITIAL_FRACTION = 0.42;
 
 interface EventPhoto {
   id: string;
@@ -57,7 +56,6 @@ export function PhotoWall({ eventId, eventTitle, onClose, onOpenCamera, shareCom
   const [heartBurst, setHeartBurst] = useState<string | null>(null);
   const [likersSheet, setLikersSheet] = useState<{ photoId: string; names: string[] } | null>(null);
   const [coverIdx, setCoverIdx] = useState(0);
-  const [sheetFraction, setSheetFraction] = useState(INITIAL_FRACTION);
 
   // Full-screen photo modal
   const [selectedPhoto, setSelectedPhoto] = useState<EventPhoto | null>(null);
@@ -76,17 +74,7 @@ export function PhotoWall({ eventId, eventTitle, onClose, onOpenCamera, shareCom
   const guestNameRef = useRef("");
   const lastTapRef = useRef<{ id: string; time: number } | null>(null);
   const singleTapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const dragging = useRef<{ startY: number; startFraction: number } | null>(null);
-  const sheetFractionRef = useRef(INITIAL_FRACTION);
-  const sheetRef = useRef<HTMLDivElement>(null);
-  const sheetContentRef = useRef<HTMLDivElement>(null);
-  const scrollExpandRef = useRef<{ startY: number; startFrac: number } | null>(null);
   const supabase = createClient();
-
-  const setFraction = (f: number) => {
-    sheetFractionRef.current = f;
-    setSheetFraction(f);
-  };
 
   const coverImages: string[] = useMemo(() => {
     const raw = invitation?.cover?.image?.prod;
@@ -106,7 +94,7 @@ export function PhotoWall({ eventId, eventTitle, onClose, onOpenCamera, shareCom
     [photos]
   );
 
-  // Event date / status for the status label below the title
+  // Event date / status
   const eventDate = useMemo(() => {
     const dateStr = invitation?.cover?.date?.value;
     if (!dateStr) return null;
@@ -230,7 +218,7 @@ export function PhotoWall({ eventId, eventTitle, onClose, onOpenCamera, shareCom
     };
   }, [eventId]);
 
-  // Stories auto-advance timer (resets whenever storiesIdx changes)
+  // Stories auto-advance timer
   useEffect(() => {
     if (storiesIdx === null) return;
     setStoriesProgress(0);
@@ -296,11 +284,12 @@ export function PhotoWall({ eventId, eventTitle, onClose, onOpenCamera, shareCom
     });
 
     try {
-      await fetch(`${API_URL}/photos/${photoId}/like`, {
+      const res = await fetch(`${API_URL}/photos/${photoId}/like`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ guest_name: guestName }),
       });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
     } catch (err) {
       console.error("Error al dar like:", err);
       setLikesMap((prev) => {
@@ -315,87 +304,10 @@ export function PhotoWall({ eventId, eventTitle, onClose, onOpenCamera, shareCom
     }
   };
 
-  const openLikersSheet = (photoId: string, e: React.MouseEvent) => {
+  const _openLikersSheet = (photoId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     const names = likesMap[photoId] ?? [];
     setLikersSheet({ photoId, names });
-  };
-
-  // Sheet drag — window-level so move/up always fire
-  useEffect(() => {
-    const onMove = (e: PointerEvent) => {
-      if (!dragging.current) return;
-      const dy = e.clientY - dragging.current.startY;
-      const newFrac = dragging.current.startFraction + dy / window.innerHeight;
-      setFraction(Math.max(0, Math.min(INITIAL_FRACTION, newFrac)));
-    };
-
-    const onEnd = () => {
-      if (!dragging.current) return;
-      const snap = sheetFractionRef.current < INITIAL_FRACTION / 2 ? 0 : INITIAL_FRACTION;
-      dragging.current = null;
-      setFraction(snap);
-    };
-
-    window.addEventListener("pointermove", onMove, { passive: true });
-    window.addEventListener("pointerup", onEnd);
-    window.addEventListener("pointercancel", onEnd);
-    return () => {
-      window.removeEventListener("pointermove", onMove);
-      window.removeEventListener("pointerup", onEnd);
-      window.removeEventListener("pointercancel", onEnd);
-    };
-  }, []);
-
-  const handleDragStart = (e: React.PointerEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    dragging.current = { startY: e.clientY, startFraction: sheetFractionRef.current };
-  };
-
-  // Scroll-up in content expands sheet
-  useEffect(() => {
-    const el = sheetContentRef.current;
-    if (!el) return;
-
-    const onTouchStart = (e: TouchEvent) => {
-      if (el.scrollTop === 0 && sheetFractionRef.current > 0) {
-        scrollExpandRef.current = { startY: e.touches[0].clientY, startFrac: sheetFractionRef.current };
-      }
-    };
-
-    const onTouchMove = (e: TouchEvent) => {
-      if (!scrollExpandRef.current) return;
-      if (el.scrollTop !== 0) { scrollExpandRef.current = null; return; }
-      const dy = e.touches[0].clientY - scrollExpandRef.current.startY;
-      if (dy >= 0) { scrollExpandRef.current = null; return; }
-      e.preventDefault();
-      const newFrac = scrollExpandRef.current.startFrac + dy / window.innerHeight;
-      setFraction(Math.max(0, Math.min(INITIAL_FRACTION, newFrac)));
-    };
-
-    const onTouchEnd = () => {
-      if (!scrollExpandRef.current) return;
-      const snap = sheetFractionRef.current < INITIAL_FRACTION / 2 ? 0 : INITIAL_FRACTION;
-      setFraction(snap);
-      scrollExpandRef.current = null;
-    };
-
-    el.addEventListener("touchstart", onTouchStart, { passive: true });
-    el.addEventListener("touchmove", onTouchMove, { passive: false });
-    el.addEventListener("touchend", onTouchEnd);
-
-    return () => {
-      el.removeEventListener("touchstart", onTouchStart);
-      el.removeEventListener("touchmove", onTouchMove);
-      el.removeEventListener("touchend", onTouchEnd);
-    };
-  }, []);
-
-  const handleContentWheel = (e: React.WheelEvent<HTMLDivElement>) => {
-    const el = e.currentTarget;
-    if (el.scrollTop === 0 && e.deltaY < 0 && sheetFractionRef.current > 0) {
-      setFraction(0);
-    }
   };
 
   const companionUrl = (password: string) => {
@@ -445,7 +357,7 @@ export function PhotoWall({ eventId, eventTitle, onClose, onOpenCamera, shareCom
   return (
     <div className={styles.container}>
 
-      {/* Cover image background */}
+      {/* Cover image fixed background */}
       {coverImages.length > 0 && (
         <div className={styles.coverBg}>
           {coverImages.map((src, i) => (
@@ -466,7 +378,7 @@ export function PhotoWall({ eventId, eventTitle, onClose, onOpenCamera, shareCom
         </div>
       )}
 
-      {/* Top bar */}
+      {/* Floating top bar — absolutely positioned over the scroll */}
       <div className={styles.topBar}>
         <button
           className={styles.navBtn}
@@ -498,21 +410,13 @@ export function PhotoWall({ eventId, eventTitle, onClose, onOpenCamera, shareCom
         </div>
       </div>
 
-      {/* Draggable sheet */}
-      <div
-        ref={sheetRef}
-        className={styles.sheet}
-        style={{
-          top: `${(sheetFraction * 100).toFixed(2)}dvh`,
-          borderRadius: `${Math.round((sheetFraction / INITIAL_FRACTION) * 64)}px ${Math.round((sheetFraction / INITIAL_FRACTION) * 64)}px 0 0`,
-          transition: dragging.current ? "none" : "all 0.3s ease",
-        }}
-      >
-        <div className={styles.handleArea} onPointerDown={handleDragStart}>
-          <div className={styles.handleBar} />
-        </div>
+      {/* Full-screen scroll — extends all the way to the top */}
+      <div className={styles.scrollArea}>
+        {/* Spacer so cover image shows initially */}
+        <div className={styles.scrollSpacer} />
 
-        <div ref={sheetContentRef} className={styles.sheetContent} onWheel={handleContentWheel}>
+        {/* Content card with glass background */}
+        <div className={styles.contentCard}>
           {titleText && (
             <h1
               className={styles.eventTitle}
@@ -563,8 +467,8 @@ export function PhotoWall({ eventId, eventTitle, onClose, onOpenCamera, shareCom
             <div className={styles.grid}>
               {photos.map((photo) => {
                 const likers = likesMap[photo.id] ?? [];
-                const liked = likers.includes(guestNameRef.current);
-                const count = likers.length;
+                const _liked = likers.includes(guestNameRef.current);
+                const _count = likers.length;
 
                 return (
                   <div
@@ -589,20 +493,7 @@ export function PhotoWall({ eventId, eventTitle, onClose, onOpenCamera, shareCom
                         <span className={styles.name} style={{ color: primaryColor }}>{photo.guest_name}</span>
                         <span className={styles.time} style={{ color: primaryColor }}>{formatTime(photo.taken_at ?? photo.uploaded_at)}</span>
                       </div>
-                      <div className={styles.likeRow}>
-                        <button
-                          className={`${styles.likeBtn} ${liked ? styles.likeBtnActive : ""}`}
-                          onClick={(e) => { e.stopPropagation(); toggleLike(photo.id); }}
-                          aria-label="Like"
-                        >
-                          <Heart size={13} fill={liked ? "currentColor" : "none"} color={primaryColor} />
-                        </button>
-                        {count > 0 && (
-                          <button className={styles.likeCount} onClick={(e) => openLikersSheet(photo.id, e)}>
-                            {count}
-                          </button>
-                        )}
-                      </div>
+                      {/* likes hidden temporarily */}
                     </div>
                   </div>
                 );
@@ -640,7 +531,7 @@ export function PhotoWall({ eventId, eventTitle, onClose, onOpenCamera, shareCom
       {/* Stories mode */}
       {storiesIdx !== null && photos[storiesIdx] && (
         <div className={styles.stories}>
-          {/* Header overlay — progress bars + guest name + close (floats above image) */}
+          {/* Header overlay — progress bars + guest name + close */}
           <div className={styles.storiesHeader}>
             <div className={styles.storiesProgress}>
               {photos.map((_, i) => (
