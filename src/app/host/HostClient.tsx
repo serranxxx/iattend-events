@@ -24,7 +24,7 @@ type FontOverride = { family: string; google_axis?: string | null };
 export default function HostClient({ textures }: Props) {
   const [invitation, setInvitation] = useState<NewInvitation | null>(null);
   const [textureOverride, setTextureOverride] = useState<Texture | null>(null);
-  const [fontOverride, setFontOverride] = useState<FontOverride | null>(null);
+  const [fontOverride, setFontOverride] = useState<FontOverride[] | null>(null);
   const [hostOrigin, setHostOrigin] = useState<string | null>(null);
   const [scrollToSection, setScrollToSection] = useState<string | null>(null);
   const [lang, setLang] = useState<string | null>(null);
@@ -66,7 +66,7 @@ export default function HostClient({ textures }: Props) {
       if (type === "HOST_PROPS" && payload?.invitationConfig) {
         setInvitation(payload.invitationConfig as NewInvitation);
         setTextureOverride((payload.textureOverride as Texture) ?? null);
-        setFontOverride((payload.fontOverride as FontOverride) ?? null);
+        setFontOverride((payload.fontOverride as FontOverride[]) ?? null);
         setLang((payload.lang as string) ?? null);
       }
       if (type === "HOST_SCROLL_TO" && payload?.section) {
@@ -82,11 +82,14 @@ export default function HostClient({ textures }: Props) {
   // un <link> aparte solo mientras dure el override.
   useEffect(() => {
     const LINK_ID = "font-override-dynamic";
-    if (!fontOverride?.family) {
+    const list = (fontOverride ?? []).filter((f) => f?.family);
+    if (!list.length) {
       document.getElementById(LINK_ID)?.remove();
       return;
     }
-    const href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(fontOverride.family)}${fontOverride.google_axis ? ":" + fontOverride.google_axis : ""}&display=swap`;
+    const href = `https://fonts.googleapis.com/css2?${list
+      .map((f) => `family=${encodeURIComponent(f.family)}${f.google_axis ? ":" + f.google_axis : ""}`)
+      .join("&")}&display=swap`;
     let link = document.getElementById(LINK_ID) as HTMLLinkElement | null;
     if (!link) {
       link = document.createElement("link");
