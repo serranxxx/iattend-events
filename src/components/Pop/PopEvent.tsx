@@ -6,7 +6,7 @@ import styles from "./quick-events.module.css";
 import { message } from "antd";
 import { createClient } from "@/lib/supabase/client";
 import { ParticipansType, QuickEventGuest, QuickEventUser } from "@/types/guests";
-import { darker, generateSimpleId } from "@/helpers/functions";
+import { darker, generateSimpleId, getEventDateOnly } from "@/helpers/functions";
 import { ConfirmCard } from "../ConfirmCard/ConfirmCard";
 import WeatherWidget from "../Invitation/Itinerary/WeatherApi/WeatherWidget";
 import { Hero } from "./Hero/Hero";
@@ -378,7 +378,12 @@ export default function PopEvents({ info, preview, password }: invProps) {
               )}
               {address?.city && (
                 <div style={{ display: "flex", flexDirection: "column", gap: "4px", alignItems: "center" }}>
-                  <WeatherWidget item={eventInfo} color="#FFFFFF40" radius={24} />
+                  <WeatherWidget
+                    item={eventInfo}
+                    color="#FFFFFF40"
+                    radius={24}
+                    eventDate={getEventDateOnly(eventInfo?.date, { state: eventInfo?.address?.state, timezone: eventInfo?.timezone })}
+                  />
                   <small style={{ fontSize: "12px", color: "#FFF", fontWeight: 400, fontFamily: "Poppins" }}>Clima</small>
                 </div>
               )}

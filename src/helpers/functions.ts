@@ -110,7 +110,7 @@ export function getTimezoneForState(state?: string | null): string {
 // iattend-vite convirtiendo la hora de pared del organizador con LA ZONA
 // HORARIA DE SU NAVEGADOR en ese momento, no la del venue — por eso hay
 // que reconvertirlo con la zona horaria correcta al mostrarlo.
-function isAbsoluteInstant(raw: string): boolean {
+export function isAbsoluteInstant(raw: string): boolean {
   return /[Zz]$|[+-]\d{2}:?\d{2}$/.test(raw.trim());
 }
 
@@ -182,6 +182,35 @@ export function formatEventDateTime(
   }
 
   return formatWallClock(raw);
+}
+
+// Extrae solo la fecha (YYYY-MM-DD, en la zona del venue) de la fecha/hora de
+// un evento, para poder buscar ese día dentro del forecast del clima. Sigue
+// la misma convención de dos formatos que `formatEventDateTime`.
+export function getEventDateOnly(
+  raw: string | null | undefined,
+  opts?: { state?: string | null; timezone?: string | null }
+): string | null {
+  if (!raw) return null;
+
+  if (isAbsoluteInstant(raw)) {
+    const normalized = raw.trim().replace(" ", "T");
+    const date = new Date(/[Zz]$|[+-]\d{2}:?\d{2}$/.test(normalized) ? normalized : `${normalized}Z`);
+    if (isNaN(date.getTime())) return null;
+
+    const timeZone = opts?.timezone || getTimezoneForState(opts?.state);
+    const parts = new Intl.DateTimeFormat("en-CA", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      timeZone,
+    }).formatToParts(date);
+    const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
+    return `${get("year")}-${get("month")}-${get("day")}`;
+  }
+
+  const match = raw.trim().match(/^(\d{4})-(\d{2})-(\d{2})/);
+  return match ? `${match[1]}-${match[2]}-${match[3]}` : null;
 }
 
 export function buttonsColorText(hex: string) {

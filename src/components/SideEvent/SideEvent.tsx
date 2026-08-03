@@ -12,7 +12,7 @@ import { FooterLand } from "../LandPage/Footer/Footer";
 import { FaLock } from "react-icons/fa";
 import { createClient } from "@/lib/supabase/client";
 import {  SideGuestSubabasePayload } from "@/types/guests";
-import { darker, formatEventDateTime } from "@/helpers/functions";
+import { darker, formatEventDateTime, getEventDateOnly } from "@/helpers/functions";
 import confetti from "canvas-confetti";
 import { AnimatePresence, motion } from "motion/react";
 
@@ -641,8 +641,13 @@ export default function SideEvents({ info, password, preview }: invProps) {
 
 
             {
-              info?.body.address.city &&
-              <WeatherWidget item={info?.body} isSide={true} color={`${darker(info?.body.color ?? '#000', 0.8) ?? "#000000"}80`} />
+              info?.body.address.city && !info?.body.hideWeather &&
+              <WeatherWidget
+                item={info?.body}
+                isSide={true}
+                color={`${darker(info?.body.color ?? '#000', 0.8) ?? "#000000"}80`}
+                eventDate={getEventDateOnly(info?.body.hour, { state: info?.body?.address?.state, timezone: info?.body?.timezone })}
+              />
             }
 
             <div className={styles.mapa_container}>

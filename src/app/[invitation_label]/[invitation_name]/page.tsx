@@ -161,7 +161,9 @@ export default async function InvitationDynamicPage({ params, searchParams }: Pa
       ui={ui}
       lang={lang}
       invitation={invitationForRender}
-      availableLanguages={invitation.generals?.languages}
+      availableLanguages={(invitation.generals?.languages ?? []).filter(
+        (code) => !invitation.generals?.disabledLanguages?.includes(code)
+      )}
       password={password}
       invitationID={invitationID}
       loader={false}

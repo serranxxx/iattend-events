@@ -86,11 +86,25 @@ export async function POST(request: Request) {
     .eq("invitation_id", invitationId);
 
   const existingRow = existingRows?.find((row) => row.lang === lang);
-  const isNewLanguage = !existingRow;
-  const alreadyPaidLanguages = existingRows?.length ?? 0;
+
+  // La decisión de "ya lo pagaste" se basa en generals.languages (la lista
+  // oficial de idiomas instalados de la invitación), no en cuántas filas hay
+  // en invitation_translations — esa tabla puede tener filas sueltas de
+  // pruebas o de idiomas que ya no están instalados, y contarlas cobraría
+  // (o dejaría de cobrar) idiomas de más.
+  const installedLanguages = Array.isArray(
+    (fullInvitation.generals as Record<string, unknown> | undefined)?.languages
+  )
+    ? ((fullInvitation.generals as Record<string, unknown>).languages as string[])
+    : [];
+  const isNewLanguage = !installedLanguages.includes(lang);
+  const alreadyPaidLanguages = installedLanguages.length;
 
   // Cobrar solo al agregar un idioma nuevo (no al retraducir uno que ya se
-  // pagó), y solo a partir del segundo idioma extra.
+  // pagó), y solo a partir del segundo idioma extra. `charged`/`amount` van en
+  // la respuesta para que iattend-vite sepa con certeza si de verdad cobró
+  // (y cuánto), en vez de adivinarlo del lado del cliente.
+  let charged = false;
   if (isNewLanguage && alreadyPaidLanguages >= FREE_LANGUAGES) {
     const { error: creditError } = await serviceClient.rpc("consume_language_credits", {
       p_invitation_id: invitationId,
@@ -106,6 +120,7 @@ export async function POST(request: Request) {
         { status: 402 }
       );
     }
+    charged = true;
   }
 
   const translatedSections: Record<string, unknown> = {};
@@ -150,5 +165,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: upsertError.message }, { status: 500 });
   }
 
-  return NextResponse.json({ content: mergedContent, section_hashes: mergedHashes });
+  return NextResponse.json({
+    content: mergedContent,
+    section_hashes: mergedHashes,
+    charged,
+    amount: charged ? LANGUAGE_CREDIT_COST : 0,
+  });
 }

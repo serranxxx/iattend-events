@@ -10,14 +10,22 @@ interface WeatherForecastHour {
   condition: { icon: string; text: string };
 }
 
+interface WeatherForecastDay {
+  date: string;
+  day: {
+    maxtemp_c: number;
+    mintemp_c: number;
+    avgtemp_c: number;
+    condition: { icon: string; text: string };
+  };
+  hour: WeatherForecastHour[];
+}
+
 interface WeatherResponse {
   location: { name: string; localtime: string };
   current: { temp_c: number; condition: { icon: string; text: string } };
   forecast: {
-    forecastday: Array<{
-      day: { maxtemp_c: number; mintemp_c: number };
-      hour: WeatherForecastHour[];
-    }>;
+    forecastday: WeatherForecastDay[];
   };
 }
 
@@ -32,15 +40,19 @@ type CardProps = {
   isSide?: boolean;
   color?: string;
   radius?: number;
+  // Fecha del evento (YYYY-MM-DD, ya resuelta en la zona del venue) para
+  // buscar ese día dentro del forecast en vez de asumir "hoy". Si no se
+  // pasa, se conserva el comportamiento anterior (día actual).
+  eventDate?: string | null;
 };
 
-export default function WeatherWidget({ invitation, item, isSide, color, radius }: CardProps) {
+export default function WeatherWidget({ invitation, item, isSide, color, radius, eventDate }: CardProps) {
   const [weather, setWeather] = useState<WeatherResponse | null>(null);
   const key = "fa4d2a7fce5841d5a51205220251009";
 
   useEffect(() => {
     const getForecast = () => {
-      fetch(`https://api.weatherapi.com/v1/forecast.json?key=${key}&q=${item?.address?.city}=1&aqi=no&alerts=no`)
+      fetch(`https://api.weatherapi.com/v1/forecast.json?key=${key}&q=${item?.address?.city}=1&days=10&aqi=no&alerts=no`)
         .then((res) => res.json())
         .then((data) => setWeather(data));
     };
@@ -49,6 +61,66 @@ export default function WeatherWidget({ invitation, item, isSide, color, radius 
   }, []);
 
   if (!weather) return <p>Cargando clima...</p>;
+
+  const forecastDays = weather.forecast?.forecastday ?? [];
+  const todayStr = weather.location?.localtime?.slice(0, 10);
+  const matchedDay = eventDate ? forecastDays.find((d) => d.date === eventDate) : forecastDays[0];
+  const isToday = !!matchedDay && matchedDay.date === todayStr;
+
+  // El evento cae fuera de la ventana de pronóstico que devolvió la API
+  // (aún faltan más días de los que el plan contratado alcanza a predecir).
+  if (eventDate && !matchedDay) {
+    const daysAhead = Math.max(forecastDays.length - 1, 0);
+    const message =
+      daysAhead > 0
+        ? `La predicción del clima estará disponible cuando falten ${daysAhead} día${daysAhead === 1 ? "" : "s"} o menos para el evento.`
+        : "La predicción del clima aún no está disponible para esta fecha.";
+
+    return (
+      <div
+        className={styles.wdiget_container}
+        style={{
+          maxWidth: isSide ? "450px" : "130px",
+          width: "100%",
+          height: isSide ? "200px" : undefined,
+          padding: isSide ? "24px" : "12px",
+          justifyContent: "center",
+          textAlign: "center",
+          backdropFilter: "blur(10px)",
+          border: isSide ? "1px solid #FFFFFF40" : undefined,
+          background: isSide ? (color ?? "var(--blur-color--dark)") : undefined,
+          borderRadius: radius,
+          fontFamily: invitation?.generals.fonts.body?.typeFace ?? "Poppins",
+        }}
+      >
+        <span className={styles.weather_sec_label}>{message}</span>
+      </div>
+    );
+  }
+
+  const displayTemp = isToday ? weather.current?.temp_c : matchedDay?.day?.avgtemp_c;
+  const displayCondition = isToday ? weather.current?.condition : matchedDay?.day?.condition;
+
+  const hoursToShow = (() => {
+    const hours = matchedDay?.hour ?? [];
+
+    if (isToday) {
+      const nowStr = weather.location.localtime; // "2025-09-11 09:01"
+      const currentHour = parseInt(nowStr.slice(11, 13), 10); // -> 9
+      const getHour = (h: WeatherForecastHour) => parseInt(h.time.slice(11, 13), 10);
+
+      if (currentHour >= 18) {
+        return hours.slice(-6);
+      }
+      const nextHours = hours.filter((h) => getHour(h) > currentHour);
+      const limit = nextHours.slice(0, 6).map((h) => h.time);
+      return hours.filter((h) => limit.includes(h.time));
+    }
+
+    // Día futuro: no hay "ahora", mostramos una muestra fija repartida en el día.
+    const targetHours = [8, 11, 14, 17, 20, 23];
+    return hours.filter((h) => targetHours.includes(parseInt(h.time.slice(11, 13), 10)));
+  })();
 
   return (
     <>
@@ -69,56 +141,37 @@ export default function WeatherWidget({ invitation, item, isSide, color, radius 
           <div className={styles.widget_row}>
             <div className={styles.widget_col}>
               <span className={styles.weather_label}>{weather.location.name}</span>
-              <span className={styles.weather_temperture}>{Math.round(weather.current.temp_c)}°</span>
+              <span className={styles.weather_temperture}>{Math.round(displayTemp ?? 0)}°</span>
             </div>
 
             <div className={styles.widget_col} style={{ alignItems: "flex-end" }}>
-              <img src={weather.current.condition.icon} alt="icono" style={{ margin: "0px -5px -6px 0px", height: "36px", padding: 0 }} />
-              <span className={styles.weather_sec_label}>{weather.current.condition.text}</span>
+              <img src={displayCondition?.icon} alt="icono" style={{ margin: "0px -5px -6px 0px", height: "36px", padding: 0 }} />
+              <span className={styles.weather_sec_label}>{displayCondition?.text}</span>
               <span className={styles.weather_sec_label}>
-                Max.: {weather.forecast.forecastday[0].day.maxtemp_c}° Min.: {weather.forecast.forecastday[0].day.mintemp_c}°{" "}
+                Max.: {matchedDay?.day?.maxtemp_c}° Min.: {matchedDay?.day?.mintemp_c}°{" "}
               </span>
             </div>
           </div>
 
           <div className={styles.widget_row}>
-            {weather.forecast.forecastday[0].hour
-              // 1. Filtrar las 6 horas que quieres mostrar
-              .filter((hour: WeatherForecastHour, index: number, arr: WeatherForecastHour[]) => {
-                const nowStr = weather.location.localtime; // "2025-09-11 09:01"
-                const currentHour = parseInt(nowStr.slice(11, 13), 10); // -> 9
+            {hoursToShow.map((hour: WeatherForecastHour, index: number) => {
+              // cortar la hora del string "YYYY-MM-DD HH:mm"
+              const hourOnly = hour.time.slice(11, 13); // "09", "10", etc.
+              // quitar el 0 inicial para que quede "9", "10", etc.
+              const cleanHour = parseInt(hourOnly, 10);
 
-                const getHour = (h: WeatherForecastHour) => parseInt(h.time.slice(11, 13), 10);
-
-                if (currentHour >= 18) {
-                  // últimas 6 horas del día
-                  return index >= arr.length - 6;
-                } else {
-                  // las siguientes 6 horas después de la actual
-                  const nextHours = arr.filter((h: WeatherForecastHour) => getHour(h) > currentHour);
-                  const limit = nextHours.slice(0, 6).map((h: WeatherForecastHour) => h.time);
-                  return limit.includes(hour.time);
-                }
-              })
-              // 2. Mapear esas 6 horas
-              .map((hour: WeatherForecastHour, index: number) => {
-                // cortar la hora del string "YYYY-MM-DD HH:mm"
-                const hourOnly = hour.time.slice(11, 13); // "09", "10", etc.
-                // quitar el 0 inicial para que quede "9", "10", etc.
-                const cleanHour = parseInt(hourOnly, 10);
-
-                return (
-                  <div key={index} className={styles.widget_col} style={{ alignItems: "center", justifyContent: "center", gap: "8px" }}>
-                    <span style={{ opacity: 0.6 }} className={styles.weather_sec_label}>
-                      {cleanHour}
-                    </span>
-                    <img src={hour.condition.icon} alt="icono" style={{ margin: "-4px 0px", height: "36px", padding: 0 }} />
-                    <span style={{ fontWeight: 600 }} className={styles.weather_sec_label}>
-                      {Math.round(hour.temp_c)}°
-                    </span>
-                  </div>
-                );
-              })}
+              return (
+                <div key={index} className={styles.widget_col} style={{ alignItems: "center", justifyContent: "center", gap: "8px" }}>
+                  <span style={{ opacity: 0.6 }} className={styles.weather_sec_label}>
+                    {cleanHour}
+                  </span>
+                  <img src={hour.condition.icon} alt="icono" style={{ margin: "-4px 0px", height: "36px", padding: 0 }} />
+                  <span style={{ fontWeight: 600 }} className={styles.weather_sec_label}>
+                    {Math.round(hour.temp_c)}°
+                  </span>
+                </div>
+              );
+            })}
           </div>
         </div>
       ) : (
@@ -159,12 +212,12 @@ export default function WeatherWidget({ invitation, item, isSide, color, radius 
             }} />
           )}
           <span className={styles.weather_label}>{weather?.location?.name}</span>
-          <span className={styles.weather_temperture}>{Math.round(weather?.current?.temp_c)}°</span>
-          <img src={weather?.current?.condition?.icon} alt="icono" style={{ margin: "-4px 0px", height: "22px", padding: 0 }} />
-          <span className={styles.weather_sec_label}>{weather?.current?.condition?.text}</span>
+          <span className={styles.weather_temperture}>{Math.round(displayTemp ?? 0)}°</span>
+          <img src={displayCondition?.icon} alt="icono" style={{ margin: "-4px 0px", height: "22px", padding: 0 }} />
+          <span className={styles.weather_sec_label}>{displayCondition?.text}</span>
           <span className={styles.weather_sec_label}>
-            Max.: {Math.round(weather?.forecast?.forecastday[0]?.day?.maxtemp_c)}° Min.:{" "}
-            {Math.round(weather?.forecast?.forecastday[0]?.day?.mintemp_c)}°{" "}
+            Max.: {Math.round(matchedDay?.day?.maxtemp_c ?? 0)}° Min.:{" "}
+            {Math.round(matchedDay?.day?.mintemp_c ?? 0)}°{" "}
           </span>
         </div>
       )}

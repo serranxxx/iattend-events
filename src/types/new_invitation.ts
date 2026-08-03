@@ -312,6 +312,7 @@ export interface Generals {
   positions: number[];
   texture: number | null;
   languages?: string[];
+  disabledLanguages?: string[];
 }
 
 // export interface InvitationMeta {

@@ -16,6 +16,7 @@ export type SideEventBody = {
   address: SideAddress;
   color: string;
   extras: string | null;
+  hideWeather?: boolean;
 };
 
 export type SideEvent = {

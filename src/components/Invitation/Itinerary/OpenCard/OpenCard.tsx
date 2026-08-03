@@ -3,6 +3,7 @@ import styles from "./open.module.css";
 import Image from "next/image";
 import { useEffect } from "react";
 import WeatherWidget from "../WeatherApi/WeatherWidget";
+import { getEventDateOnly } from "@/helpers/functions";
 
 type CardProps = {
   invitation: NewInvitation;
@@ -83,7 +84,7 @@ export default function OpenCard({ invitation, dev, item,  }: CardProps) {
             {
               item.address.city &&(
                 <>
-                  {<WeatherWidget invitation={invitation} dev={dev} item={item} />}
+                  {<WeatherWidget invitation={invitation} dev={dev} item={item} eventDate={getEventDateOnly(invitation.cover.date.value)} />}
 
                   <div className={styles.mapa_container} style={{ backgroundColor: secondary }}>
                     <iframe
