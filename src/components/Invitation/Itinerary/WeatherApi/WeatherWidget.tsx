@@ -3,6 +3,7 @@ import { ItineraryItem, NewInvitation } from "@/types/new_invitation";
 import { useEffect, useState } from "react";
 import styles from "./weather.module.css";
 import { SideAddress, SideEventBody } from "@/types/side_event";
+import { CloudOff } from "lucide-react";
 
 interface WeatherForecastHour {
   time: string;
@@ -70,12 +71,6 @@ export default function WeatherWidget({ invitation, item, isSide, color, radius,
   // El evento cae fuera de la ventana de pronóstico que devolvió la API
   // (aún faltan más días de los que el plan contratado alcanza a predecir).
   if (eventDate && !matchedDay) {
-    const daysAhead = Math.max(forecastDays.length - 1, 0);
-    const message =
-      daysAhead > 0
-        ? `La predicción del clima estará disponible cuando falten ${daysAhead} día${daysAhead === 1 ? "" : "s"} o menos para el evento.`
-        : "La predicción del clima aún no está disponible para esta fecha.";
-
     return (
       <div
         className={styles.wdiget_container}
@@ -84,7 +79,9 @@ export default function WeatherWidget({ invitation, item, isSide, color, radius,
           width: "100%",
           height: isSide ? "200px" : undefined,
           padding: isSide ? "24px" : "12px",
+          alignItems: "center",
           justifyContent: "center",
+          gap: isSide ? "8px" : "4px",
           textAlign: "center",
           backdropFilter: "blur(10px)",
           border: isSide ? "1px solid #FFFFFF40" : undefined,
@@ -93,7 +90,10 @@ export default function WeatherWidget({ invitation, item, isSide, color, radius,
           fontFamily: invitation?.generals.fonts.body?.typeFace ?? "Poppins",
         }}
       >
-        <span className={styles.weather_sec_label}>{message}</span>
+        <CloudOff size={isSide ? 24 : 16} style={{ opacity: 0.7, flexShrink: 0 }} />
+        <span className={styles.weather_label} style={{ opacity: 0.7, fontSize: isSide ? undefined : "11px" }}>
+          Pronóstico aún no disponible
+        </span>
       </div>
     );
   }
