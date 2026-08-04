@@ -1,14 +1,16 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Pause } from "lucide-react";
+import { Music, Pause, VolumeX } from "lucide-react";
 import styles from "./song-player.module.css";
 
 type Song = {
   id: string;
+  source?: "spotify" | "upload";
   name: string;
   artist: string;
   albumArt?: string;
+  previewUrl?: string | null;
 };
 
 type SongPlayerProps = {
@@ -45,11 +47,18 @@ export default function SongPlayer({ song, accent = "#000000", dev = false }: So
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   useEffect(() => {
+    // Archivo propio: la URL subida ya es el audio a reproducir, no hay
+    // nada que resolver contra iTunes (no tenemos track/artist reales).
+    if (song.source === "upload") {
+      setPreviewUrl(song.previewUrl ?? null);
+      return;
+    }
+
     fetch(`/api/song-preview?track=${encodeURIComponent(song.name)}&artist=${encodeURIComponent(song.artist)}`)
       .then(r => r.json())
       .then(data => setPreviewUrl(data.previewUrl ?? null))
       .catch(() => {});
-  }, [song.id]);
+  }, [song.id, song.source, song.previewUrl, song.name, song.artist]);
 
   useEffect(() => {
     if (!previewUrl) return;
@@ -110,6 +119,29 @@ export default function SongPlayer({ song, accent = "#000000", dev = false }: So
     setPlaying(p => !p);
   };
 
+  // Archivo subido manualmente: no hay metadata real (título/artista/álbum)
+  // que mostrar, así que en vez del pill con disco + info se muestra un botón
+  // redondo "liquid glass" (mismo estilo que LanguageToggle) que alterna
+  // play/pause y su propio ícono. Las canciones importadas de Spotify —
+  // incluidas las guardadas antes de que existiera `source`— conservan el
+  // pill original con disco, título y artista.
+  const isUpload = song.source === "upload";
+
+  if (isUpload) {
+    if (!previewUrl) return null;
+
+    return (
+      <button
+        type="button"
+        onClick={toggleAudio}
+        className={styles.uploadTrigger}
+        aria-label={playing ? "Pausar música" : "Reproducir música"}
+      >
+        {playing ? <Music size={18} /> : <VolumeX size={18} />}
+      </button>
+    );
+  }
+
   return (
     <div className={`${styles.player} ${!playing ? styles.playerCollapsed : ''}`}>
 
@@ -118,13 +150,15 @@ export default function SongPlayer({ song, accent = "#000000", dev = false }: So
           src={song.albumArt}
           alt=""
           onClick={toggleAudio}
-          className={`${styles.disc} ${playing ? styles.discSpinning : ''}`}
+          className={`${styles.discArt} ${playing ? styles.discSpinning : ''}`}
         />
       )}
 
       <div className={`${styles.info} ${!playing ? styles.infoHidden : ''}`}>
         <span className={styles.title} style={{ color: accent }}>{song.name}</span>
-        <span className={styles.artist} style={{ color: accent }}>{song.artist}</span>
+        {song.artist && (
+          <span className={styles.artist} style={{ color: accent }}>{song.artist}</span>
+        )}
       </div>
 
       {previewUrl && (

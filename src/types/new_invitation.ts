@@ -117,9 +117,11 @@ export interface CoverSection {
   };
   song?: {
     id: string;
+    source?: "spotify" | "upload";
     name: string;
     artist: string;
     albumArt?: string;
+    previewUrl?: string | null;
   } | null;
   image: {
     prod: string | string[] | null;

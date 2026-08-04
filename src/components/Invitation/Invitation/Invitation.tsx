@@ -123,7 +123,7 @@ export default function Invitation({ password, invitationID, ui, lang, available
   const accent = invitation?.generals?.colors.accent ?? "#FFFFFF";
   const actions = invitation?.generals?.colors.actions ?? "#FFFFFF";
   const font = invitation?.generals.fonts.body?.typeFace ?? "Poppins";
-  const coverSong = (invitation?.cover as unknown as Record<string, unknown>)?.song as { id: string; name: string; artist: string; albumArt?: string } | null | undefined;
+  const coverSong = invitation?.cover?.song;
 
   // const scrollableContentRef = useRef<HTMLDivElement | null>(null);
 
