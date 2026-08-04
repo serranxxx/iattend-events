@@ -275,6 +275,7 @@ export default function Wallet({ ui, invitation, dev: _dev = false }: CardProps)
                     <div className={styles.wallet_col} style={{ gap: "6px" }}>
                       <span>{ui.labels.DiscoverGifts}</span>
                       <Button
+                        onPointerDown={(e) => e.stopPropagation()}
                         onClick={(e) => {
                           e.stopPropagation();
                           window.open(card.url!, "_blank");
@@ -291,6 +292,7 @@ export default function Wallet({ ui, invitation, dev: _dev = false }: CardProps)
                       <span>
                         {card.number}{" "}
                         <Button
+                          onPointerDown={(e) => e.stopPropagation()}
                           onClick={(e) => {
                             e.stopPropagation();
                             copyToClipboard(card.number!);
