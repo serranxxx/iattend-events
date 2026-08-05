@@ -4,7 +4,7 @@ import PrioridadInvitados from "./PrioridadInvitados";
 const TITLE = "Conoce la prioridad del invitado | I attend";
 const DESCRIPTION =
   "3 preguntas rápidas, sin adivinar: descubre qué tan prioritario es un invitado para tu lista.";
-const IMAGE_URL = "https://iattend.site/assets/images/9.jpg";
+const IMAGE_URL = "/assets/images/9.jpg";
 
 export const metadata: Metadata = {
   title: TITLE,
