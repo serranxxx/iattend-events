@@ -155,6 +155,27 @@ export default function Invitation({ password, invitationID, ui, lang, available
     // embebe en el wizard/preview), causando un scroll indeseado fuera de aquí.
     const targetTop = target.getBoundingClientRect().top - container.getBoundingClientRect().top + container.scrollTop;
     container.scrollTo({ top: targetTop, behavior: "smooth" });
+
+    // Bug conocido de WebKit/iOS: tras un scrollTo({behavior:'smooth'}) sobre un
+    // contenedor con -webkit-overflow-scrolling:touch, el momentum scroll se queda
+    // "congelado" y el swipe manual deja de responder hasta que algo fuerza un
+    // reflow. Se espera a que el scroll se asiente (polling en vez de 'scrollend',
+    // que no existe en Safari viejo) y se alterna esa propiedad para destrabarlo.
+    let settleTimer: ReturnType<typeof setTimeout>;
+    let lastTop = container.scrollTop;
+    const waitForSettle = () => {
+      if (container.scrollTop === lastTop) {
+        container.style.setProperty("-webkit-overflow-scrolling", "auto");
+        void container.offsetHeight;
+        container.style.removeProperty("-webkit-overflow-scrolling");
+        return;
+      }
+      lastTop = container.scrollTop;
+      settleTimer = setTimeout(waitForSettle, 100);
+    };
+    settleTimer = setTimeout(waitForSettle, 100);
+
+    return () => clearTimeout(settleTimer);
   }, [scrollToSection]);
 
   // Scrollspy: avisa al host qué sección está a la vista mientras el invitado navega libremente
