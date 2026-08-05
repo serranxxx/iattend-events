@@ -1,0 +1,312 @@
+.page_bg {
+  --navy: #1c3249;
+  --lilac: #d1bedd;
+  --cream: #eeeadf;
+  --sage: #eeeadf;
+  --ink: #0c171b;
+
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  min-height: 100dvh;
+  padding: max(40px, env(safe-area-inset-top)) 0 max(40px, env(safe-area-inset-bottom));
+  box-sizing: border-box;
+}
+
+.wrap {
+  width: 390px;
+  flex-shrink: 0;
+  background: #eeeadf;
+  padding: 0 16px 40px;
+  box-sizing: border-box;
+  color: var(--ink);
+  font-family: "Luxora Grotesk", "Poppins", sans-serif;
+}
+
+.eyebrow {
+  display: block;
+  font-family: "Windsor", "Poppins", sans-serif;
+  font-weight: 800;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--navy);
+  opacity: 0.7;
+  margin-bottom: 8px;
+}
+
+.heading {
+  font-family: "Denver Serial", "Poppins", sans-serif !important;
+  font-weight: 800 !important;
+  font-size: 28px !important;
+  color: var(--navy) !important;
+  margin: 0 0 6px !important;
+  letter-spacing: -0.01em;
+}
+
+.sub {
+  font-size: 15px !important;
+  font-weight: 200;
+  opacity: 0.75;
+  margin-bottom: 24px !important;
+  line-height: 1.5;
+  color: var(--ink) !important;
+}
+
+.progress {
+  margin-bottom: 22px;
+}
+
+.card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 28px;
+  box-shadow: 0 2px 12px rgba(12, 23, 27, 0.07);
+  border: 1px solid rgba(12, 23, 27, 0.06);
+  min-height: 280px;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.q_num {
+  display: block;
+  font-family: "Windsor", "Poppins", sans-serif;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--navy);
+  opacity: 0.55;
+  margin-bottom: 8px;
+}
+
+.q_text {
+  font-family: "Denver Serial", "Poppins", sans-serif !important;
+  font-size: 20px !important;
+  font-weight: 800 !important;
+  color: var(--navy) !important;
+  margin: 0 0 20px !important;
+  line-height: 1.3;
+}
+
+.date_picker {
+  width: 100%;
+  height: 48px;
+  border-radius: 10px !important;
+  border: 1.5px solid #eeeadf !important;
+  background: #eeeadf !important;
+}
+
+.date_picker :global(.ant-picker-input > input) {
+  font-family: "Luxora Grotesk", "Poppins", sans-serif;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--navy);
+}
+
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.opt {
+  height: auto !important;
+  width: 100%;
+  border: 1.5px solid #eeeadf !important;
+  background: #eeeadf !important;
+  border-radius: 12px !important;
+  padding: 14px 16px !important;
+  text-align: left;
+  white-space: normal;
+  font-family: "Luxora Grotesk", "Poppins", sans-serif !important;
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  color: var(--ink) !important;
+  box-shadow: none !important;
+}
+
+.opt.selected {
+  background: var(--navy) !important;
+  border-color: var(--navy) !important;
+  color: #fff !important;
+}
+
+.nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-top: auto;
+  padding-top: 22px;
+}
+
+.btn_primary {
+  border: none !important;
+  border-radius: 12px !important;
+  padding: 13px 20px !important;
+  height: auto !important;
+  font-family: "Windsor", "Poppins", sans-serif !important;
+  font-size: 14px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.02em;
+  background: var(--lilac) !important;
+  color: var(--navy) !important;
+  flex: 1;
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+
+.btn_primary:disabled {
+  opacity: 0.4 !important;
+  background: var(--lilac) !important;
+  color: var(--navy) !important;
+}
+
+.btn_ghost {
+  background: transparent !important;
+  color: var(--navy) !important;
+  opacity: 0.6;
+  padding: 13px 8px !important;
+  font-family: "Windsor", "Poppins", sans-serif !important;
+  font-size: 14px !important;
+  font-weight: 800 !important;
+  box-shadow: none !important;
+}
+
+.btn_ghost:hover {
+  opacity: 1;
+}
+
+.result_card {
+  background: var(--navy);
+  color: #fff;
+  border-radius: 16px;
+  padding: 26px;
+  margin-top: 20px;
+  box-sizing: border-box;
+}
+
+.kicker {
+  display: block;
+  font-family: "Windsor", "Poppins", sans-serif;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--lilac);
+  opacity: 0.9;
+  margin-bottom: 4px;
+}
+
+.headline {
+  font-family: "Denver Serial", "Poppins", sans-serif !important;
+  font-size: 22px !important;
+  font-weight: 800 !important;
+  margin: 0 0 18px !important;
+  line-height: 1.3;
+  color: #fff !important;
+}
+
+.timeline {
+  margin-top: 4px;
+}
+
+.timeline :global(.ant-timeline-item-tail) {
+  border-inline-start: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+
+.timeline :global(.ant-timeline-item-content) {
+  color: #fff !important;
+  min-height: auto !important;
+}
+
+.milestone_txt .m_label {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.75;
+  margin-bottom: 2px;
+  color: #fff;
+}
+
+.milestone_txt .m_date {
+  font-family: "Denver Serial", "Poppins", sans-serif;
+  font-size: 18px;
+  font-weight: 800;
+  color: #fff;
+}
+
+.milestone_txt .m_detail {
+  font-size: 13px;
+  font-weight: 200;
+  opacity: 0.85;
+  color: #fff;
+  margin-top: 3px;
+}
+
+.milestone_txt .m_calendar {
+  margin-top: 8px;
+}
+
+.restart {
+  display: block !important;
+  text-align: center;
+  margin-top: 16px !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  color: var(--navy) !important;
+  opacity: 0.6;
+  width: 100%;
+  font-family: "Luxora Grotesk", "Poppins", sans-serif !important;
+}
+
+.restart:hover {
+  opacity: 1;
+  text-decoration: underline;
+}
+
+.footnote {
+  font-size: 12px !important;
+  opacity: 0.55;
+  line-height: 1.6;
+  margin-top: 16px !important;
+  font-weight: 200;
+  color: var(--ink) !important;
+}
+
+.cta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-top: 24px;
+  text-align: center;
+}
+
+.cta_text {
+  font-family: "Denver Serial", "Poppins", sans-serif !important;
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  color: var(--navy) !important;
+}
+
+.cta_btn {
+  border: none !important;
+  border-radius: 12px !important;
+  padding: 13px 28px !important;
+  height: auto !important;
+  font-family: "Windsor", "Poppins", sans-serif !important;
+  font-size: 14px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.02em;
+  background: var(--lilac) !important;
+  color: var(--navy) !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
