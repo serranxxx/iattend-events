@@ -4,7 +4,7 @@ import EnvioInvitacion from "./EnvioInvitacion";
 const TITLE = "¿Cuándo enviar tu invitación? | I attend";
 const DESCRIPTION =
   "Responde 4 preguntas rápidas y descubre cuándo enviar tu save the date, tu invitación formal y cuándo cerrar confirmaciones.";
-const IMAGE_URL = "/assets/images/7.jpg";
+const IMAGE_URL = "https://jblcqcxckefmydvtrxbi.supabase.co/storage/v1/object/public/landing/9.jpg";
 
 export const metadata: Metadata = {
   title: TITLE,
