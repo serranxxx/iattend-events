@@ -307,7 +307,10 @@ export default function Wallet({ ui, invitation, dev: _dev = false }: CardProps)
               </FadeDown>
             ))}
 
-          {/* Lines debajo y sin eventos */}
+          {/* Bolsillo: se pinta ENCIMA de las tarjetas (z-index 10) a propósito, para el
+              efecto de "tarjetas dentro de la cartera". No hacerlo pointer-events: none:
+              debajo quedan los CTA ocultos de las tarjetas cerradas y se volverían
+              tappeables sin ser visibles. */}
           <div
             onClick={(e) => { e.stopPropagation(); handleReset(); }}
             style={{

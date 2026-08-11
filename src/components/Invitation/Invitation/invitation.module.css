@@ -198,6 +198,8 @@
   left: 50%;
   transform: translate(-50%, -50%);
   z-index: 99;
+  /* es solo el saludo de la intro: nunca debe interceptar taps */
+  pointer-events: none;
   font-size: 36px;
   line-height: 1.2;
   font-weight: 400;
