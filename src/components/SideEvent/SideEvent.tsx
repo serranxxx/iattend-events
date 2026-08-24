@@ -380,12 +380,18 @@ export default function SideEvents({ info, password, preview }: invProps) {
               }}
             >
               <span>{formatEventDateTime(info?.body.hour, { state: info?.body.address?.state, timezone: info?.body.timezone })}</span>
-              <span>
-                {info?.body.address.street} {info?.body.address.number},
-              </span>
-              <span>
-                {info?.body.address.state} {info?.body.address.country}
-              </span>
+              {info?.body.place_name ? (
+                <span>{info.body.place_name}</span>
+              ) : (
+                <>
+                  <span>
+                    {info?.body.address.street} {info?.body.address.number},
+                  </span>
+                  <span>
+                    {info?.body.address.state} {info?.body.address.country}
+                  </span>
+                </>
+              )}
             </div>
 
 

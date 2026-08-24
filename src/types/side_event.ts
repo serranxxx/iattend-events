@@ -17,6 +17,9 @@ export type SideEventBody = {
   color: string;
   extras: string | null;
   hideWeather?: boolean;
+  // Nombre del lugar (ej. "Salón Jardín"), opcional. Cuando existe, se
+  // muestra en vez de la dirección debajo de la fecha en SideEvent.tsx.
+  place_name?: string | null;
 };
 
 export type SideEvent = {
