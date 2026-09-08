@@ -149,6 +149,8 @@
   padding: 28px 20px 20px;
   border-radius: 20px;
   box-shadow: var(--modal-shadow);
+  max-height: 100%;
+  overflow-y: auto;
 }
 
 .wallet_help_close {
@@ -173,4 +175,11 @@
 
 .wallet_help_hint {
   opacity: 0.6;
+}
+
+/* TEMPORAL: diagnóstico del navegador embebido. Borrar con el bloque del TSX. */
+.wallet_help_diag {
+  opacity: 0.45;
+  word-break: break-all;
+  text-align: left;
 }
