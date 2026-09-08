@@ -86,11 +86,42 @@ export function Ticket({ guest, invitation, ui, colors, onClose, id }: TicketPro
     return url.toString()
   }
 
+  const safariUrl = (url: string) =>
+    url.replace(/^http(s?):\/\//, "x-safari-http$1://")
+
+  /**
+   * Salta directo a Safari con el esquema `x-safari-https://`, que es el único
+   * navegador que puede presentar la hoja de Apple Wallet. Se hace sin
+   * preguntar nada: si la invitación ya estaba en Safari el esquema lo maneja
+   * Safari mismo y el pase se agrega igual.
+   *
+   * `x-safari-https://` no es API pública, así que puede estar bloqueado. Si
+   * a los 1.8 s la página sigue al frente, es que el salto no ocurrió y se
+   * abre la hoja de respaldo con las instrucciones manuales.
+   */
   const addToWallet = (e: React.MouseEvent) => {
     e.stopPropagation()
     if (addingToWallet || !id || guest.id == null) return
 
-    setPassUrl(buildPassUrl())
+    const url = buildPassUrl()
+    let left = false
+    const markLeft = () => { left = true }
+    const onVisibility = () => { if (document.hidden) left = true }
+
+    window.addEventListener("pagehide", markLeft)
+    window.addEventListener("blur", markLeft)
+    document.addEventListener("visibilitychange", onVisibility)
+
+    setAddingToWallet(true)
+    window.location.href = safariUrl(url)
+
+    later(() => {
+      window.removeEventListener("pagehide", markLeft)
+      window.removeEventListener("blur", markLeft)
+      document.removeEventListener("visibilitychange", onVisibility)
+      setAddingToWallet(false)
+      if (!left) setPassUrl(url)
+    }, 1800)
   }
 
   /**
@@ -112,7 +143,7 @@ export function Ticket({ guest, invitation, ui, colors, onClose, id }: TicketPro
    */
   const openPassInSafari = () => {
     if (!passUrl) return
-    window.location.href = passUrl.replace(/^http(s?):\/\//, "x-safari-http$1://")
+    window.location.href = safariUrl(passUrl)
   }
 
   const copyPassUrl = async () => {
@@ -263,6 +294,8 @@ export function Ticket({ guest, invitation, ui, colors, onClose, id }: TicketPro
             <span className={`c1 ${styles.wallet_help_hint}`}>
               Si en lugar del pase aparece texto raro, la app abrió la liga en
               su propio navegador. Apple Wallet solo acepta pases desde Safari:
+              toca el botón <b>···</b> de arriba a la derecha y elige
+              {" "}<b>Abrir en Safari</b>, o intenta con esto:
             </span>
 
             <Button
