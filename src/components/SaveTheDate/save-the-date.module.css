@@ -1,0 +1,84 @@
+/* CTA glass fijo arriba a la derecha, sobre el cover */
+.ctaFixed {
+    position: fixed;
+    top: 12px;
+    right: 12px;
+    z-index: 40;
+}
+
+/* Dots del carrusel — mismo look que los del Cover, pero viven aquí porque
+   el Cover del Save the Date no dibuja media */
+.dots {
+    position: absolute;
+    /* arriba al centro, como el progreso de una historia */
+    top: 18px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 8px;
+    z-index: 20;
+}
+
+.dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 99px;
+    border: none;
+    padding: 0;
+    background: rgba(255, 255, 255, 0.45);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.dotActive {
+    background: #FFFFFF;
+    width: 22px;
+}
+
+/* Menú del dropdown con el mismo glass que el botón.
+   Se portalea a <body>, por eso el :global sobre las clases de antd. */
+.glassMenu :global(.ant-dropdown-menu) {
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(28px) saturate(200%);
+    -webkit-backdrop-filter: blur(28px) saturate(200%);
+    box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.14),
+        0 2px 8px rgba(0, 0, 0, 0.08);
+    padding: 6px;
+}
+
+.glassMenu :global(.ant-dropdown-menu-item) {
+    border-radius: 10px;
+    font-family: Poppins, sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    color: #111;
+}
+
+.glassMenu :global(.ant-dropdown-menu-item:hover) {
+    background: rgba(0, 0, 0, 0.06);
+}
+
+/* ── Espacio para la barra de reacciones ──
+   El contenido del Cover (título + countdown) sube para no quedar debajo
+   de la barra fija. Selector por atributo porque la clase del Cover viene
+   hasheada por CSS Modules. */
+.coverShell [class*="background_cover"] {
+    /* libra la barra de reacciones; sin mensajes no hay ticker que librar */
+    padding-bottom: 76px;
+    box-sizing: border-box;
+    transition: padding-bottom 0.3s ease;
+}
+
+/* Con mensajes guardados: espacio extra para el ticker */
+.coverShellTicker [class*="background_cover"] {
+    padding-bottom: 128px;
+}
+
+/* Countdown 10% más pequeño (segundo hijo: el bloque del countdown) */
+.coverShell [class*="background_cover"] > div:nth-child(2) {
+    transform: scale(0.9);
+    transform-origin: center bottom;
+}

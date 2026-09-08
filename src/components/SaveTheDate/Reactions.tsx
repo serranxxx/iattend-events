@@ -1,0 +1,242 @@
+"use client";
+
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
+import styles from "./reactions.module.css";
+
+const HEART = "❤️";
+const TICKER_FADE_MS = 320;
+
+type ReactionsProps = {
+  // null en el preview del editor (host): anima pero no persiste
+  saveTheDateId: string | null;
+  // avisa al contenedor si hay mensajes guardados (para reservar espacio al ticker)
+  onMessagesChange?: (hasMessages: boolean) => void;
+};
+
+type Floater = {
+  id: number;
+  emoji: string;
+  right: number;    // % desde la derecha
+  size: number;     // px
+  duration: number; // s
+  drift: number;    // px de deriva horizontal
+};
+
+type StoredMessage = {
+  id: string | number;
+  message: string;
+  created_at: string;
+};
+
+export default function Reactions({ saveTheDateId, onMessagesChange }: ReactionsProps) {
+  const supabase = useMemo(() => createClient(), []);
+  const [message, setMessage] = useState("");
+  const [sent, setSent] = useState(false);
+  const [floaters, setFloaters] = useState<Floater[]>([]);
+  const [messages, setMessages] = useState<StoredMessage[]>([]); // más reciente primero
+  const [msgIndex, setMsgIndex] = useState(0);
+  const [tickerShown, setTickerShown] = useState(true);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [sheetClosing, setSheetClosing] = useState(false);
+  const idRef = useRef(0);
+
+  const closeSheet = () => {
+    if (sheetClosing) return;
+    setSheetClosing(true);
+    setTimeout(() => {
+      setHistoryOpen(false);
+      setSheetClosing(false);
+    }, 280);
+  };
+
+  const hasText = message.trim().length > 0;
+
+  const spawn = (count: number) => {
+    const batch: Floater[] = Array.from({ length: count }, () => ({
+      id: ++idRef.current,
+      emoji: HEART,
+      right: 4 + Math.random() * 26,
+      size: 22 + Math.random() * 22,
+      duration: 2.6 + Math.random() * 1.8,
+      drift: -30 + Math.random() * 70,
+    }));
+    setFloaters((f) => [...f, ...batch]);
+    setTimeout(() => {
+      setFloaters((f) => f.filter((x) => !batch.some((b) => b.id === x.id)));
+    }, 5000);
+  };
+
+  // Al abrir: carga reacciones. Si ya hay corazones de alguien más, suben
+  // solitos (como IG); los mensajes alimentan el ticker.
+  useEffect(() => {
+    if (!saveTheDateId) return;
+    let cancelled = false;
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    (async () => {
+      const { data } = await supabase
+        .from("save_the_date_reactions")
+        .select("id, emoji, message, created_at")
+        .eq("save_the_date_id", saveTheDateId)
+        .order("created_at", { ascending: false })
+        .limit(100);
+      if (cancelled || !data) return;
+      const msgs = data.filter((r) => r.message) as StoredMessage[];
+      setMessages(msgs);
+      const heartCount = data.filter((r) => r.emoji).length;
+      if (heartCount > 0) {
+        Array.from({ length: Math.min(heartCount, 12) }).forEach((_, i) => {
+          timers.push(setTimeout(() => spawn(1), 800 + i * 380));
+        });
+      }
+    })();
+    return () => {
+      cancelled = true;
+      timers.forEach(clearTimeout);
+    };
+  }, [saveTheDateId, supabase]);
+
+  useEffect(() => {
+    onMessagesChange?.(messages.length > 0);
+  }, [messages.length, onMessagesChange]);
+
+  // Ticker: un mensaje a la vez. Rotación en dos fases: fade-out → cambio → fade-in
+  useEffect(() => {
+    if (messages.length <= 1 || historyOpen) return;
+    let swap: ReturnType<typeof setTimeout> | undefined;
+    const id = setInterval(() => {
+      setTickerShown(false);
+      swap = setTimeout(() => {
+        setMsgIndex((i) => (i + 1) % messages.length);
+        setTickerShown(true);
+      }, TICKER_FADE_MS);
+    }, 5000);
+    return () => { clearInterval(id); if (swap) clearTimeout(swap); };
+  }, [messages.length, historyOpen]);
+
+  const react = () => {
+    spawn(7);
+    if (!saveTheDateId) return; // preview del editor
+    supabase
+      .from("save_the_date_reactions")
+      .insert({ save_the_date_id: saveTheDateId, emoji: HEART })
+      .then(({ error }) => { if (error) console.error("[reaction]", error); });
+  };
+
+  const send = () => {
+    const text = message.trim();
+    if (!text) return;
+    setMessage("");
+    setSent(true);
+    setTimeout(() => setSent(false), 2500);
+    spawn(5);
+    // optimista: aparece de inmediato en el ticker
+    setMessages((prev) => [{ id: `local-${Date.now()}`, message: text, created_at: new Date().toISOString() }, ...prev]);
+    setMsgIndex(0);
+    setTickerShown(true);
+    if (!saveTheDateId) return;
+    supabase
+      .from("save_the_date_reactions")
+      .insert({ save_the_date_id: saveTheDateId, message: text })
+      .then(({ error }) => { if (error) console.error("[reaction]", error); });
+  };
+
+  const fmtTime = (iso: string) =>
+    new Date(iso).toLocaleString("es-MX", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+
+  const current = messages.length > 0 ? messages[msgIndex % messages.length] : null;
+
+  return (
+    <>
+      {/* Corazones flotando desde bottom-right */}
+      <div className={styles.floatLayer} aria-hidden>
+        {floaters.map((f) => (
+          <span
+            key={f.id}
+            className={styles.floater}
+            style={{
+              right: `${f.right}%`,
+              fontSize: `${f.size}px`,
+              animationDuration: `${f.duration}s`,
+              "--drift": `${f.drift}px`,
+            } as React.CSSProperties}
+          >
+            {f.emoji}
+          </span>
+        ))}
+      </div>
+
+      {/* Ticker de mensajes (uno a la vez), estilo caption de historia.
+          Si hay mensajes guardados, siempre visible (el sheet lo cubre al abrirse). */}
+      {current && (
+        <div className={styles.tickerWrap}>
+          <button
+            className={`${styles.msgTicker} ${tickerShown ? "" : styles.tickerHidden}`}
+            onClick={() => setHistoryOpen(true)}
+          >
+            <span className={styles.msgAvatar}>💌</span>
+            <span className={styles.msgText}>{current.message}</span>
+          </button>
+        </div>
+      )}
+
+      {/* Barra inferior: mensaje (flex 1) + corazón/enviar con crossfade */}
+      <div className={styles.bar}>
+        <input
+          className={styles.input}
+          value={message}
+          maxLength={200}
+          placeholder={sent ? "¡Enviado! 💌" : "Envía un mensaje..."}
+          onChange={(e) => setMessage(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") send(); }}
+        />
+        <div className={`${styles.actionSlot} ${hasText ? styles.actionSlotWide : ""}`}>
+          <button
+            className={`${styles.slotItem} ${styles.heartBtn} ${!hasText ? styles.slotItemActive : ""}`}
+            onClick={react}
+            tabIndex={hasText ? -1 : 0}
+            aria-label="Reaccionar con corazón"
+            aria-hidden={hasText}
+          >
+            {HEART}
+          </button>
+          <button
+            className={`${styles.slotItem} ${styles.sendBtn} ${hasText ? styles.slotItemActive : ""}`}
+            onClick={send}
+            tabIndex={hasText ? 0 : -1}
+            aria-hidden={!hasText}
+          >
+            Enviar
+          </button>
+        </div>
+      </div>
+
+      {/* Historial de mensajes (bottom sheet, anónimo) */}
+      {historyOpen && (
+        <div
+          className={`${styles.sheetBackdrop} ${sheetClosing ? styles.backdropClosing : ""}`}
+          onClick={closeSheet}
+        >
+          <div
+            className={`${styles.sheet} ${sheetClosing ? styles.sheetClosing : ""}`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className={styles.sheetHandle} />
+            <div className={styles.sheetTitle}>Mensajes</div>
+            <div className={styles.sheetList}>
+              {messages.map((m) => (
+                <div key={String(m.id)} className={styles.sheetRow}>
+                  <span className={styles.msgAvatar}>💌</span>
+                  <div className={styles.sheetRowBody}>
+                    <span className={styles.sheetRowText}>{m.message}</span>
+                    <span className={styles.sheetRowMeta}>{fmtTime(m.created_at)}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}

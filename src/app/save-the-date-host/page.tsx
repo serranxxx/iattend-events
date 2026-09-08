@@ -1,0 +1,69 @@
+"use client";
+import SaveTheDate from "@/components/SaveTheDate/SaveTheDate";
+import { CoverSection } from "@/types/new_invitation";
+import { useEffect, useRef, useState } from "react";
+
+// 👇 Lista de orígenes permitidos (misma que side-event-host)
+const ALLOWED_ORIGINS = [
+  "http://localhost:3001",
+  "http://localhost:3000",
+  "https://www.iattend.mx",
+  "https://www.iattend.site",
+];
+
+type SaveTheDateConfig = {
+  id?: string | null; // con id, el preview carga y persiste reacciones reales
+  cover: Partial<CoverSection> | null;
+  event_date: string | null;
+};
+
+export default function Page() {
+  const [hostOrigin, setHostOrigin] = useState<string | null>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const [config, setConfig] = useState<SaveTheDateConfig | null>(null);
+
+  // Handshake inicial
+  useEffect(() => {
+    ALLOWED_ORIGINS.forEach((origin) => {
+      window.parent?.postMessage({ type: "REMOTE_READY" }, origin);
+    });
+  }, []);
+
+  // Escuchar mensajes del host
+  useEffect(() => {
+    function onMessage(ev: MessageEvent) {
+      if (!ALLOWED_ORIGINS.includes(ev.origin)) return;
+      const { type, payload } = ev.data || {};
+      if (!hostOrigin) setHostOrigin(ev.origin);
+      if (type === "HOST_PROPS" && payload?.saveTheDateConfig) {
+        setConfig(payload.saveTheDateConfig as SaveTheDateConfig);
+      }
+    }
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, [hostOrigin]);
+
+  // Reportar altura al host
+  useEffect(() => {
+    const el = rootRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => {
+      const height = el.getBoundingClientRect().height;
+      if (hostOrigin) {
+        window.parent?.postMessage({ type: "REMOTE_HEIGHT", payload: { height } }, hostOrigin);
+      } else {
+        ALLOWED_ORIGINS.forEach((origin) => {
+          window.parent?.postMessage({ type: "REMOTE_HEIGHT", payload: { height } }, origin);
+        });
+      }
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [hostOrigin]);
+
+  return (
+    <div ref={rootRef} style={{ width: "100%", backgroundColor: "#FFF" }} className="scroll-invitation">
+      {config && <SaveTheDate cover={config.cover} eventDate={config.event_date} saveTheDateId={config.id ?? null} />}
+    </div>
+  );
+}
