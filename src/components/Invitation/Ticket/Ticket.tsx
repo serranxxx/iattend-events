@@ -5,16 +5,29 @@ import { GuestSubabasePayload } from "@/types/guests";
 import Image from "next/image";
 import { darker } from "@/helpers/functions";
 import styles from "./ticket.module.css";
-import { QRCode, Spin } from "antd";
-import { useEffect, useState } from "react";
+import { Button, QRCode, Spin } from "antd";
+import { useEffect, useRef, useState } from "react";
+import { Check, Compass, Copy, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-
-const API_URL = "https://i-attend-22z4h.ondigitalocean.app/api";
-// const API_URL = "http://localhost:4000/api"
 
 const isIOS = () =>
   typeof navigator !== "undefined" &&
   /iPad|iPhone|iPod/.test(navigator.userAgent);
+
+/**
+ * Detecta el navegador embebido de WhatsApp / Instagram / Facebook / etc.
+ *
+ * Esos navegadores son un WKWebView dentro de la app y NO pueden presentar la
+ * hoja nativa de "Agregar a Apple Wallet": el .pkpass simplemente no hace nada.
+ * En iOS el user agent de un WKWebView embebido no incluye el token "Safari/",
+ * mientras que Safari, Chrome (CriOS) y Firefox (FxiOS) sí lo incluyen.
+ */
+const isEmbeddedBrowser = () => {
+  if (typeof navigator === "undefined") return false;
+  const ua = navigator.userAgent;
+  if (/FBAN|FBAV|FB_IAB|Instagram|Line\/|MicroMessenger|GSA\//.test(ua)) return true;
+  return /iPad|iPhone|iPod/.test(ua) && !/Safari\//.test(ua);
+};
 
 type TicketColors = {
   primary: string;
@@ -53,40 +66,55 @@ export function Ticket({ guest, invitation, ui, colors, onClose, id }: TicketPro
 
   const [tables, setTables] = useState<{ id: string; number: number }[]>([])
   const [addingToWallet, setAddingToWallet] = useState(false)
+  const [passUrl, setPassUrl] = useState<string | null>(null)
+  const [copied, setCopied] = useState(false)
+  const timers = useRef<number[]>([])
 
-  const addToWallet = async (e: React.MouseEvent) => {
+  const later = (fn: () => void, ms: number) => {
+    timers.current.push(window.setTimeout(fn, ms))
+  }
+
+  useEffect(() => () => timers.current.forEach(clearTimeout), [])
+
+  const buildPassUrl = () => {
+    const url = new URL("/api/wallet/pass", window.location.origin)
+    url.searchParams.set("invitation", String(id))
+    url.searchParams.set("guest", String(guest.id))
+    return url.toString()
+  }
+
+  const addToWallet = (e: React.MouseEvent) => {
     e.stopPropagation()
-    if (addingToWallet) return
+    if (addingToWallet || !id || guest.id == null) return
+
+    const url = buildPassUrl()
+
+    // Dentro del navegador de WhatsApp la hoja de Wallet nunca aparece: hay que
+    // salir a Safari. `x-safari-https://` es el esquema que iOS usa para eso;
+    // si la app lo bloquea, la pantalla no cambia y mostramos las instrucciones.
+    if (isEmbeddedBrowser()) {
+      window.location.href = url.replace(/^http(s?):\/\//, "x-safari-http$1://")
+      later(() => {
+        if (document.visibilityState === "visible") setPassUrl(url)
+      }, 1200)
+      return
+    }
+
+    // Safari entrega el pase a Apple Wallet cuando *navega* a un recurso con
+    // MIME type application/vnd.apple.pkpass — no con un blob + <a download>.
     setAddingToWallet(true)
+    window.location.href = url
+    later(() => setAddingToWallet(false), 3000)
+  }
+
+  const copyPassUrl = async () => {
+    if (!passUrl) return
     try {
-      const tableNumber = tables?.find(t => t.id === guest.table)?.number ?? null
-      const res = await fetch(`${API_URL}/wallet/pass`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          guestId: guest.id,
-          guestName: guest.name ?? "Invitado",
-          eventName: invitation.cover.title.text.value,
-          eventDate: invitation.cover.date.value,
-          eventTime: invitation.itinerary.object[0]?.time ?? "",
-          tableNumber,
-          coverImageUrl: coverImageSrc,
-          primaryColor: primary,
-          accentColor: accent,
-        }),
-      })
-      if (!res.ok) throw new Error("Error al generar el pase")
-      const blob = await res.blob()
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement("a")
-      a.href = url
-      a.download = "i-attend-pass.pkpass"
-      a.click()
-      URL.revokeObjectURL(url)
+      await navigator.clipboard.writeText(passUrl)
+      setCopied(true)
+      later(() => setCopied(false), 2000)
     } catch (err) {
-      console.error("Error al agregar a Apple Wallet:", err)
-    } finally {
-      setAddingToWallet(false)
+      console.error("No se pudo copiar la liga del pase:", err)
     }
   }
 
@@ -183,6 +211,52 @@ export function Ticket({ guest, invitation, ui, colors, onClose, id }: TicketPro
 
 
       <div className={styles.ticket_effect} />
+
+      {passUrl && (
+        <div
+          className={styles.wallet_help}
+          style={{ backgroundColor: `${darker(primary, 0.5) ?? primary}D9` }}
+          onClick={(e) => { e.stopPropagation(); setPassUrl(null) }}
+        >
+          <div
+            className={styles.wallet_help_card}
+            style={{
+              fontFamily: font,
+              backgroundColor: primary,
+              color: accent,
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Button
+              type="text"
+              shape="circle"
+              className={styles.wallet_help_close}
+              icon={<X size={14} />}
+              onClick={() => setPassUrl(null)}
+            />
+
+            <Compass size={28} className={styles.wallet_help_icon} />
+
+            <span className={`s1 ${styles.wallet_help_title}`}>
+              Ábrelo en Safari
+            </span>
+            <span className={`b3 ${styles.wallet_help_text}`}>
+              El navegador de WhatsApp no puede guardar pases en Apple Wallet.
+              Toca los tres puntos de arriba a la derecha y elige
+              {" "}<b>Abrir en Safari</b>, o copia la liga y pégala en Safari.
+            </span>
+
+            <Button
+              block
+              size="large"
+              icon={copied ? <Check size={14} /> : <Copy size={14} />}
+              onClick={copyPassUrl}
+            >
+              {copied ? "Liga copiada" : "Copiar liga del pase"}
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
