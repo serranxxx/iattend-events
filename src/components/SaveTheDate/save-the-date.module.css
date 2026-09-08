@@ -82,3 +82,17 @@
     transform: scale(0.9);
     transform-origin: center bottom;
 }
+
+/* ── Acabado liquid glass del CTA (mismo recipe que el sidebar rail) ──
+   Las capas (efecto / tinte+brillo) se montan como elementos con estilos
+   inline en SaveTheDate.tsx: el pipeline de CSS de Next rompe
+   `backdrop-filter` en este archivo (emite solo la variante -webkit- y el
+   navegador la descarta), así que inline es la única vía confiable. */
+.glassWrap {
+    position: relative;
+    isolation: isolate;
+    display: inline-flex;
+    border-radius: 99px;
+    overflow: hidden;
+    box-shadow: 0 6px 6px rgba(0, 0, 0, 0.2), 0 0 20px rgba(0, 0, 0, 0.1);
+}

@@ -18,6 +18,7 @@ type AddToCalendarProps = {
   accent: string;
   label?: string;
   buttonStyle?: React.CSSProperties;  // overrides sobre el estilo base del botón
+  buttonClassName?: string;           // clase del botón (acabado liquid glass)
   menuClassName?: string;             // clase para el dropdown portaleado
   placement?: DropdownProps["placement"]; // posición del menú (default "top")
 };
@@ -107,7 +108,7 @@ function outlookUrl({ name, startDate, startTime, endTime, location, description
 }
 
 export function AddToCalendar(props: AddToCalendarProps) {
-  const { primary, accent, label = "Agregar al calendario", buttonStyle, menuClassName, placement = "top" } = props;
+  const { primary, accent, label = "Agregar al calendario", buttonStyle, buttonClassName, menuClassName, placement = "top" } = props;
 
   const items: MenuProps["items"] = [
     {
@@ -133,6 +134,7 @@ export function AddToCalendar(props: AddToCalendarProps) {
   return (
     <Dropdown menu={{ items }} placement={placement} trigger={["click"]} overlayClassName={menuClassName}>
       <Button
+        className={buttonClassName}
         icon={<CalendarPlus size={18} />}
         style={{
           backgroundColor: accent,

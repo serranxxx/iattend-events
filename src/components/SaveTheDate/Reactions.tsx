@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import styles from "./reactions.module.css";
 
 const HEART = "❤️";
+const EMOJIS = [HEART, "✨", "😍"];
 const TICKER_FADE_MS = 320;
 
 type ReactionsProps = {
@@ -40,6 +41,7 @@ export default function Reactions({ saveTheDateId, onMessagesChange }: Reactions
   const [historyOpen, setHistoryOpen] = useState(false);
   const [sheetClosing, setSheetClosing] = useState(false);
   const idRef = useRef(0);
+  const ownIdsRef = useRef<Set<string>>(new Set());
 
   const closeSheet = () => {
     if (sheetClosing) return;
@@ -52,10 +54,10 @@ export default function Reactions({ saveTheDateId, onMessagesChange }: Reactions
 
   const hasText = message.trim().length > 0;
 
-  const spawn = (count: number) => {
+  const spawn = (emoji: string, count: number) => {
     const batch: Floater[] = Array.from({ length: count }, () => ({
       id: ++idRef.current,
-      emoji: HEART,
+      emoji,
       right: 4 + Math.random() * 26,
       size: 22 + Math.random() * 22,
       duration: 2.6 + Math.random() * 1.8,
@@ -83,12 +85,12 @@ export default function Reactions({ saveTheDateId, onMessagesChange }: Reactions
       if (cancelled || !data) return;
       const msgs = data.filter((r) => r.message) as StoredMessage[];
       setMessages(msgs);
-      const heartCount = data.filter((r) => r.emoji).length;
-      if (heartCount > 0) {
-        Array.from({ length: Math.min(heartCount, 12) }).forEach((_, i) => {
-          timers.push(setTimeout(() => spawn(1), 800 + i * 380));
+      data
+        .filter((r) => r.emoji)
+        .slice(0, 12)
+        .forEach((row, i) => {
+          timers.push(setTimeout(() => spawn(row.emoji as string, 1), 800 + i * 380));
         });
-      }
     })();
     return () => {
       cancelled = true;
@@ -99,6 +101,53 @@ export default function Reactions({ saveTheDateId, onMessagesChange }: Reactions
   useEffect(() => {
     onMessagesChange?.(messages.length > 0);
   }, [messages.length, onMessagesChange]);
+
+  // Realtime: las reacciones y mensajes de otros entran en vivo.
+  useEffect(() => {
+    if (!saveTheDateId) return;
+    const channel = supabase
+      .channel(`std_reactions_${saveTheDateId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "save_the_date_reactions",
+          filter: `save_the_date_id=eq.${saveTheDateId}`,
+        },
+        (payload) => {
+          const row = payload.new as { id: string; emoji: string | null; message: string | null; created_at: string };
+          // lo que mandé yo ya se animó de forma optimista
+          if (ownIdsRef.current.has(String(row.id))) return;
+
+          if (row.emoji) spawn(row.emoji, 3);
+
+          if (row.message) {
+            const msg = row.message;
+            setMessages((prev) => {
+              if (prev.some((m) => String(m.id) === String(row.id))) return prev;
+              // si ya está como optimista (sin id real), solo se le pone el id
+              const i = prev.findIndex((m) => String(m.id).startsWith("local-") && m.message === msg);
+              if (i > -1) {
+                const next = [...prev];
+                next[i] = { id: row.id, message: msg, created_at: row.created_at };
+                return next;
+              }
+              return [{ id: row.id, message: msg, created_at: row.created_at }, ...prev];
+            });
+            setMsgIndex(0);
+            setTickerShown(true);
+          }
+        }
+      )
+      .subscribe((status) => {
+        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+          console.warn("[save-the-date] realtime:", status);
+        }
+      });
+
+    return () => { supabase.removeChannel(channel); };
+  }, [saveTheDateId, supabase]);
 
   // Ticker: un mensaje a la vez. Rotación en dos fases: fade-out → cambio → fade-in
   useEffect(() => {
@@ -114,13 +163,18 @@ export default function Reactions({ saveTheDateId, onMessagesChange }: Reactions
     return () => { clearInterval(id); if (swap) clearTimeout(swap); };
   }, [messages.length, historyOpen]);
 
-  const react = () => {
-    spawn(7);
+  const react = (emoji: string) => {
+    spawn(emoji, 7);
     if (!saveTheDateId) return; // preview del editor
     supabase
       .from("save_the_date_reactions")
-      .insert({ save_the_date_id: saveTheDateId, emoji: HEART })
-      .then(({ error }) => { if (error) console.error("[reaction]", error); });
+      .insert({ save_the_date_id: saveTheDateId, emoji })
+      .select("id")
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (error) return console.error("[reaction]", error);
+        if (data?.id) ownIdsRef.current.add(String(data.id));
+      });
   };
 
   const send = () => {
@@ -129,7 +183,7 @@ export default function Reactions({ saveTheDateId, onMessagesChange }: Reactions
     setMessage("");
     setSent(true);
     setTimeout(() => setSent(false), 2500);
-    spawn(5);
+    spawn(HEART, 5);
     // optimista: aparece de inmediato en el ticker
     setMessages((prev) => [{ id: `local-${Date.now()}`, message: text, created_at: new Date().toISOString() }, ...prev]);
     setMsgIndex(0);
@@ -138,7 +192,19 @@ export default function Reactions({ saveTheDateId, onMessagesChange }: Reactions
     supabase
       .from("save_the_date_reactions")
       .insert({ save_the_date_id: saveTheDateId, message: text })
-      .then(({ error }) => { if (error) console.error("[reaction]", error); });
+      .select("id, created_at")
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (error) return console.error("[reaction]", error);
+        if (!data?.id) return;
+        ownIdsRef.current.add(String(data.id));
+        // el optimista pasa a tener el id real (así el eco no lo duplica)
+        setMessages((prev) => prev.map((m) =>
+          String(m.id).startsWith("local-") && m.message === text
+            ? { id: data.id, message: text, created_at: data.created_at }
+            : m
+        ));
+      });
   };
 
   const fmtTime = (iso: string) =>
@@ -191,15 +257,20 @@ export default function Reactions({ saveTheDateId, onMessagesChange }: Reactions
           onKeyDown={(e) => { if (e.key === "Enter") send(); }}
         />
         <div className={`${styles.actionSlot} ${hasText ? styles.actionSlotWide : ""}`}>
-          <button
-            className={`${styles.slotItem} ${styles.heartBtn} ${!hasText ? styles.slotItemActive : ""}`}
-            onClick={react}
-            tabIndex={hasText ? -1 : 0}
-            aria-label="Reaccionar con corazón"
-            aria-hidden={hasText}
-          >
-            {HEART}
-          </button>
+          <div className={`${styles.slotItem} ${styles.emojiRow} ${!hasText ? styles.slotItemActive : ""}`}>
+            {EMOJIS.map((e) => (
+              <button
+                key={e}
+                className={styles.emojiBtn}
+                onClick={() => react(e)}
+                tabIndex={hasText ? -1 : 0}
+                aria-label={`Reaccionar ${e}`}
+                aria-hidden={hasText}
+              >
+                {e}
+              </button>
+            ))}
+          </div>
           <button
             className={`${styles.slotItem} ${styles.sendBtn} ${hasText ? styles.slotItemActive : ""}`}
             onClick={send}
@@ -217,8 +288,11 @@ export default function Reactions({ saveTheDateId, onMessagesChange }: Reactions
           className={`${styles.sheetBackdrop} ${sheetClosing ? styles.backdropClosing : ""}`}
           onClick={closeSheet}
         >
+          {/* El desenfoque va inline: el pipeline de CSS de Next descarta
+              `backdrop-filter` en los módulos de este repo. */}
           <div
             className={`${styles.sheet} ${sheetClosing ? styles.sheetClosing : ""}`}
+            style={{ backdropFilter: "blur(40px)", WebkitBackdropFilter: "blur(40px)" }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className={styles.sheetHandle} />

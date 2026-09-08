@@ -124,7 +124,7 @@
     z-index: 50;
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
 }
 
 .input {
@@ -152,7 +152,9 @@
    Apilados con position absolute (anclados a la derecha del slot). */
 .actionSlot {
     position: relative;
-    width: 48px;
+    /* exacto al ancho de la fila de 3 emojis: cualquier sobrante se vería
+       como aire extra entre el input y el primer emoji */
+    width: 110px;
     height: 48px;
     flex-shrink: 0;
     transition: width 0.3s ease;
@@ -178,13 +180,24 @@
     pointer-events: auto;
 }
 
-.heartBtn {
+.emojiRow {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.emojiBtn {
     background: transparent;
     border: none;
-    font-size: 30px;
+    font-size: 26px;
     line-height: 1;
     cursor: pointer;
     padding: 4px;
+    transition: transform 0.15s ease;
+}
+
+.emojiBtn:active {
+    transform: scale(1.35);
 }
 
 .sendBtn {
@@ -233,9 +246,10 @@
     display: flex;
     flex-direction: column;
     border-radius: 24px 24px 0 0;
-    background: rgba(255, 255, 255, 0.94);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
+    /* Panel translúcido con desenfoque alto (sin liquid glass).
+       El blur va inline en Reactions.tsx: aquí el pipeline lo descarta. */
+    background: rgba(155, 160, 155, 0.28);
+    overflow: hidden;
     padding: 12px 20px 24px;
     box-sizing: border-box;
     animation: sheetIn 0.28s ease;
@@ -259,7 +273,7 @@
     width: 44px;
     height: 4px;
     border-radius: 99px;
-    background: rgba(0, 0, 0, 0.18);
+    background: rgba(255, 255, 255, 0.4);
     margin: 4px auto 10px;
     flex-shrink: 0;
 }
@@ -268,7 +282,7 @@
     font-family: Poppins, sans-serif;
     font-size: 15px;
     font-weight: 600;
-    color: #16323d;
+    color: #FFFFFF;
     text-align: center;
     margin-bottom: 10px;
     flex-shrink: 0;
@@ -287,7 +301,7 @@
     align-items: flex-start;
     gap: 12px;
     padding: 12px 6px;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .sheetRow:last-child {
@@ -295,7 +309,7 @@
 }
 
 .sheetRow .msgAvatar {
-    background: #F1EDF4;
+    background: rgba(255, 255, 255, 0.18);
 }
 
 .sheetRowBody {
@@ -309,12 +323,12 @@
     font-family: Poppins, sans-serif;
     font-size: 14px;
     line-height: 1.45;
-    color: #29262D;
+    color: #FFFFFF;
     word-break: break-word;
 }
 
 .sheetRowMeta {
     font-family: Poppins, sans-serif;
     font-size: 11px;
-    color: #787878;
+    color: rgba(255, 255, 255, 0.6);
 }

@@ -6,13 +6,17 @@ import { darker } from "@/helpers/functions";
 import { Cover } from "@/components/Invitation/Cover/Cover";
 import { AddToCalendar } from "@/components/AddToCalendar/AddToCalendar";
 import Reactions from "./Reactions";
+import { GLASS_BRILLO, GLASS_EFECTO, glassTinte } from "./glass";
 import { CoverSection, Font, Generals, NewInvitation } from "@/types/new_invitation";
 import styles from "./save-the-date.module.css";
 
 // El cover del Save the Date extiende al de la invitación con la tipografía
 // del countdown (cover.date.typeFace) — vive solo en save_the_dates.cover.
 type StdDate = CoverSection["date"] & { typeFace?: string | null };
-type StdCover = Omit<CoverSection, "date"> & { date: StdDate };
+type StdCover = Omit<CoverSection, "date"> & {
+  date: StdDate;
+  button?: { color?: string | null } | null; // tinte del CTA (editable)
+};
 
 type SaveTheDateProps = {
   cover: Partial<StdCover> | null;
@@ -37,6 +41,7 @@ const DEFAULT_COVER: StdCover = {
     },
   },
   date: { value: "", active: true, color: "#FFFFFF", type: null, typeFace: null },
+  button: { color: "rgba(74, 113, 145, 0.5)" },
   song: null,
   image: {
     prod: null,
@@ -62,18 +67,18 @@ const DEFAULT_GENERALS: Generals = {
   texture: null,
 };
 
-// Look "liquid glass" del CTA (mismo recipe que el reproductor de música comprimido)
+// Acabado "liquid glass" del CTA: el botón va transparente encima de dos capas
+// (efecto y tinte+brillo) que replican el recipe del sidebar rail.
 const GLASS_BUTTON: React.CSSProperties = {
+  position: "relative",
+  zIndex: 3,
   minHeight: "44px",
   borderRadius: "99px",
   padding: "0 18px",
-  border: "1px solid rgba(255, 255, 255, 0.45)",
-  background: "rgba(255, 255, 255, 0.42)",
-  backdropFilter: "blur(28px) saturate(200%)",
-  WebkitBackdropFilter: "blur(28px) saturate(200%)",
-  boxShadow:
-    "0 8px 32px rgba(0, 0, 0, 0.14), 0 2px 8px rgba(0, 0, 0, 0.08), inset 0 1.5px 0 rgba(255, 255, 255, 0.65), inset 0 -1px 0 rgba(255, 255, 255, 0.15)",
-  color: "#111",
+  border: "none",
+  background: "transparent",
+  boxShadow: "none",
+  color: "#FFFFFF",
   fontFamily: "Poppins, sans-serif",
   fontWeight: 600,
   fontSize: "14px",
@@ -96,6 +101,7 @@ function normalizeCover(raw: Partial<StdCover> | null, eventDate: string | null)
       ...(eventDate ? { value: eventDate } : {}),
     },
     song: c.song ?? null,
+    button: { ...DEFAULT_COVER.button, ...(c.button ?? {}) },
     image: { ...DEFAULT_COVER.image, ...(c.image ?? {}) },
   };
 }
@@ -221,19 +227,35 @@ export default function SaveTheDate({ cover, eventDate, saveTheDateId = null }: 
         )}
       </div>
 
+      {/* Filtro de desplazamiento del acabado liquid glass */}
+      <svg aria-hidden width="0" height="0" style={{ position: "absolute" }}>
+        <defs>
+          <filter id="liquido" x="0%" y="0%" width="100%" height="100%" colorInterpolationFilters="sRGB">
+            <feTurbulence type="fractalNoise" baseFrequency="0.008 0.008" numOctaves={2} seed={92} result="ruido" />
+            <feGaussianBlur in="ruido" stdDeviation="2" result="ruidoSuave" />
+            <feDisplacementMap in="SourceGraphic" in2="ruidoSuave" scale={70} xChannelSelector="R" yChannelSelector="G" />
+          </filter>
+        </defs>
+      </svg>
+
       {/* CTA glass fijo arriba, sobre el cover */}
       {startDate && (
         <div className={styles.ctaFixed}>
-          <AddToCalendar
-            name={eventName}
-            startDate={startDate}
-            primary="#16323d"
-            accent="#F5F3F2"
-            label="Save the date"
-            buttonStyle={GLASS_BUTTON}
-            menuClassName={styles.glassMenu}
-            placement="bottomRight"
-          />
+          <span className={styles.glassWrap}>
+            <span aria-hidden style={GLASS_EFECTO} />
+            <span aria-hidden style={glassTinte(normalized.button?.color ?? "rgba(74, 113, 145, 0.5)")} />
+            <span aria-hidden style={GLASS_BRILLO} />
+            <AddToCalendar
+              name={eventName}
+              startDate={startDate}
+              primary="#16323d"
+              accent="#F5F3F2"
+              label="Save the date"
+              buttonStyle={GLASS_BUTTON}
+              menuClassName={styles.glassMenu}
+              placement="bottomRight"
+            />
+          </span>
         </div>
       )}
 
