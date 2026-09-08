@@ -7,7 +7,7 @@ import { darker } from "@/helpers/functions";
 import styles from "./ticket.module.css";
 import { Button, QRCode, Spin } from "antd";
 import { useEffect, useRef, useState } from "react";
-import { Check, Compass, Copy, X } from "lucide-react";
+import { Check, Compass, Copy, ExternalLink, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 const isIOS = () =>
@@ -15,19 +15,17 @@ const isIOS = () =>
   /iPad|iPhone|iPod/.test(navigator.userAgent);
 
 /**
- * Detecta el navegador embebido de WhatsApp / Instagram / Facebook / etc.
+ * Solo Safari puede entregar un .pkpass a Apple Wallet. Los navegadores
+ * embebidos (WhatsApp, Instagram, Facebook) son un webview dentro de la app:
+ * en lugar de la hoja de "Agregar a Apple Wallet" muestran el archivo como
+ * texto crudo.
  *
- * Esos navegadores son un WKWebView dentro de la app y NO pueden presentar la
- * hoja nativa de "Agregar a Apple Wallet": el .pkpass simplemente no hace nada.
- * En iOS el user agent de un WKWebView embebido no incluye el token "Safari/",
- * mientras que Safari, Chrome (CriOS) y Firefox (FxiOS) sí lo incluyen.
+ * NO se puede distinguir por user agent — el navegador de WhatsApp también
+ * incluye el token "Safari/". La prueba confiable es `ApplePaySession`: Apple
+ * la expone únicamente en Safari, nunca en un webview embebido.
  */
-const isEmbeddedBrowser = () => {
-  if (typeof navigator === "undefined") return false;
-  const ua = navigator.userAgent;
-  if (/FBAN|FBAV|FB_IAB|Instagram|Line\/|MicroMessenger|GSA\//.test(ua)) return true;
-  return /iPad|iPhone|iPod/.test(ua) && !/Safari\//.test(ua);
-};
+const canAddPassToWallet = () =>
+  typeof window !== "undefined" && "ApplePaySession" in window;
 
 type TicketColors = {
   primary: string;
@@ -89,14 +87,10 @@ export function Ticket({ guest, invitation, ui, colors, onClose, id }: TicketPro
 
     const url = buildPassUrl()
 
-    // Dentro del navegador de WhatsApp la hoja de Wallet nunca aparece: hay que
-    // salir a Safari. `x-safari-https://` es el esquema que iOS usa para eso;
-    // si la app lo bloquea, la pantalla no cambia y mostramos las instrucciones.
-    if (isEmbeddedBrowser()) {
-      window.location.href = url.replace(/^http(s?):\/\//, "x-safari-http$1://")
-      later(() => {
-        if (document.visibilityState === "visible") setPassUrl(url)
-      }, 1200)
+    // Fuera de Safari no hay forma de agregar el pase: hay que salir del
+    // webview primero. La hoja explica cómo y ofrece el intento automático.
+    if (!canAddPassToWallet()) {
+      setPassUrl(url)
       return
     }
 
@@ -105,6 +99,18 @@ export function Ticket({ guest, invitation, ui, colors, onClose, id }: TicketPro
     setAddingToWallet(true)
     window.location.href = url
     later(() => setAddingToWallet(false), 3000)
+  }
+
+  /**
+   * Salta a Safari con el esquema `x-safari-https://`. Se dispara con un tap
+   * del invitado porque los webviews solo permiten abrir otra app a partir de
+   * un gesto del usuario. Si Safari ya es el navegador activo (falso negativo
+   * de `canAddPassToWallet`) el esquema lo maneja Safari mismo y también
+   * termina abriendo la hoja de Wallet.
+   */
+  const openPassInSafari = () => {
+    if (!passUrl) return
+    window.location.href = passUrl.replace(/^http(s?):\/\//, "x-safari-http$1://")
   }
 
   const copyPassUrl = async () => {
@@ -241,14 +247,29 @@ export function Ticket({ guest, invitation, ui, colors, onClose, id }: TicketPro
               Ábrelo en Safari
             </span>
             <span className={`b3 ${styles.wallet_help_text}`}>
-              El navegador de WhatsApp no puede guardar pases en Apple Wallet.
-              Toca los tres puntos de arriba a la derecha y elige
-              {" "}<b>Abrir en Safari</b>, o copia la liga y pégala en Safari.
+              Apple Wallet solo acepta pases desde Safari, y estás dentro del
+              navegador de WhatsApp.
             </span>
 
             <Button
               block
               size="large"
+              type="primary"
+              icon={<ExternalLink size={14} />}
+              onClick={openPassInSafari}
+            >
+              Abrir en Safari
+            </Button>
+
+            <span className={`c1 ${styles.wallet_help_hint}`}>
+              Si no se abre, toca el botón <b>···</b> de arriba a la derecha y
+              elige <b>Abrir en Safari</b>, o copia la liga y pégala allá.
+            </span>
+
+            <Button
+              block
+              size="small"
+              type="text"
               icon={copied ? <Check size={14} /> : <Copy size={14} />}
               onClick={copyPassUrl}
             >
