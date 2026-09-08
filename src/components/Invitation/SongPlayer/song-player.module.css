@@ -75,6 +75,12 @@
   animation-play-state: running;
 }
 
+/* Modo compacto: el disco ocupa el círculo completo, sin pill ni info */
+.discArtCompact {
+  width: 30px;
+  height: 30px;
+}
+
 @keyframes spinDisc {
   from { transform: rotate(0deg); }
   to   { transform: rotate(360deg); }

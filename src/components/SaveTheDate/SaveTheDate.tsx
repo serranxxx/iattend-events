@@ -6,6 +6,7 @@ import { darker } from "@/helpers/functions";
 import { Cover } from "@/components/Invitation/Cover/Cover";
 import { AddToCalendar } from "@/components/AddToCalendar/AddToCalendar";
 import Reactions from "./Reactions";
+import SongPlayer from "@/components/Invitation/SongPlayer/SongPlayer";
 import { GLASS_BRILLO, GLASS_EFECTO, glassTinte } from "./glass";
 import { CoverSection, Font, Generals, NewInvitation } from "@/types/new_invitation";
 import styles from "./save-the-date.module.css";
@@ -273,6 +274,17 @@ export default function SaveTheDate({ cover, eventDate, saveTheDateId = null }: 
             />
           </span>
         </div>
+      )}
+
+      {/* Reproductor de la canción, igual que en la invitación */}
+      {normalized.song && (
+        <SongPlayer
+          song={normalized.song}
+          accent={DEFAULT_GENERALS.colors.accent ?? "#F5F3F2"}
+          secondary={DEFAULT_GENERALS.colors.secondary ?? "#F5F3F2"}
+          dev={false}
+          compact
+        />
       )}
 
       {/* Reacciones estilo historia de Instagram */}

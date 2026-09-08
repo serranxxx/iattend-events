@@ -18,6 +18,10 @@ type SongPlayerProps = {
   secondary?: string;
   dev?: boolean;
   accent: string;
+  // Modo compacto (Save the Date): el player queda siempre como círculo
+  // cerrado —sin expandir a pill— y el estado se lee por el disco: girando
+  // = suena, quieto = pausado. Evita que choque con el CTA de la pieza.
+  compact?: boolean;
 };
 
 // Módulo-scope, no estado de React: un cambio de idioma hace que page.tsx
@@ -41,7 +45,7 @@ export function notifyLanguageChanging() {
   languageChangeInFlight = true;
 }
 
-export default function SongPlayer({ song, accent = "#000000", dev = false }: SongPlayerProps) {
+export default function SongPlayer({ song, accent = "#000000", dev = false, compact = false }: SongPlayerProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [playing, setPlaying] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -127,7 +131,7 @@ export default function SongPlayer({ song, accent = "#000000", dev = false }: So
   // pill original con disco, título y artista.
   const isUpload = song.source === "upload";
 
-  if (isUpload) {
+  if (isUpload || (compact && !song.albumArt)) {
     if (!previewUrl) return null;
 
     return (
@@ -143,32 +147,37 @@ export default function SongPlayer({ song, accent = "#000000", dev = false }: So
   }
 
   return (
-    <div className={`${styles.player} ${!playing ? styles.playerCollapsed : ''}`}>
+    <div className={`${styles.player} ${(!playing || compact) ? styles.playerCollapsed : ''}`}>
 
       {song.albumArt && (
         <img
           src={song.albumArt}
           alt=""
           onClick={toggleAudio}
-          className={`${styles.discArt} ${playing ? styles.discSpinning : ''}`}
+          className={`${styles.discArt} ${compact ? styles.discArtCompact : ''} ${playing ? styles.discSpinning : ''}`}
+          aria-label={playing ? "Pausar música" : "Reproducir música"}
         />
       )}
 
-      <div className={`${styles.info} ${!playing ? styles.infoHidden : ''}`}>
-        <span className={styles.title} style={{ color: accent }}>{song.name}</span>
-        {song.artist && (
-          <span className={styles.artist} style={{ color: accent }}>{song.artist}</span>
-        )}
-      </div>
+      {!compact && (
+        <>
+          <div className={`${styles.info} ${!playing ? styles.infoHidden : ''}`}>
+            <span className={styles.title} style={{ color: accent }}>{song.name}</span>
+            {song.artist && (
+              <span className={styles.artist} style={{ color: accent }}>{song.artist}</span>
+            )}
+          </div>
 
-      {previewUrl && (
-        <button
-          className={`${styles.toggleBtn} ${!playing ? styles.toggleBtnHidden : ''}`}
-          onClick={toggleAudio}
-          style={{ color: accent }}
-        >
-          <Pause size={18} fill={accent} strokeWidth={0} />
-        </button>
+          {previewUrl && (
+            <button
+              className={`${styles.toggleBtn} ${!playing ? styles.toggleBtnHidden : ''}`}
+              onClick={toggleAudio}
+              style={{ color: accent }}
+            >
+              <Pause size={18} fill={accent} strokeWidth={0} />
+            </button>
+          )}
+        </>
       )}
 
     </div>
