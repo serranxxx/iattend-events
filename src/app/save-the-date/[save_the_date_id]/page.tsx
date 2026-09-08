@@ -1,10 +1,15 @@
 import { notFound } from "next/navigation";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { getPublicServerClient } from "@/lib/supabase/public-server";
 import { CoverSection } from "@/types/new_invitation";
 import SaveTheDate from "@/components/SaveTheDate/SaveTheDate";
 
 export const dynamic = "force-dynamic";
+
+// La barra de estado de Safari toma este color (si no, sale gris/blanca)
+export const viewport: Viewport = {
+  themeColor: "#0c171b",
+};
 
 // --------------------
 // Types

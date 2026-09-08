@@ -2,13 +2,12 @@
    Suben desde bottom-right */
 .floatLayer {
     position: fixed;
-    right: 0;
-    bottom: 0;
-    width: 45%;
-    height: 75vh;
+    /* Cubre todo el viewport y sin recorte: la caja anterior (45% × 75vh)
+       cortaba los emojis al cruzar sus bordes durante la animación. */
+    inset: 0;
     pointer-events: none;
     z-index: 45;
-    overflow: hidden;
+    overflow: visible;
 }
 
 .floater {

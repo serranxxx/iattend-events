@@ -58,10 +58,12 @@ export default function Reactions({ saveTheDateId, onMessagesChange }: Reactions
     const batch: Floater[] = Array.from({ length: count }, () => ({
       id: ++idRef.current,
       emoji,
-      right: 4 + Math.random() * 26,
+      // arranca separado del borde y deriva hacia adentro: así ni el emoji ni
+      // su deriva final (drift * 1.6) se salen de la pantalla
+      right: 8 + Math.random() * 16,
       size: 22 + Math.random() * 22,
       duration: 2.6 + Math.random() * 1.8,
-      drift: -30 + Math.random() * 70,
+      drift: -45 + Math.random() * 60,
     }));
     setFloaters((f) => [...f, ...batch]);
     setTimeout(() => {

@@ -154,6 +154,22 @@ export default function SaveTheDate({ cover, eventDate, saveTheDateId = null }: 
   const mediaItems = mediaList.filter((s) => typeof s === "string" && !!s.trim());
   const isCarousel = mediaItems.length > 1;
 
+  // iOS: al abrir el teclado el viewport se encoge y asoma el fondo del
+  // documento. Se pinta oscuro mientras la pieza está montada y se restaura
+  // al salir, para no afectar al resto de las rutas.
+  useEffect(() => {
+    const html = document.documentElement;
+    const body = document.body;
+    const prevHtml = html.style.background;
+    const prevBody = body.style.background;
+    html.style.background = "#0c171b";
+    body.style.background = "#0c171b";
+    return () => {
+      html.style.background = prevHtml;
+      body.style.background = prevBody;
+    };
+  }, []);
+
   useEffect(() => {
     if (activeIdx >= mediaItems.length && mediaItems.length > 0) setActiveIdx(0);
   }, [mediaItems.length, activeIdx]);
