@@ -45,10 +45,23 @@ async function fetchSaveTheDate(rawId: string) {
   return (data as SaveTheDateRow | null) ?? null;
 }
 
-function firstImage(cover: Partial<CoverSection> | null): string | undefined {
-  const prod = cover?.image?.prod;
-  if (typeof prod === "string" && prod.trim()) return prod;
-  if (Array.isArray(prod)) return prod.find((s) => typeof s === "string" && !!s.trim());
+const isVideo = (url: string) => /\.(mp4|webm|mov|m4v)(\?|$)/i.test(url);
+
+/**
+ * Imagen para la vista previa del link (WhatsApp, OG, Twitter).
+ *
+ * Cuando la portada es un video no hay nada que enseñar: el editor pide una
+ * "imagen para el link" y se guarda en `cover.image.poster`. Si no hay poster
+ * se usa la primera imagen del carrusel, nunca el video.
+ */
+function linkImage(cover: Partial<CoverSection> | null): string | undefined {
+  const image = cover?.image as (Partial<CoverSection>["image"] & { poster?: string | null }) | undefined;
+  const poster = image?.poster;
+  if (typeof poster === "string" && poster.trim()) return poster;
+
+  const prod = image?.prod;
+  if (typeof prod === "string" && prod.trim() && !isVideo(prod)) return prod;
+  if (Array.isArray(prod)) return prod.find((s) => typeof s === "string" && !!s.trim() && !isVideo(s));
   return undefined;
 }
 
@@ -67,7 +80,7 @@ export async function generateMetadata({ params }: { params: Promise<RouteParams
   }
 
   const title = row.cover?.title?.text?.value?.trim() || "Save the date";
-  const url_image = firstImage(row.cover);
+  const url_image = linkImage(row.cover);
 
   return {
     title,
