@@ -16,6 +16,25 @@ type Alta = "si" | "no";
 const TOTAL_STEPS = 4;
 const PAGE_BG = "#eeeadf";
 
+/**
+ * `save-the-date` es la variante que se embebe en el editor del Save the
+ * Date (iattend-vite): cambia el encabezado, deja fuera el CTA a la landing
+ * —ahí la persona ya está dentro del producto— y su línea de tiempo siempre
+ * incluye el save the date, aunque los tiempos den para prescindir de él.
+ */
+export type EnvioVariant = "invitacion" | "save-the-date";
+
+const COPY: Record<EnvioVariant, { title: string; sub: string }> = {
+  invitacion: {
+    title: "¿Cuándo enviar tu invitación?",
+    sub: "Responde 4 preguntas rápidas y te decimos exactamente cuándo mandar el save the date, la invitación formal y cuándo cerrar confirmaciones.",
+  },
+  "save-the-date": {
+    title: "¿Cuándo enviar tu save the date?",
+    sub: "Responde 4 preguntas rápidas y te decimos cuándo mandarlo — y de paso cuándo enviar la invitación formal y cerrar confirmaciones.",
+  },
+};
+
 function fmt(date: Dayjs) {
   return date.locale("es").format("D [de] MMMM [de] YYYY");
 }
@@ -28,7 +47,10 @@ interface Milestone {
   calendarName?: string;
 }
 
-export default function EnvioInvitacion() {
+export default function EnvioInvitacion({ variant = "invitacion" }: { variant?: EnvioVariant }) {
+  const isStd = variant === "save-the-date";
+  const copy = COPY[variant];
+
   const [step, setStep] = useState(1);
   const [fechaEvento, setFechaEvento] = useState<Dayjs | null>(null);
   const [tipo, setTipo] = useState<Tipo | null>(null);
@@ -98,6 +120,12 @@ export default function EnvioInvitacion() {
       if (esAlta) {
         saveTheDate = fechaEvento.subtract(5, "month");
         saveTheDateLabel = "Save the date (recomendado por la temporada)";
+      } else if (isStd) {
+        // Boda local, sin foráneos y fuera de temporada alta: la invitación
+        // sola alcanzaría, pero aquí el save the date es el tema, así que se
+        // recomienda con holgura sobre la invitación formal.
+        saveTheDate = fechaEvento.subtract(4, "month");
+        saveTheDateLabel = "Save the date";
       }
       invitacion = fechaEvento.subtract(10, "week");
       rsvp = fechaEvento.subtract(3, "week");
@@ -143,13 +171,9 @@ export default function EnvioInvitacion() {
       <div className={styles.wrap} >
         <Text className={styles.eyebrow}>I attend · Herramienta gratuita</Text>
         <Title level={1} className={styles.heading}>
-          ¿Cuándo enviar tu invitación?
+          {copy.title}
         </Title>
-        <Paragraph className={styles.sub}>
-          Responde 4 preguntas rápidas y te decimos exactamente cuándo mandar
-          el save the date, la invitación formal y cuándo cerrar
-          confirmaciones.
-        </Paragraph>
+        <Paragraph className={styles.sub}>{copy.sub}</Paragraph>
 
         <Progress
           percent={progressPercent}
@@ -364,18 +388,20 @@ export default function EnvioInvitacion() {
           tu wedding planner. Ajusta las fechas según tu caso particular.
         </Paragraph>
 
-        <div className={styles.cta}>
-          <Text className={styles.cta_text}>Tu evento bajo control</Text>
-          <Button
-            type="primary"
-            href="https://iattend.mx"
-            target="_blank"
-            rel="noreferrer"
-            className={styles.cta_btn}
-          >
-            Descubre cómo funciona
-          </Button>
-        </div>
+        {!isStd && (
+          <div className={styles.cta}>
+            <Text className={styles.cta_text}>Tu evento bajo control</Text>
+            <Button
+              type="primary"
+              href="https://iattend.mx"
+              target="_blank"
+              rel="noreferrer"
+              className={styles.cta_btn}
+            >
+              Descubre cómo funciona
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );
