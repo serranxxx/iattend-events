@@ -15,6 +15,7 @@ import { Notices } from "../Notices/Notices";
 import { Gallery } from "../Gallery/Gallery";
 import Image from "next/image";
 import { Texture } from "@/lib/textures/cache";
+import type { GiftBrand } from "@/lib/giftBrands/cache";
 import { TextureOverlay } from "./TexturesOverlay";
 import { Button, Input, message } from "antd";
 import Confirm from "../Confirm/Confirm";
@@ -50,6 +51,7 @@ type invProps = {
   scrollToSection?: string | null;
   onSectionChange?: (_section: string) => void;
   textures?: Texture[];
+  giftBrands?: GiftBrand[];
   textureOverride?: Texture | null;
 };
 
@@ -57,7 +59,7 @@ type invProps = {
 
 
 
-export default function Invitation({ password, invitationID, ui, lang, availableLanguages, invitation, loader, type, mongoID, dev, plan, phone_number, scrollToSection, onSectionChange, textures = [], textureOverride = null }: invProps) {
+export default function Invitation({ password, invitationID, ui, lang, availableLanguages, invitation, loader, type, mongoID, dev, plan, phone_number, scrollToSection, onSectionChange, textures = [], textureOverride = null, giftBrands = [] }: invProps) {
   const coverRef = useRef<HTMLDivElement>(null);
   const greetingRef = useRef<HTMLDivElement>(null);
   const peopleRef = useRef<HTMLDivElement>(null);
@@ -250,7 +252,7 @@ export default function Invitation({ password, invitationID, ui, lang, available
       case 5:
         return <DressCode ui={ui} key={index} ref={dresscodeRef} dev={dev} invitation={invitation} />;
       case 6:
-        return <Gifts ui={ui} key={index} ref={giftsRef} dev={false} invitation={invitation} />;
+        return <Gifts ui={ui} key={index} ref={giftsRef} dev={false} invitation={invitation} brands={giftBrands} />;
       case 7:
         return <Destinations invitationID={invitationID} ui={ui} key={index} ref={destinationRef} dev={false} invitation={invitation} />;
       case 8:

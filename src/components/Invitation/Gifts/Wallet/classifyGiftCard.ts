@@ -1,6 +1,4 @@
-// ❌ ya no importes imágenes desde src
-// import amazon from "../../../../assets/banks/AMAZON.png";
-// ...
+import type { GiftBrand } from "@/lib/giftBrands/cache";
 
 export type GiftCard = {
   kind: "store" | "bank";
@@ -8,26 +6,22 @@ export type GiftCard = {
   bank?: string | null;
 };
 
-export type BrandKey =
-  | "amazon"
-  | "banamex"
-  | "banorte"
-  | "bbva"
-  | "hsbc"
-  | "liverpool"
-  | "nu"
-  | "palacio"
-  | "santander"
-  | "scotiabank"
-  | "crelan"
-  | "sears";
-
-type BrandMeta = {
-  className: BrandKey | "default";
-  imagePath?: string; // 👉 ruta pública
+export type ResolvedGiftBrand = {
+  /** la marca del catálogo, o null si el string guardado no resuelve a ninguna */
+  brand: GiftBrand | null;
+  /** clave normalizada del string guardado; sirve como key estable de render */
+  key: string;
+  logoUrl: string | null;
+  background: string | null;
+  textColor: string | null;
 };
 
-const normalize = (s?: string) =>
+/**
+ * Espejo de public.gift_brand_key() en SQL y de normalizarClave() en
+ * iattend-vite (controllers/adminGiftBrands.js y GiftBrandLabPage.jsx).
+ * Si cambia uno, cambian los tres.
+ */
+export const normalizeBrandKey = (s?: string | null) =>
   (s ?? "")
     .toLowerCase()
     .normalize("NFD")
@@ -35,52 +29,30 @@ const normalize = (s?: string) =>
     .replace(/\s+/g, " ")
     .trim();
 
-const ALIAS_TO_KEY: Record<string, BrandKey> = {
-  liverpool: "liverpool",
-  "el puerto de liverpool": "liverpool",
-  "palacio de hierro": "palacio",
-  "el palacio de hierro": "palacio",
-  amazon: "amazon",
-  crelan: "crelan",
-  sears: "sears",
-  bbva: "bbva",
-  banamex: "banamex",
-  citibanamex: "banamex",
-  banorte: "banorte",
-  santander: "santander",
-  hsbc: "hsbc",
-  scotiabank: "scotiabank",
-  nu: "nu",
-  nubank: "nu",
-  "nu bank": "nu",
-  "banco nu": "nu",
-};
+/**
+ * Resuelve la tarjeta contra el catálogo `gift_brands`.
+ *
+ * Una tarjeta guarda el NOMBRE de la marca como texto libre (cards[].brand para
+ * tiendas, cards[].bank para bancos), no un id: el matcheo es por slug o por
+ * alias, ambos normalizados. Si no resuelve, la tarjeta se pinta sin logo ni
+ * fondo de marca — en /admin → Laboratorio → Regalos aparecen justamente esos
+ * valores para darlos de alta como alias.
+ */
+export function resolveGiftBrand(card: GiftCard, brands: GiftBrand[]): ResolvedGiftBrand {
+  const key = normalizeBrandKey(card.kind === "store" ? card.brand : card.bank);
 
-// 👇 mapea a rutas públicas
-const BRAND_META: Record<BrandKey, BrandMeta> = {
-  amazon: { className: "amazon", imagePath: "/assets/banks/AMAZON.png" },
-  crelan: { className: "crelan", imagePath: "/assets/banks/crelan.png" },
-  banamex: { className: "banamex", imagePath: "/assets/banks/BANAMEX.png" },
-  banorte: { className: "banorte", imagePath: "/assets/banks/BANORTE.png" },
-  bbva: { className: "bbva", imagePath: "/assets/banks/BBVA.png" },
-  hsbc: { className: "hsbc", imagePath: "/assets/banks/HSBC.png" },
-  liverpool: { className: "liverpool", imagePath: "/assets/banks/LIVERPOOL.png" },
-  nu: { className: "nu", imagePath: "/assets/banks/NU.png" },
-  palacio: { className: "palacio", imagePath: "/assets/banks/PALACIO.png" },
-  santander: { className: "santander", imagePath: "/assets/banks/SANTANDER.png" },
-  scotiabank: { className: "scotiabank", imagePath: "/assets/banks/SCOTIABANK.png" },
-  sears: { className: "sears", imagePath: "/assets/banks/SEARS.png" },
-};
+  const brand =
+    brands.find((b) => b.kind === card.kind && (b.slug === key || b.aliases.includes(key))) ??
+    // Fallback por si una tarjeta vieja guardó la marca en el campo del otro
+    // tipo (p. ej. un banco escrito en `brand`).
+    brands.find((b) => b.slug === key || b.aliases.includes(key)) ??
+    null;
 
-export function classifyGiftCard(card: GiftCard): {
-  key?: BrandKey;
-  className: string;
-  imageUrl: string | null; // listo para <img> o next/image
-} {
-  const raw = card.kind === "store" ? card.brand ?? "" : card.bank ?? "";
-  const key = ALIAS_TO_KEY[normalize(raw)];
-  if (!key) return { className: "default", imageUrl: null };
-
-  const meta = BRAND_META[key];
-  return { key, className: meta.className, imageUrl: meta.imagePath ?? null };
+  return {
+    brand,
+    key: key || "sin-marca",
+    logoUrl: brand?.logoUrl ?? null,
+    background: brand?.background ?? null,
+    textColor: brand?.textColor ?? null,
+  };
 }

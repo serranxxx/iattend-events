@@ -4,7 +4,8 @@ import React, { useEffect, useRef, useState } from "react";
 import styles from "./wallet.module.css";
 import { GiftCard, InvitationUIBundle, NewInvitation } from "@/types/new_invitation";
 import { darker } from "@/helpers/functions";
-import { classifyGiftCard } from "./classifyGiftCard";
+import { resolveGiftBrand } from "./classifyGiftCard";
+import type { GiftBrand } from "@/lib/giftBrands/cache";
 import { Button, message } from "antd";
 import { MdArrowOutward } from "react-icons/md";
 import { FaCopy } from "react-icons/fa";
@@ -17,9 +18,11 @@ type CardProps = {
   invitation: NewInvitation;
   dev?: boolean;
   ui: InvitationUIBundle;
+  /** catálogo `gift_brands`; vacío = las tarjetas se pintan sin logo ni fondo de marca */
+  brands?: GiftBrand[];
 };
 
-export default function Wallet({ ui, invitation, dev: _dev = false }: CardProps) {
+export default function Wallet({ ui, invitation, dev: _dev = false, brands = [] }: CardProps) {
   const [base, setBase] = useState<number[]>([]);
   const baseRef = useRef<number[]>([]);
   const [bottoms, setBottoms] = useState<number[]>([]);
@@ -235,15 +238,23 @@ export default function Wallet({ ui, invitation, dev: _dev = false }: CardProps)
           }}
         >
           {bottoms.length > 0 &&
-            cards?.map((card, index) => (
+            cards?.map((card, index) => {
+              const marca = resolveGiftBrand(card, brands);
+
+              return (
               <FadeDown
-                key={`${classifyGiftCard(card).className}-${index}`} // ✅ key para estabilidad en el render
+                key={`${marca.key}-${index}`} // ✅ key para estabilidad en el render
                 duration={index}
                 zIndex={movedIndex === index ? 12 : cards.length + 5 - index}
               >
                 <div
-                  className={`${styles.card} ${styles[classifyGiftCard(card).className]}`}
+                  className={styles.card}
                   style={{
+                    // Fondo y color de texto vienen del catálogo: antes eran una
+                    // clase CSS por marca en wallet.module.css, lo que hacía
+                    // imposible dar de alta una marca nueva sin tocar el repo.
+                    background: marca.background ?? undefined,
+                    color: marca.textColor ?? undefined,
                     zIndex: movedIndex === index ? 12 : cards.length + 5 - index,
                     bottom: fanOpen && movedIndex === null ? `${(baseRef.current[index] ?? 0) + FAN_OFFSET}px` : `${bottoms[index]}px`,
                     padding: movedIndex === index ? "24px" : undefined,
@@ -268,7 +279,11 @@ export default function Wallet({ ui, invitation, dev: _dev = false }: CardProps)
                       height: movedIndex === index ? "24px" : undefined,
                     }}
                   >
-                    <img src={classifyGiftCard(card).imageUrl ?? ""} alt="" style={{ height: "100%", objectFit: "cover" }} />
+                    {marca.logoUrl ? (
+                      <img src={marca.logoUrl} alt="" style={{ height: "100%", objectFit: "cover" }} />
+                    ) : (
+                      <span>{card.kind === "store" ? card.brand : card.bank}</span>
+                    )}
                   </div>
 
                   {card.kind === "store" ? (
@@ -305,7 +320,8 @@ export default function Wallet({ ui, invitation, dev: _dev = false }: CardProps)
                   )}
                 </div>
               </FadeDown>
-            ))}
+              );
+            })}
 
           {/* Bolsillo: se pinta ENCIMA de las tarjetas (z-index 10) a propósito, para el
               efecto de "tarjetas dentro de la cartera". No hacerlo pointer-events: none:

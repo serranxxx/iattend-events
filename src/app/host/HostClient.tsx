@@ -3,6 +3,7 @@ import Invitation from "@/components/Invitation/Invitation/Invitation";
 import uiES from "@/data/ui/invitation_ui_es";
 import { InvitationType, InvitationUIBundle, NewInvitation } from "@/types/new_invitation";
 import { Texture } from "@/lib/textures/cache";
+import type { GiftBrand } from "@/lib/giftBrands/cache";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 
@@ -17,11 +18,12 @@ const ALLOWED_ORIGINS = [
 
 type Props = {
   textures: Texture[];
+  giftBrands: GiftBrand[];
 };
 
 type FontOverride = { family: string; google_axis?: string | null };
 
-export default function HostClient({ textures }: Props) {
+export default function HostClient({ textures, giftBrands }: Props) {
   const [invitation, setInvitation] = useState<NewInvitation | null>(null);
   const [textureOverride, setTextureOverride] = useState<Texture | null>(null);
   const [fontOverride, setFontOverride] = useState<FontOverride[] | null>(null);
@@ -138,6 +140,7 @@ export default function HostClient({ textures }: Props) {
         scrollToSection={scrollToSection}
         onSectionChange={handleSectionChange}
         textures={textures}
+        giftBrands={giftBrands}
         textureOverride={textureOverride}
       />
     </div>
