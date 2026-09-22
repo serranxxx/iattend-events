@@ -3,6 +3,7 @@ import React, { forwardRef } from "react";
 import { Separador } from "../Separator/Separator";
 import styles from "./gifts.module.css";
 import Wallet from "./Wallet/Wallet";
+import type { GiftBrand } from "@/lib/giftBrands/cache";
 import FadeLeft from "@/components/Motion/FadeLeft";
 import Image from "next/image";
 
@@ -10,9 +11,10 @@ type DresscodeProps = {
   dev: boolean;
   invitation: NewInvitation;
   ui: InvitationUIBundle;
+  brands?: GiftBrand[];
 };
 
-export const Gifts = forwardRef<HTMLDivElement, DresscodeProps>(function Greeting({ ui, dev, invitation }, ref) {
+export const Gifts = forwardRef<HTMLDivElement, DresscodeProps>(function Greeting({ ui, dev, invitation, brands = [] }, ref) {
   const content = invitation.gifts;
   const generals = invitation.generals;
 
@@ -99,7 +101,7 @@ export const Gifts = forwardRef<HTMLDivElement, DresscodeProps>(function Greetin
             >
               {
                 invitation.gifts.cards.length > 0 &&
-                <Wallet ui={ui} invitation={invitation} dev={dev} />
+                <Wallet ui={ui} invitation={invitation} dev={dev} brands={brands} />
               }
 
             </div>

@@ -7,6 +7,7 @@ import { getPublicServerClient } from "@/lib/supabase/public-server";
 import { getTranslatedInvitationFromCache } from "@/lib/translation/cache";
 import { getTranslatedCopy } from "@/lib/translation/copy-cache";
 import { getTextures } from "@/lib/textures/cache";
+import { getGiftBrands } from "@/lib/giftBrands/cache";
 
 export const dynamic = "force-dynamic";
 
@@ -153,6 +154,7 @@ export default async function InvitationDynamicPage({ params, searchParams }: Pa
 
   const ui = await getTranslatedCopy("invitation_ui_v1", lang ?? "es", "es");
   const textures = await getTextures();
+  const giftBrands = await getGiftBrands();
 
   return (
     <Invitation
@@ -172,6 +174,7 @@ export default async function InvitationDynamicPage({ params, searchParams }: Pa
       plan={plan}
       phone_number={phone_number}
       textures={textures}
+      giftBrands={giftBrands}
     />
   );
 }
