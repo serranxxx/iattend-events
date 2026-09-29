@@ -650,6 +650,7 @@ export default function Invitation({ password, invitationID, ui, lang, available
             guestName={guestInfo?.name ?? undefined}
             accentColor={'#000'}
             ui={ui}
+            lang={lang}
             onClose={() => setShowLia(false)}
           />
         )}

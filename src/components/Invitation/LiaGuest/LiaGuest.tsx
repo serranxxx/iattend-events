@@ -11,6 +11,8 @@ interface Message {
   role: "user" | "assistant";
   content: string;
   streaming?: boolean;
+  // Mensaje de error local: se muestra, pero no se reenvía al modelo.
+  error?: boolean;
 }
 
 interface LiaGuestProps {
@@ -18,6 +20,8 @@ interface LiaGuestProps {
   guestName?: string;
   accentColor?: string;
   ui?: InvitationUIBundle | null;
+  // Idioma en el que el invitado ve la invitación: pista para que Lia responda igual.
+  lang?: string | null;
   onClose: () => void;
 }
 
@@ -72,7 +76,7 @@ function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-export default function LiaGuest({ invitationID, guestName, accentColor, ui, onClose }: LiaGuestProps) {
+export default function LiaGuest({ invitationID, guestName, accentColor, ui, lang, onClose }: LiaGuestProps) {
   const prompts = ui?.liaGuest.prompts ?? [];
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
@@ -83,10 +87,23 @@ export default function LiaGuest({ invitationID, guestName, accentColor, ui, onC
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // Al cerrar el overlay el componente se desmonta: se corta la petición para
+  // no seguir pagando una respuesta que ya nadie va a leer.
+  useEffect(() => () => abortRef.current?.abort(), []);
+
+  const setLastAssistant = (message: Message) =>
+    setMessages((prev) => {
+      const next = [...prev];
+      if (next[next.length - 1]?.streaming) next[next.length - 1] = message;
+      return next;
+    });
+
   const sendMessage = async (text: string) => {
     if (!text.trim() || loading) return;
 
-    const history = messages.filter((m) => !m.streaming);
+    const history = messages
+      .filter((m) => !m.streaming && !m.error)
+      .map(({ role, content }) => ({ role, content }));
     setMessages((prev) => [
       ...prev,
       { role: "user", content: text.trim() },
@@ -94,7 +111,12 @@ export default function LiaGuest({ invitationID, guestName, accentColor, ui, onC
     ]);
     setLoading(true);
 
+    abortRef.current?.abort();
     abortRef.current = new AbortController();
+
+    let accumulated = "";
+    let finished = false;
+    let failed = false;
 
     try {
       const response = await fetch(`${API_URL}/ai/guest-chat`, {
@@ -104,60 +126,67 @@ export default function LiaGuest({ invitationID, guestName, accentColor, ui, onC
           invitation_id: invitationID,
           message: text.trim(),
           guest_name: guestName,
+          lang: lang ?? undefined,
           conversation_history: history,
         }),
         signal: abortRef.current.signal,
       });
 
-      if (!response.body) throw new Error("No response body");
+      // 4xx/5xx (límite, evento sin Lia, error) llegan como JSON, no como SSE.
+      if (!response.ok || !response.body) throw new Error(`HTTP ${response.status}`);
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
-      let accumulated = "";
+      // Un evento SSE puede quedar partido entre dos chunks: se guarda el
+      // pedazo incompleto hasta que llegue el resto.
+      let buffer = "";
 
-      while (true) {
+      while (!finished) {
         const { done, value } = await reader.read();
         if (done) break;
 
-        const lines = decoder.decode(value, { stream: true }).split("\n");
-        for (const line of lines) {
+        buffer += decoder.decode(value, { stream: true });
+        const events = buffer.split("\n\n");
+        buffer = events.pop() ?? "";
+
+        for (const raw of events) {
+          const line = raw.trim();
           if (!line.startsWith("data: ")) continue;
+
+          let event: { type?: string; text?: string };
           try {
-            const event = JSON.parse(line.slice(6));
-            if (event.type === "text") {
-              accumulated += event.text;
-              setMessages((prev) => {
-                const next = [...prev];
-                const last = next[next.length - 1];
-                if (last?.streaming) next[next.length - 1] = { ...last, content: accumulated };
-                return next;
-              });
-            } else if (event.type === "done") {
-              setMessages((prev) => {
-                const next = [...prev];
-                const last = next[next.length - 1];
-                if (last?.streaming) next[next.length - 1] = { role: "assistant", content: accumulated };
-                return next;
-              });
-            } else if (event.type === "error") {
-              throw new Error(event.error);
-            }
+            event = JSON.parse(line.slice(6));
           } catch {
-            // skip malformed line
+            continue;
+          }
+
+          if (event.type === "text") {
+            accumulated += event.text ?? "";
+            setLastAssistant({ role: "assistant", content: accumulated, streaming: true });
+          } else if (event.type === "done") {
+            finished = true;
+          } else if (event.type === "error") {
+            failed = true;
+            finished = true;
           }
         }
       }
     } catch (err: unknown) {
       if (err instanceof Error && err.name === "AbortError") return;
-      setMessages((prev) => {
-        const next = [...prev];
-        const last = next[next.length - 1];
-        if (last?.streaming)
-          next[next.length - 1] = { role: "assistant", content: ui?.liaGuest.connectionError ?? "Hubo un error al conectarme. Intenta de nuevo." };
-        return next;
-      });
+      failed = true;
     } finally {
       setLoading(false);
+    }
+
+    // Si la conexión se cortó sin "done" pero ya llegó texto, se conserva.
+    if (accumulated.trim() && !failed) {
+      setLastAssistant({ role: "assistant", content: accumulated });
+    } else {
+      setLastAssistant({
+        role: "assistant",
+        content: ui?.liaGuest.connectionError ?? "Hubo un error al conectarme. Intenta de nuevo.",
+        error: true,
+      });
     }
   };
 
