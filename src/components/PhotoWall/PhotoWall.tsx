@@ -37,6 +37,10 @@ interface PhotoWallProps {
   onOpenCamera?: () => void;
   shareCompanions?: ShareCompanion[];
   invitation?: NewInvitation | null;
+  // Dentro de la tarjeta del dock de la invitación (plan Pro) en lugar de a
+  // pantalla completa. Los overlays (foto, historias, hojas) quedan dentro de
+  // la tarjeta porque el contenedor del dock es su containing block.
+  embedded?: boolean;
 }
 
 const formatTime = (dateStr: string) => {
@@ -48,7 +52,7 @@ const formatTime = (dateStr: string) => {
   });
 };
 
-export function PhotoWall({ eventId, eventTitle, onClose, onOpenCamera, shareCompanions, invitation }: PhotoWallProps) {
+export function PhotoWall({ eventId, eventTitle, onClose, onOpenCamera, shareCompanions, invitation, embedded = false }: PhotoWallProps) {
   const router = useRouter();
   const [photos, setPhotos] = useState<EventPhoto[]>([]);
   const [loading, setLoading] = useState(true);
@@ -355,7 +359,7 @@ export function PhotoWall({ eventId, eventTitle, onClose, onOpenCamera, shareCom
   };
 
   return (
-    <div className={styles.container}>
+    <div className={`${styles.container} ${embedded ? styles.embedded : ""}`}>
 
       {/* Cover image fixed background */}
       {coverImages.length > 0 && (

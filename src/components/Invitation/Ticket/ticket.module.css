@@ -183,3 +183,42 @@
   word-break: break-all;
   text-align: left;
 }
+
+/* ── Variante "dock": tarjeta del carrusel de pases (plan Pro) ── */
+.ticket_dock {
+  flex: 0 0 290px;
+  max-width: 290px;
+  min-width: 290px;
+  border-radius: 30px;
+  scroll-snap-align: center;
+  backdrop-filter: none;
+  box-shadow: 0 6px 20px rgba(60, 20, 10, 0.22);
+}
+
+.ticket_image_dock {
+  height: 230px;
+}
+
+.ticket_pass_label {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 2;
+  padding: 5px 10px;
+  border-radius: 99px;
+  background: rgba(0, 0, 0, 0.32);
+  color: #fff;
+  font-family: 'Outfit', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+
+.ticket_value {
+  font-weight: 500;
+  line-height: 1;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

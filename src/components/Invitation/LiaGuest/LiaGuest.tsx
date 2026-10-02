@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { X, Sparkles } from "lucide-react";
 import { InvitationUIBundle } from "@/types/new_invitation";
 import styles from "./lia-guest.module.css";
 
@@ -18,11 +17,12 @@ interface Message {
 interface LiaGuestProps {
   invitationID: string;
   guestName?: string;
-  accentColor?: string;
   ui?: InvitationUIBundle | null;
   // Idioma en el que el invitado ve la invitación: pista para que Lia responda igual.
   lang?: string | null;
-  onClose: () => void;
+  // Primer mensaje fijo de Lia (ya traducido), p. ej. "¡Hola, Ana! Soy Lia…".
+  greeting: string;
+  quickQuestionLabel: string;
 }
 
 // ── Markdown renderer ─────────────────────────────────────────
@@ -65,27 +65,11 @@ function renderMarkdown(text: string): React.ReactNode {
 
 // ─────────────────────────────────────────────────────────────
 
-function hexToRgba(hex: string, alpha: number): string {
-  const clean = hex.replace("#", "");
-  const full = clean.length === 3
-    ? clean.split("").map((c) => c + c).join("")
-    : clean;
-  const r = parseInt(full.slice(0, 2), 16);
-  const g = parseInt(full.slice(2, 4), 16);
-  const b = parseInt(full.slice(4, 6), 16);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
-
-export default function LiaGuest({ invitationID, guestName, accentColor, ui, lang, onClose }: LiaGuestProps) {
+export default function LiaGuest({ invitationID, guestName, ui, lang, greeting, quickQuestionLabel }: LiaGuestProps) {
   const prompts = ui?.liaGuest.prompts ?? [];
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
 
   // Al cerrar el overlay el componente se desmonta: se corta la petición para
   // no seguir pagando una respuesta que ya nadie va a leer.
@@ -193,40 +177,34 @@ export default function LiaGuest({ invitationID, guestName, accentColor, ui, lan
   const isEmpty = messages.length === 0;
 
   return (
-    <div
-      style={{
-        width: '100%',
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        background: accentColor ? hexToRgba(accentColor, 0.8) : 'rgba(0,0,0,0.72)',
-        backdropFilter: 'blur(6px)',
-        WebkitBackdropFilter: 'blur(6px)',
-        overflow: 'hidden',
-      }}
-    >
-      {/* Header */}
-      <div className={styles.header}>
-        <div className={styles.headerTitle}>
-          <Sparkles size={18} className={styles.headerIcon} />
-          <span>Lia</span>
-        </div>
-        <button className={styles.closeBtn} onClick={onClose} aria-label={ui?.liaGuest.close ?? "Cerrar"}>
-          <X size={20} />
-        </button>
-      </div>
-
-      {/* Messages */}
+    <div className={styles.root}>
+      {/* Messages — column-reverse lo mantiene pegado abajo */}
       <div className={styles.messages}>
-        {isEmpty && (
-          <div className={styles.emptyState}>
-            <div className={styles.liaAvatar}>
-              <Sparkles size={24} />
+        <div className={styles.thread}>
+          <div className={`${styles.bubble} ${styles.bubbleLia}`}>
+            <span className={styles.bubbleText}>{greeting}</span>
+          </div>
+
+          {messages.map((msg, i) => (
+            <div
+              key={i}
+              className={`${styles.bubble} ${msg.role === "user" ? styles.bubbleUser : styles.bubbleLia}`}
+            >
+              {msg.role === "assistant" && msg.streaming && !msg.content ? (
+                <span className={styles.typing}>
+                  <span /><span /><span />
+                </span>
+              ) : msg.role === "assistant" ? (
+                <span className={styles.bubbleText}>{renderMarkdown(msg.content)}</span>
+              ) : (
+                <span className={styles.bubbleText}>{msg.content}</span>
+              )}
             </div>
-            <p className={styles.emptyText}>
-              {ui?.confirm.hello ?? "Hola"}{guestName ? `, ${guestName}` : ""}! {ui?.liaGuest.introLine ?? "Soy Lia. Puedo ayudarte a resolver tus dudas."}
-            </p>
+          ))}
+
+          {isEmpty && (
             <div className={styles.suggestions}>
+              <span className={styles.suggestionsLabel}>{quickQuestionLabel}</span>
               {prompts.map((p) => (
                 <button
                   key={p}
@@ -238,31 +216,13 @@ export default function LiaGuest({ invitationID, guestName, accentColor, ui, lan
                 </button>
               ))}
             </div>
-          </div>
-        )}
-
-        {messages.map((msg, i) => (
-          <div
-            key={i}
-            className={`${styles.bubble} ${msg.role === "user" ? styles.bubbleUser : styles.bubbleLia}`}
-          >
-            {msg.role === "assistant" && msg.streaming && !msg.content ? (
-              <span className={styles.typing}>
-                <span /><span /><span />
-              </span>
-            ) : msg.role === "assistant" ? (
-              <span className={styles.bubbleText}>{renderMarkdown(msg.content)}</span>
-            ) : (
-              <span className={styles.bubbleText}>{msg.content}</span>
-            )}
-          </div>
-        ))}
-        <div ref={messagesEndRef} />
+          )}
+        </div>
       </div>
 
       {/* Horizontal prompt chips — only once conversation started */}
-      {!isEmpty && <div className={styles.promptBar}>
-        <div className={styles.promptTrack}>
+      {!isEmpty && (
+        <div className={styles.promptBar}>
           {prompts.map((p) => (
             <button
               key={p}
@@ -274,7 +234,7 @@ export default function LiaGuest({ invitationID, guestName, accentColor, ui, lan
             </button>
           ))}
         </div>
-      </div>}
+      )}
     </div>
   );
 }

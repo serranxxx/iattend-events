@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { QrCode, Camera, SquarePen, Sparkles } from "lucide-react";
+import { SquarePen } from "lucide-react";
 import { GuestSubabasePayload } from "@/types/guests";
 import { InvitationUIBundle } from "@/types/new_invitation";
 import styles from "./invitation-control-bar.module.css";
@@ -18,10 +18,9 @@ type InvitationControlBarProps = {
   scrolledDown?: boolean;
   hidden?: boolean;
   onOpenConfirm: () => void;
-  onShowTicket: () => void;
-  onShowCamera?: () => void;
-  onAskLia?: () => void;
 };
+
+// Barra de los planes Lite y paperless. El plan Pro usa InvitationDock.
 
 export default function InvitationControlBar({
   plan,
@@ -35,13 +34,9 @@ export default function InvitationControlBar({
   scrolledDown = false,
   hidden = false,
   onOpenConfirm,
-  onShowTicket,
-  onShowCamera,
-  onAskLia,
 }: InvitationControlBarProps) {
   if (hidden) return null;
   const isConfirmed = guestInfo?.state === 'confirmado' || guestInfo?.state === 'asistente';
-  const showPill = isConfirmed && plan === 'pro';
   const showLite = isConfirmed && plan === 'lite';
 
   const wrapperClass = `${styles.wrapper} ${scrolledDown ? styles.wrapperSmall : ''}`;
@@ -78,63 +73,6 @@ export default function InvitationControlBar({
           >
             <SquarePen size={18} />
             <span>{ui?.controlBar.editResponse}</span>
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // --- Pro plan: icon pill completo ---
-  if (showPill) {
-    return (
-      <div className={wrapperClass} style={{
-        background: `${actions}70`, borderRadius: '99px'
-      }}>
-        <div className={styles.pill}>
-          <button
-            className={styles.iconBtn}
-            style={{ color: primary }}
-            onClick={!dev ? onOpenConfirm : undefined}
-            aria-label={ui?.controlBar.updateStatus}
-          >
-            <SquarePen size={18} />
-          </button>
-
-          <span className={styles.divider} />
-
-          <button
-            className={styles.iconBtn}
-            style={{ color: primary }}
-            onClick={onShowTicket}
-            aria-label={ui?.controlBar.digitalPass}
-          >
-            <QrCode size={20} />
-          </button>
-
-          {onShowCamera && (
-            <>
-              <span className={styles.divider} />
-              <button
-                className={styles.iconBtn}
-                style={{ color: primary }}
-                onClick={onShowCamera}
-                aria-label={ui?.controlBar.photoWall}
-              >
-                <Camera size={20} />
-              </button>
-            </>
-          )}
-
-          <span className={styles.divider} />
-
-          <button
-            className={styles.liaBtn}
-            style={{ color: primary, gap: '12px' }}
-            onClick={onAskLia}
-            aria-label={ui?.controlBar.askLia}
-          >
-            <Sparkles size={18} />
-            <span>{ui?.controlBar.askLia}</span>
           </button>
         </div>
       </div>

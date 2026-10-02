@@ -401,6 +401,10 @@ export interface InvitationUIBundle {
     prompts: string[];
   };
 
+  // Rediseño de la confirmación (plan Pro). Opcional: el bundle de Supabase
+  // puede no tenerlo todavía — se completa con `getDockCopy()`.
+  dock?: Partial<DockCopy>;
+
   camera: {
     noName: string;
     tooEarly: string;
@@ -449,6 +453,90 @@ export interface InvitationUIBundle {
     digital_name:string,
     digital_table:string
   };
+}
+
+export interface DockCopy {
+  confirm: string;
+  close: string;
+  eyebrowConfirm: string;
+  eyebrowEdit: string;
+  eyebrowConfirmed: string;
+  eyebrowTour: string;
+  eyebrowDeclined: string;
+  hi: string;
+  pass: string;
+  passes: string;
+  individual: string;
+  forYouAndOne: string;
+  forYouAndMany: string;
+  whoAttends: string;
+  countOf: string;
+  youGoing: string;
+  youNotGoing: string;
+  going: string;
+  notGoing: string;
+  needsName: string;
+  companionPlaceholder: string;
+  missingOne: string;
+  missingMany: string;
+  toastMissingOne: string;
+  toastMissingMany: string;
+  ctaConfirmOne: string;
+  ctaConfirmMany: string;
+  ctaSend: string;
+  ctaSave: string;
+  declineAll: string;
+  openHi: string;
+  openSub: string;
+  openCountOne: string;
+  openCountMany: string;
+  yourName: string;
+  companionName: string;
+  addCompanion: string;
+  remove: string;
+  toastName: string;
+  toastUpdated: string;
+  toastError: string;
+  thanks: string;
+  thanksSub: string;
+  confirmedOne: string;
+  confirmedMany: string;
+  saveCalendar: string;
+  until: string;
+  hours2: string;
+  allDay: string;
+  calNoteOne: string;
+  calNoteMany: string;
+  calNoteNone: string;
+  calDone: string;
+  calNext: string;
+  continue: string;
+  tourTitle: string;
+  tourSub: string;
+  tourPassesOne: string;
+  tourPassesMany: string;
+  tourPhotos: string;
+  tourLia: string;
+  tourEdit: string;
+  tourNote: string;
+  gotIt: string;
+  declinedTitle: string;
+  declinedSub: string;
+  changeAnswer: string;
+  tabPasses: string;
+  tabPhotos: string;
+  tabLia: string;
+  tabEdit: string;
+  passesTitle: string;
+  passesSubOne: string;
+  passesSubMany: string;
+  passLabel: string;
+  passHint: string;
+  liaTitle: string;
+  liaSub: string;
+  liaHello: string;
+  liaHelloAnon: string;
+  quickQuestion: string;
 }
 
 /** Payload para crear/actualizar desde formularios del cliente */

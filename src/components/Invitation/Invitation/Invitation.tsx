@@ -26,13 +26,10 @@ import { GuestSubabasePayload } from "@/types/guests";
 import { createClient } from "@/lib/supabase/client";
 import AnimatedPath from "@/components/Motion/AnimatedPath";
 import { FooterLand } from "@/components/LandPage/Footer/Footer";
-import { Ticket } from "../Ticket/Ticket";
 import SongPlayer from "../SongPlayer/SongPlayer";
 import InvitationControlBar from "../InvitationControlBar/InvitationControlBar";
+import InvitationDock from "../InvitationDock/InvitationDock";
 import LanguageToggle from "../LanguageToggle/LanguageToggle";
-import CameraView from "../CameraView/CameraView";
-import LiaGuest from "../LiaGuest/LiaGuest";
-import { PhotoWall } from "@/components/PhotoWall/PhotoWall";
 
 type invProps = {
   invitation: NewInvitation | null;
@@ -76,12 +73,8 @@ export default function Invitation({ password, invitationID, ui, lang, available
   const supabase = createClient();
 
   const [open, setOpen] = useState(false);
-  const [onShowTicket, setOnShowTicket] = useState(false);
-  const [showCamera, setShowCamera] = useState(false);
-  const [showLia, setShowLia] = useState(false);
-  const [showPhotoWall, setShowPhotoWall] = useState(false);
-  const [mounted, setMounted] = useState(false);
   const [footerVisible, setFooterVisible] = useState(false);
+  const [coverBehindDock, setCoverBehindDock] = useState(true);
   const [scrolledDown, setScrolledDown] = useState(false);
   const lastScrollY = useRef(0);
   const scrollDirection = useRef<'up' | 'down'>('up');
@@ -91,7 +84,6 @@ export default function Invitation({ password, invitationID, ui, lang, available
   const [animatedText, setAnimatedText] = useState<boolean>(false);
   const [messageApi, contextHolder] = message.useMessage();
   const [guestInfo, setGuestInfo] = useState<GuestSubabasePayload | null>(null);
-  const [companions, setCompanions] = useState<GuestSubabasePayload[]>([])
   const [allCompanions, setAllCompanions] = useState<GuestSubabasePayload[]>([])
 
   // html/body solo tienen min-height (sin overflow:hidden) porque otras rutas
@@ -309,7 +301,6 @@ export default function Invitation({ password, invitationID, ui, lang, available
         if (isErr) {
           console.log(isErr, 'not found')
         }
-        setCompanions(companions?.filter(c => c.state === 'confirmado' || c.state === 'asistente') ?? [])
         setAllCompanions(companions ?? [])
       }
 
@@ -352,8 +343,6 @@ export default function Invitation({ password, invitationID, ui, lang, available
         if (isErr) {
           console.log(isErr, 'not found')
         }
-
-        setCompanions(companions?.filter(c => c.state === 'confirmado' || c.state === 'asistente') ?? [])
         setAllCompanions(companions ?? [])
       }
 
@@ -390,8 +379,6 @@ export default function Invitation({ password, invitationID, ui, lang, available
         if (isErr) {
           console.log(isErr, 'not found')
         }
-
-        setCompanions(companions?.filter(c => c.state === 'confirmado' || c.state === 'asistente') ?? [])
         setAllCompanions(companions ?? [])
       }
 
@@ -404,8 +391,6 @@ export default function Invitation({ password, invitationID, ui, lang, available
 
 
 
-
-  useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
 
@@ -473,6 +458,21 @@ export default function Invitation({ password, invitationID, ui, lang, available
     container.addEventListener('scroll', onScroll, { passive: true });
     return () => container.removeEventListener('scroll', onScroll);
   }, []);
+
+  // El dock (plan Pro) no debe tapar la portada: se oculta mientras la
+  // portada pase por la franja inferior de la pantalla, donde flota el dock.
+  useEffect(() => {
+    const cover = coverRef.current;
+    const container = scrollableContentRef.current;
+    if (!cover || !container) return;
+    const DOCK_BAND_PX = 100; // alto de la barra (68) + su margen inferior (20) + aire
+    const observer = new IntersectionObserver(
+      ([entry]) => setCoverBehindDock(entry.isIntersecting),
+      { root: container, rootMargin: `-${Math.max(0, container.clientHeight - DOCK_BAND_PX)}px 0px 0px 0px` }
+    );
+    observer.observe(cover);
+    return () => observer.disconnect();
+  }, [validated]);
 
   useEffect(() => {
     const el = footerRef.current;
@@ -624,7 +624,25 @@ export default function Invitation({ password, invitationID, ui, lang, available
 
       </div>
 
-      {validated && (
+      {/* Plan Pro: un solo contenedor que se transforma (confirmación, pases, Lia, Photo Wall) */}
+      {validated && plan === "pro" && (
+        <InvitationDock
+          invitation={invitation}
+          invitationID={invitationID}
+          ui={ui}
+          lang={lang}
+          type={type}
+          dev={dev}
+          guestInfo={guestInfo}
+          companions={allCompanions}
+          refreshGuest={refreshGuest}
+          onGuestCreated={onValidateUser}
+          hidden={footerVisible || coverBehindDock}
+          scrolledDown={scrolledDown}
+        />
+      )}
+
+      {validated && plan !== "pro" && (
         <InvitationControlBar
           plan={plan}
           dev={dev}
@@ -635,52 +653,10 @@ export default function Invitation({ password, invitationID, ui, lang, available
           accent={accent}
           phone_number={phone_number}
           scrolledDown={scrolledDown}
-          hidden={showLia || footerVisible}
+          hidden={footerVisible}
           onOpenConfirm={() => setOpen(true)}
-          onShowTicket={() => setOnShowTicket(true)}
-          onShowCamera={(guestInfo?.state === 'confirmado' || guestInfo?.state === 'asistente') ? () => setShowPhotoWall(true) : undefined}
-          onAskLia={() => setShowLia(true)}
         />
       )}
-
-      <SlideOverlay open={showLia && !!invitationID}>
-        {invitationID && (
-          <LiaGuest
-            invitationID={invitationID}
-            guestName={guestInfo?.name ?? undefined}
-            accentColor={'#000'}
-            ui={ui}
-            lang={lang}
-            onClose={() => setShowLia(false)}
-          />
-        )}
-      </SlideOverlay>
-
-      {showCamera && guestInfo && invitationID && (
-        <CameraView
-          invitation={invitation}
-          invitationID={invitationID}
-          guestInfo={guestInfo}
-          ui={ui}
-          onClose={() => setShowCamera(false)}
-          onOpenPhotoWall={() => { setShowCamera(false); setShowPhotoWall(true); }}
-          shareCompanions={allCompanions.map(c => ({ name: c.name ?? '', password: c.password }))}
-        />
-      )}
-
-      <SlideOverlay open={showPhotoWall && mounted && !!invitationID}>
-        <div style={{ width: '100%', height: '100%', background: '#0a0a0a' }}>
-          {invitationID && (
-            <PhotoWall
-              eventId={invitationID}
-              onClose={() => setShowPhotoWall(false)}
-              onOpenCamera={() => { setShowPhotoWall(false); setShowCamera(true); }}
-              invitation={invitation}
-              shareCompanions={allCompanions.map(c => ({ name: c.name ?? '', password: c.password }))}
-            />
-          )}
-        </div>
-      </SlideOverlay>
 
       <div style={{ opacity: animation ? 1 : 0 }} className={styles.animation_cont}>
         {animation && (
@@ -698,26 +674,7 @@ export default function Invitation({ password, invitationID, ui, lang, available
         <span style={{ marginRight: '8px' }}>{ui.confirm.hello}</span>
         <b translate="no" className="notranslate" style={{ color: '#FFF', textAlign: 'left' }}>{guestInfo?.name}</b>
       </div>
-      <SlideOverlay open={onShowTicket}>
-        <div
-          onClick={() => setOnShowTicket(false)}
-          className="scroll-invitation"
-          style={{
-            width: '100%', height: '100%', display: 'flex', alignItems: 'flex-end',
-            justifyContent: companions.length === 0 ? 'center' : 'flex-start',
-            overflowX: 'auto', gap: '12px', padding: '24px',
-            background: 'rgba(0, 0, 0, 0.32)', backdropFilter: 'blur(2px)', WebkitBackdropFilter: 'blur(2px)',
-          }}
-        >
-          {guestInfo && (
-            <Ticket id={invitationID} guest={guestInfo} invitation={invitation} ui={ui} colors={{ primary, secondary, accent }} onClose={() => setOnShowTicket(false)} />
-          )}
-          {companions?.map((companion) => (
-            <Ticket id={invitationID} key={companion.id} guest={companion} invitation={invitation} ui={ui} colors={{ primary, secondary, accent }} onClose={() => setOnShowTicket(false)} />
-          ))}
-        </div>
-      </SlideOverlay>
-
+      {/* Confirmación de los planes que no son Pro (Lite y anteriores) */}
       <SlideOverlay open={open}>
         <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", backgroundColor: primary }}>
           <div

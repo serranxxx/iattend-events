@@ -35,10 +35,26 @@ function nextDay(date: string) {
   return d.toISOString().slice(0, 10).replace(/-/g, "");
 }
 
-function downloadICS({ name, startDate, startTime, endTime, description, location, timeZone }: Omit<AddToCalendarProps, "primary" | "accent" | "label">) {
+export type CalendarEvent = {
+  name: string;
+  startDate: string;   // YYYY-MM-DD
+  startTime?: string;  // HH:MM
+  endTime?: string;    // HH:MM
+  endDate?: string;    // YYYY-MM-DD, si termina otro día (p. ej. después de medianoche)
+  description?: string;
+  location?: string;
+  timeZone?: string;
+};
+
+// RFC 5545: comas, punto y coma y saltos de línea van escapados en los textos.
+function escapeICS(text: string) {
+  return text.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n");
+}
+
+function veventLines({ name, startDate, startTime, endTime, endDate, description, location, timeZone }: CalendarEvent) {
   const tzPrefix = (t?: string) => (timeZone && t ? `;TZID=${timeZone}` : "");
   const isAllDay = !startTime;
-  const uid = `${typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : Date.now()}@iattend.events`;
+  const uid = `${typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`}@iattend.events`;
   const dtStamp = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
 
   // Sin hora → evento de día completo (DTEND exclusivo al día siguiente, RFC 5545).
@@ -49,39 +65,50 @@ function downloadICS({ name, startDate, startTime, endTime, description, locatio
     : `DTSTART${tzPrefix(startTime)}:${toICSDate(startDate, startTime)}`;
   const dtEndLine = isAllDay
     ? `DTEND;VALUE=DATE:${nextDay(startDate)}`
-    : `DTEND${tzPrefix(endTime ?? startTime)}:${toICSDate(startDate, endTime ?? startTime)}`;
+    : `DTEND${tzPrefix(endTime ?? startTime)}:${toICSDate(endDate ?? startDate, endTime ?? startTime)}`;
+
+  return [
+    "BEGIN:VEVENT",
+    `UID:${uid}`,
+    `DTSTAMP:${dtStamp}`,
+    `SUMMARY:${escapeICS(name)}`,
+    dtStartLine,
+    dtEndLine,
+    description ? `DESCRIPTION:${escapeICS(description)}` : null,
+    location    ? `LOCATION:${escapeICS(location)}`       : null,
+    "STATUS:CONFIRMED",
+    "END:VEVENT",
+  ].filter(Boolean) as string[];
+}
+
+// Un solo VCALENDAR con uno o varios VEVENT (Apple Calendar / Outlook los
+// importan todos de una vez).
+export function downloadICS(events: CalendarEvent | CalendarEvent[], fileName?: string) {
+  const list = Array.isArray(events) ? events : [events];
+  if (list.length === 0) return;
 
   const lines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
     "PRODID:-//I attend//Save the date//ES",
     "CALSCALE:GREGORIAN",
-    "BEGIN:VEVENT",
-    `UID:${uid}`,
-    `DTSTAMP:${dtStamp}`,
-    `SUMMARY:${name}`,
-    dtStartLine,
-    dtEndLine,
-    description ? `DESCRIPTION:${description}` : null,
-    location    ? `LOCATION:${location}`       : null,
-    "STATUS:CONFIRMED",
-    "END:VEVENT",
+    ...list.flatMap(veventLines),
     "END:VCALENDAR",
-  ].filter(Boolean).join("\r\n");
+  ].join("\r\n");
 
   const blob = new Blob([lines], { type: "text/calendar;charset=utf-8" });
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement("a");
   a.href     = url;
-  a.download = `${name.replace(/\s+/g, "_")}.ics`;
+  a.download = `${(fileName ?? list[0].name).replace(/\s+/g, "_")}.ics`;
   a.click();
   URL.revokeObjectURL(url);
 }
 
-function googleUrl({ name, startDate, startTime, endTime, location, description, timeZone }: Omit<AddToCalendarProps, "primary" | "accent" | "label">) {
+export function googleUrl({ name, startDate, startTime, endTime, endDate, location, description, timeZone }: CalendarEvent) {
   const fmt = (d: string, t?: string) => `${d.replace(/-/g, "")}${t ? `T${t.replace(":", "")}00` : ""}`;
   const dates = startTime
-    ? `${fmt(startDate, startTime)}/${fmt(startDate, endTime ?? startTime)}`
+    ? `${fmt(startDate, startTime)}/${fmt(endDate ?? startDate, endTime ?? startTime)}`
     : `${fmt(startDate)}/${nextDay(startDate)}`;
 
   const params = new URLSearchParams({ action: "TEMPLATE", text: name, dates });
@@ -92,7 +119,7 @@ function googleUrl({ name, startDate, startTime, endTime, location, description,
   return `https://calendar.google.com/calendar/render?${params.toString()}`;
 }
 
-function outlookUrl({ name, startDate, startTime, endTime, location, description }: Omit<AddToCalendarProps, "primary" | "accent" | "label">) {
+function outlookUrl({ name, startDate, startTime, endTime, location, description }: CalendarEvent) {
   const iso = (d: string, t?: string) => `${d}${t ? `T${t}:00` : ""}`;
 
   const params = new URLSearchParams({

@@ -8,6 +8,40 @@
   z-index: 9999;
 }
 
+/* Dentro de la tarjeta del dock: llena su contenedor en vez de la pantalla. */
+.embedded {
+  position: absolute;
+  z-index: auto;
+  border-radius: inherit;
+}
+
+.embedded .topBar {
+  padding-top: 14px;
+}
+
+.embedded .scrollArea {
+  scrollbar-width: none;
+  overscroll-behavior: contain;
+}
+
+.embedded .scrollArea::-webkit-scrollbar {
+  display: none;
+}
+
+.embedded .scrollSpacer {
+  height: 38%;
+}
+
+.embedded .contentCard {
+  min-height: 100%;
+  border-radius: 36px 36px 0 0;
+  padding-bottom: 24px;
+}
+
+.embedded .eventTitle {
+  font-size: 30px;
+}
+
 /* ── Cover image background ──────────────────────────────── */
 
 .coverBg {
