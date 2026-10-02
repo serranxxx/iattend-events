@@ -459,19 +459,35 @@ export default function Invitation({ password, invitationID, ui, lang, available
     return () => container.removeEventListener('scroll', onScroll);
   }, []);
 
-  // El dock (plan Pro) no debe tapar la portada: se oculta mientras la
-  // portada pase por la franja inferior de la pantalla, donde flota el dock.
+  // El dock (plan Pro) nunca debe tapar la portada: se oculta mientras la
+  // portada llegue a la franja inferior de la pantalla, donde flota el dock.
+  // Se mide en cada scroll/resize en vez de con un IntersectionObserver con
+  // rootMargin fijo: en Safari iOS el alto visible cambia con la barra del
+  // navegador y esa medida inicial no era confiable.
   useEffect(() => {
-    const cover = coverRef.current;
     const container = scrollableContentRef.current;
-    if (!cover || !container) return;
+    if (!container) return;
     const DOCK_BAND_PX = 100; // alto de la barra (68) + su margen inferior (20) + aire
-    const observer = new IntersectionObserver(
-      ([entry]) => setCoverBehindDock(entry.isIntersecting),
-      { root: container, rootMargin: `-${Math.max(0, container.clientHeight - DOCK_BAND_PX)}px 0px 0px 0px` }
-    );
-    observer.observe(cover);
-    return () => observer.disconnect();
+    let frame = 0;
+    const measure = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const cover = coverRef.current;
+        if (!cover) return;
+        const viewportH = window.visualViewport?.height ?? window.innerHeight;
+        setCoverBehindDock(cover.getBoundingClientRect().bottom > viewportH - DOCK_BAND_PX);
+      });
+    };
+    measure();
+    container.addEventListener("scroll", measure, { passive: true });
+    window.addEventListener("resize", measure);
+    window.visualViewport?.addEventListener("resize", measure);
+    return () => {
+      cancelAnimationFrame(frame);
+      container.removeEventListener("scroll", measure);
+      window.removeEventListener("resize", measure);
+      window.visualViewport?.removeEventListener("resize", measure);
+    };
   }, [validated]);
 
   useEffect(() => {

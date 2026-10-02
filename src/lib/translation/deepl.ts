@@ -144,16 +144,20 @@ export function collectTranslatableStrings(obj: unknown, path: (string|number)[]
 
 /* ============ TRADUCCIÓN ============ */
 
+// `context`: texto que DeepL usa para desambiguar pero no traduce ni cobra
+// (p. ej. que "pase" es un boleto de entrada y no el verbo).
 export async function translateStringsBatch(
   values: string[],
   targetLang: string,
-  sourceLang?: deepl.SourceLanguageCode
+  sourceLang?: deepl.SourceLanguageCode,
+  context?: string
 ) {
   if (values.length === 0) return [];
   const result = await translator.translateText(
     values,
     (sourceLang ?? null) as deepl.SourceLanguageCode | null,
-    targetLang as deepl.TargetLanguageCode
+    targetLang as deepl.TargetLanguageCode,
+    context ? { context } : undefined
   ) as deepl.TextResult | deepl.TextResult[];
   return Array.isArray(result) ? result.map(r => r.text) : [result.text];
 }
@@ -161,7 +165,8 @@ export async function translateStringsBatch(
 export async function translateInvitationObject<T extends Record<string, unknown>>(
   invitation: T,
   targetLang: string,
-  sourceLang?: deepl.SourceLanguageCode
+  sourceLang?: deepl.SourceLanguageCode,
+  context?: string
 ): Promise<T> {
   const items = collectTranslatableStrings(invitation);
   if (items.length === 0) return invitation;
@@ -169,7 +174,8 @@ export async function translateInvitationObject<T extends Record<string, unknown
   const translated = await translateStringsBatch(
     items.map(i => i.value),
     targetLang,
-    sourceLang
+    sourceLang,
+    context
   );
 
   const clone: Record<string | number, unknown> = structuredClone(invitation);
