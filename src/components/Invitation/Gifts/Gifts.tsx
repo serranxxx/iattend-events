@@ -6,6 +6,9 @@ import Wallet from "./Wallet/Wallet";
 import type { GiftBrand } from "@/lib/giftBrands/cache";
 import FadeLeft from "@/components/Motion/FadeLeft";
 import Image from "next/image";
+import { useIsSplitLayout } from "../layout/InvitationLayout";
+import { WebSection } from "../layout/WebSection";
+import web from "../layout/web-section.module.css";
 
 type DresscodeProps = {
   dev: boolean;
@@ -53,6 +56,52 @@ export const Gifts = forwardRef<HTMLDivElement, DresscodeProps>(function Greetin
 
   const hasContent = Boolean(content?.title?.trim()) || Boolean(content?.description?.trim()) || Boolean(content?.cards?.length);
   const hasSeparator = Boolean(content?.dynamic_separator?.active);
+  const isSplit = useIsSplitLayout();
+
+  if (isSplit) {
+    if (!content.active || !generals || !(hasContent || hasSeparator)) return null;
+    const invertedOnBand = content?.dynamic_background?.active && content?.inverted;
+    return (
+      <WebSection
+        ref={ref}
+        background={content.dynamic_background}
+        secondary={secondary}
+        maxWidth={960}
+        separator={content.dynamic_separator}
+        inverted={content.inverted}
+        generals={generals}
+      >
+        {hasContent && (
+          <div className={web.stack}>
+            <FadeLeft>
+              <span
+                className={web.title}
+                style={{ color: invertedOnBand ? primary : title.color, fontFamily: title.font ?? "Poppins", fontWeight: title.weight, opacity: title.opacity }}
+              >
+                {renderTextWithStrong(content.title ?? "")}
+              </span>
+            </FadeLeft>
+            {content.description && (
+              <FadeLeft>
+                <p
+                  className={web.body}
+                  style={{ maxWidth: 560, marginInline: "auto", color: invertedOnBand ? primary : accent, fontFamily: body.font ?? "Poppins", fontWeight: body.weight, opacity: body.opacity }}
+                >
+                  {renderTextWithStrong(content.description)}
+                </p>
+              </FadeLeft>
+            )}
+            {/* La cartera es la misma de móvil, sin cambios visuales */}
+            {content.cards.length > 0 && (
+              <div className={styles.cards_container} style={{ alignSelf: "center", marginTop: 0 }}>
+                <Wallet ui={ui} invitation={invitation} dev={dev} brands={brands} />
+              </div>
+            )}
+          </div>
+        )}
+      </WebSection>
+    );
+  }
 
   return (
     <>

@@ -167,6 +167,13 @@ const uiES: InvitationUIBundle = {
     liaHelloAnon: "¡Hola! Soy Lia. Puedo ayudarte a resolver tus dudas sobre el evento.",
     quickQuestion: "Pregunta rápida"
   },
+  web: {
+    previous: "Anterior",
+    next: "Siguiente",
+    navigate: "Navegar",
+    photos: "{n} fotos",
+    dragHint: "Arrastra o desliza para ver más"
+  },
   camera: {
     noName: "No podemos identificar tu nombre. Contacta al organizador del evento.",
     tooEarly: "La cámara estará disponible el día del evento",

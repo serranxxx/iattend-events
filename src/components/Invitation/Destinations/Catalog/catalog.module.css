@@ -1,0 +1,172 @@
+/* ── Escenario del abanico ── */
+.stage {
+    position: relative;
+    width: 100%;
+    height: 460px;
+    perspective: 1200px;
+}
+
+.card {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform-origin: center;
+    transition:
+        transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+        opacity 0.3s ease;
+}
+
+.frame {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    padding: 5px;
+    background: #ffffff;
+    border-radius: 0 10px 0 0;
+    box-shadow: 4px 6px 14px rgba(0, 0, 0, 0.28);
+}
+
+.photo {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    border-radius: 0 8px 0 0;
+    background: #00000010;
+}
+
+.vignette {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background:
+        linear-gradient(to top, rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0) 40%),
+        linear-gradient(to bottom, rgba(0, 0, 0, 0.25), rgba(0, 0, 0, 0) 35%);
+}
+
+.card_name {
+    position: absolute;
+    left: 10px;
+    top: 10px;
+    right: 10px;
+    z-index: 2;
+    text-align: left;
+    font-weight: 800;
+    line-height: 1.1;
+    text-transform: uppercase;
+    font-size: 20px;
+    color: #ffffff;
+    text-shadow: 0 0 4px rgba(0, 0, 0, 0.5);
+}
+
+.card_tag {
+    position: absolute;
+    bottom: 6px;
+    right: 6px;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.card_label {
+    text-transform: uppercase;
+    font-size: 12px;
+    font-weight: 800;
+    line-height: 1;
+    color: #ffffff;
+    text-shadow: 0 0 8px rgba(0, 0, 0, 0.5);
+}
+
+.icon_chip {
+    width: 20px;
+    height: 20px;
+    padding: 8px 2px;
+    box-sizing: content-box;
+    border-radius: 99px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.dim {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    background: #000;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+/* ── Barra de detalle de la tarjeta al frente ── */
+.detail {
+    width: 100%;
+    max-width: 880px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px 40px;
+    padding-top: 28px;
+    border-top: 1px solid;
+    text-align: left;
+}
+
+.detail_info {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex: 1 1 260px;
+    min-width: 0;
+}
+
+.detail_meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+.detail_rule {
+    width: 24px;
+    height: 1px;
+}
+
+.detail_name {
+    font-weight: 800;
+    font-size: 34px;
+    line-height: 1.1;
+    text-transform: uppercase;
+    text-wrap: balance;
+}
+
+.detail_description {
+    margin: 0;
+    font-size: 17px;
+    line-height: 1.6;
+    max-width: 520px;
+    text-wrap: pretty;
+}
+
+.detail_actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+}
+
+.detail_arrow {
+    width: 48px;
+    height: 48px;
+}
+
+.navigate {
+    height: 48px;
+    padding: 0 22px;
+}

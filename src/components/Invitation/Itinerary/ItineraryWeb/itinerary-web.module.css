@@ -1,0 +1,83 @@
+.scroller {
+    width: 100%;
+    display: flex;
+    gap: 32px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    padding-bottom: 4px;
+    text-align: left;
+}
+
+.scroller::-webkit-scrollbar {
+    display: none;
+}
+
+/* Siempre del tamaño de "2 por fila", haya 2 o más momentos */
+.card {
+    flex: 0 0 calc((100% - 32px) / 2);
+    min-width: 0;
+    scroll-snap-align: start;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.time_row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.time {
+    font-size: 28px;
+    font-weight: 600;
+    line-height: 1;
+}
+
+.rule {
+    flex: 1;
+    height: 2px;
+}
+
+.image {
+    position: relative;
+    border-radius: 16px;
+    overflow: hidden;
+    aspect-ratio: 16 / 10;
+}
+
+.info {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.name {
+    font-size: 24px;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.subtext {
+    font-size: 17px;
+}
+
+.address {
+    font-size: 15px;
+    line-height: 1.5;
+}
+
+.actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}

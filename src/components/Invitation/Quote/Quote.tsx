@@ -4,6 +4,9 @@ import React, { forwardRef } from "react";
 import { Separador } from "../Separator/Separator";
 import FadeIn from "@/components/Motion/FadeIn";
 import { darker } from "@/helpers/functions";
+import styles from "./quote.module.css";
+import { useIsSplitLayout } from "../layout/InvitationLayout";
+import { WebSection } from "../layout/WebSection";
 
 type quoteProps = {
   dev: boolean;
@@ -22,6 +25,7 @@ export const Quote = forwardRef<HTMLDivElement, quoteProps>(function Greeting({ 
 
   const hasQuoteContent = content.image.active || Boolean(content.text.font.value?.trim());
   const hasSeparator = Boolean(content?.dynamic_separator?.active);
+  const isSplit = useIsSplitLayout();
 
   const renderTextWithStrong = (text: string) => {
     const parts = text.split(/(\*[^*]+\*)/g);
@@ -34,6 +38,59 @@ export const Quote = forwardRef<HTMLDivElement, quoteProps>(function Greeting({ 
     });
   };
 
+  if (isSplit) {
+    if (!content.active || !(hasQuoteContent || hasSeparator)) return null;
+    const withImage = content.image.active;
+    return (
+      <WebSection
+        ref={ref}
+        background={withImage ? undefined : content.dynamic_background}
+        secondary={secondary}
+        flush={withImage}
+        separator={content.dynamic_separator}
+        inverted={content.inverted}
+        generals={generals}
+      >
+        {hasQuoteContent && (withImage ? (
+          <FadeIn>
+            <div className={styles.web_image}>
+              {image_src && <Image fill sizes="60vw" style={{ objectFit: "cover" }} loading="lazy" alt="" src={image_src} />}
+              {content.text.shadow && (
+                <div
+                  className={styles.web_shadow}
+                  style={{ background: `linear-gradient(to top, ${darker(accent, 0.7)}80, rgba(0,0,0,0))` }}
+                />
+              )}
+              <div className={styles.web_text_layer} style={{ alignItems: content.text.align }}>
+                <span
+                  className={styles.web_text}
+                  style={{
+                    color: content.text.font.color,
+                    fontFamily: content.text.font.typeFace ?? "Poppins",
+                    // En web la frase se lee al doble del tamaño móvil (30 → 60px).
+                    fontSize: `${Math.max(36, (content.text.font.size || 30) * 2)}px`,
+                    opacity: content.text.font.opacity,
+                    fontWeight: content.text.font.weight,
+                    textAlign: content.text.justify,
+                    width: `${content.text.width ?? 70}%`,
+                  }}
+                >
+                  {renderTextWithStrong(content.text.font.value ?? "")}
+                </span>
+              </div>
+            </div>
+          </FadeIn>
+        ) : (
+          <p
+            className={styles.web_plain}
+            style={{ color: content.inverted ? primary : accent, fontFamily: content.text.font.typeFace }}
+          >
+            {renderTextWithStrong(content.text.font.value ?? "")}
+          </p>
+        ))}
+      </WebSection>
+    );
+  }
 
   return (
     <>

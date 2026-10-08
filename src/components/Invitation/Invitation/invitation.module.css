@@ -211,3 +211,35 @@
   transition: all 0.3s ease;
 }
 
+
+/* ── Layout "Split + Dock" (≥768) ── */
+.split_shell {
+  position: relative;
+  display: flex;
+  width: 100%;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+/* Portada fija: nunca hace scroll. El dock se ancla aquí adentro. */
+.split_aside {
+  position: relative;
+  flex: 0 0 42%;
+  max-width: 540px;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Único contenedor de scroll de la página (misma regla de iOS que en móvil) */
+.split_main {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+}

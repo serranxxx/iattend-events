@@ -140,3 +140,13 @@
   max-width: 0;
   opacity: 0;
 }
+
+/* Layout web: dentro del panel de la portada, alineado a la izquierda */
+.inline {
+  position: relative;
+  top: auto;
+  left: auto;
+  right: auto;
+  align-self: flex-start;
+  flex-shrink: 0;
+}

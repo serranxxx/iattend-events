@@ -405,6 +405,10 @@ export interface InvitationUIBundle {
   // puede no tenerlo todavía — se completa con `getDockCopy()`.
   dock?: Partial<DockCopy>;
 
+  // Layout web (≥768): destinos, galería, flechas. Opcional igual
+  // que `dock` — se completa con `getWebCopy()`.
+  web?: Partial<WebCopy>;
+
   camera: {
     noName: string;
     tooEarly: string;
@@ -453,6 +457,14 @@ export interface InvitationUIBundle {
     digital_name:string,
     digital_table:string
   };
+}
+
+export interface WebCopy {
+  previous: string;
+  next: string;
+  navigate: string;
+  photos: string;
+  dragHint: string;
 }
 
 export interface DockCopy {

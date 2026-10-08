@@ -4,6 +4,10 @@ import Card from "./Card/Card";
 import { Separador } from "../Separator/Separator";
 import FadeLeft from "@/components/Motion/FadeLeft";
 import Image from "next/image";
+import DestinationsCatalog from "./Catalog/DestinationsCatalog";
+import { useIsSplitLayout } from "../layout/InvitationLayout";
+import { WebSection } from "../layout/WebSection";
+import web from "../layout/web-section.module.css";
 
 type DresscodeProps = {
   dev: boolean;
@@ -12,7 +16,7 @@ type DresscodeProps = {
   invitationID: string | undefined;
 };
 
-export const Destinations = forwardRef<HTMLDivElement, DresscodeProps>(function destinations({ ui, dev: _dev, invitation, invitationID }, ref) {
+export const Destinations = forwardRef<HTMLDivElement, DresscodeProps>(function Destinations({ ui, dev: _dev, invitation, invitationID }, ref) {
   const content = invitation.destinations;
   const generals = invitation.generals;
   const primary = generals?.colors.primary ?? "#FFFFFF";
@@ -58,6 +62,49 @@ export const Destinations = forwardRef<HTMLDivElement, DresscodeProps>(function 
 
   const hasContent = Boolean(content?.title?.trim()) || Boolean(content?.description?.trim()) || Boolean(content?.cards?.length);
   const hasSeparator = Boolean(content?.dynamic_separator?.active);
+  const isSplit = useIsSplitLayout();
+
+  if (isSplit) {
+    if (!content.active || !generals || !(hasContent || hasSeparator)) return null;
+    const textColor = content.inverted ? primary : accent;
+    return (
+      <WebSection
+        ref={ref}
+        background={content.dynamic_background}
+        secondary={secondary}
+        maxWidth={1040}
+        separator={content.dynamic_separator}
+        inverted={content.inverted}
+        generals={generals}
+      >
+        {hasContent && (
+          <div className={web.stack} style={{ gap: 40, alignItems: "center" }}>
+            <div className={web.stack} style={{ gap: 20 }}>
+              {content.title && (
+                <span
+                  className={web.title}
+                  style={{ color: content.inverted ? primary : title.color, fontFamily: title.font ?? "Poppins", fontWeight: title.weight, opacity: title.opacity }}
+                >
+                  {renderTextWithStrong(content.title)}
+                </span>
+              )}
+              {content.description && (
+                <p
+                  className={web.body}
+                  style={{ maxWidth: 640, marginInline: "auto", color: textColor, fontFamily: body.font ?? "Poppins", fontWeight: body.weight, opacity: body.opacity }}
+                >
+                  {renderTextWithStrong(content.description)}
+                </p>
+              )}
+            </div>
+            {content.cards?.length > 0 && (
+              <DestinationsCatalog invitation={invitation} ui={ui} textColor={textColor} />
+            )}
+          </div>
+        )}
+      </WebSection>
+    );
+  }
 
   return (
     <>

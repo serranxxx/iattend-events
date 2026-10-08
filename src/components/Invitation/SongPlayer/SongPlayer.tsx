@@ -22,6 +22,8 @@ type SongPlayerProps = {
   // cerrado —sin expandir a pill— y el estado se lee por el disco: girando
   // = suena, quieto = pausado. Evita que choque con el CTA de la pieza.
   compact?: boolean;
+  // Layout web: vive dentro del panel de la portada en vez de flotar fijo.
+  inline?: boolean;
 };
 
 // Módulo-scope, no estado de React: un cambio de idioma hace que page.tsx
@@ -45,7 +47,7 @@ export function notifyLanguageChanging() {
   languageChangeInFlight = true;
 }
 
-export default function SongPlayer({ song, accent = "#000000", dev = false, compact = false }: SongPlayerProps) {
+export default function SongPlayer({ song, accent = "#000000", dev = false, compact = false, inline = false }: SongPlayerProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [playing, setPlaying] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -138,7 +140,7 @@ export default function SongPlayer({ song, accent = "#000000", dev = false, comp
       <button
         type="button"
         onClick={toggleAudio}
-        className={styles.uploadTrigger}
+        className={`${styles.uploadTrigger} ${inline ? styles.inline : ''}`}
         aria-label={playing ? "Pausar música" : "Reproducir música"}
       >
         {playing ? <Music size={18} /> : <VolumeX size={18} />}
@@ -147,7 +149,7 @@ export default function SongPlayer({ song, accent = "#000000", dev = false, comp
   }
 
   return (
-    <div className={`${styles.player} ${(!playing || compact) ? styles.playerCollapsed : ''}`}>
+    <div className={`${styles.player} ${(!playing || compact) ? styles.playerCollapsed : ''} ${inline ? styles.inline : ''}`}>
 
       {song.albumArt && (
         <img

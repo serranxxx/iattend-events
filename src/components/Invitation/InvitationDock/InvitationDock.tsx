@@ -43,6 +43,9 @@ type InvitationDockProps = {
   onGuestCreated: (_password: string) => Promise<void> | void;
   hidden?: boolean;
   scrolledDown?: boolean;
+  // Layout web: el dock vive dentro del panel de la portada (position
+  // absolute) y se mide contra ese panel en vez de contra el viewport.
+  container?: { w: number; h: number } | null;
 };
 
 const newGuest = (invitationID: string): GuestSubabasePayload => ({
@@ -78,7 +81,7 @@ const newGuest = (invitationID: string): GuestSubabasePayload => ({
  */
 export default function InvitationDock({
   invitation, invitationID, ui, lang, type, dev, guestInfo, companions,
-  refreshGuest, onGuestCreated, hidden = false, scrolledDown = false,
+  refreshGuest, onGuestCreated, hidden = false, scrolledDown = false, container = null,
 }: InvitationDockProps) {
   const supabase = createClient();
   const t = getDockCopy(ui);
@@ -344,18 +347,22 @@ export default function InvitationDock({
 
   // ── Medidas del morph ──
 
-  const cardW = Math.min(366, viewport.w - 24);
-  const maxH = viewport.h - 40;
+  const anchored = Boolean(container);
+  const area = container ?? viewport;
+  const cardW = Math.min(anchored ? 400 : 366, area.w - 24);
+  const maxH = area.h - 40;
+  const bottom = anchored ? 24 : 20;
   const dims = isPanel
-    ? { w: cardW, h: Math.min(tool === "passes" ? 590 : 700, maxH), r: 36, bottom: 20 }
+    ? { w: cardW, h: Math.min(tool === "passes" ? 590 : 700, maxH), r: 36, bottom }
     : isCard
-      ? { w: cardW, h: Math.min(cardH, maxH), r: 32, bottom: 20 }
+      ? { w: cardW, h: Math.min(cardH, maxH), r: 32, bottom }
       : phase === "bar"
-        ? { w: Math.min(354, viewport.w - 24), h: 68, r: 99, bottom: 20 }
-        : { w: 214, h: 56, r: 99, bottom: 20 };
+        ? { w: Math.min(354, area.w - 24), h: 68, r: 99, bottom }
+        : { w: 214, h: 56, r: 99, bottom };
 
   const morphClass = [
     styles.morph,
+    anchored ? styles.anchored : "",
     isCompact ? styles.morph_glass : isPhotos ? styles.morph_dark : styles.morph_card,
     isCompact && scrolledDown ? styles.morph_small : "",
     showCamera || (isCompact && hidden) ? styles.morph_hidden : "",
@@ -390,7 +397,7 @@ export default function InvitationDock({
   return (
     <>
       <div
-        className={`${styles.scrim} ${isCard || isPanel ? styles.scrim_visible : ""}`}
+        className={`${styles.scrim} ${anchored ? styles.anchored : ""} ${isCard || isPanel ? styles.scrim_visible : ""}`}
         onClick={close}
         aria-hidden
       />

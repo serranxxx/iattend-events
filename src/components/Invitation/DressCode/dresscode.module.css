@@ -70,3 +70,68 @@
 .links_button {
     box-shadow: 0 0 6px 0 rgba(0, 0, 0, 0.25), 0 0 6px 0 rgba(134, 134, 134, 0.25) inset;
 }
+/* ── Layout web (≥768) ── */
+.web_grid {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 48px;
+    align-items: center;
+}
+
+.web_text {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 24px;
+    text-align: left;
+}
+
+/* Sin imágenes: el texto queda solo y centrado */
+.web_text_alone {
+    align-items: center;
+    text-align: center;
+}
+
+.web_palette {
+    display: flex;
+    flex-wrap: wrap;
+    padding-left: 12px;
+}
+
+.web_swatch {
+    width: 52px;
+    height: 52px;
+    margin-left: -12px;
+    border-radius: 99px;
+    border: 3px solid;
+}
+
+.web_links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.web_link {
+    box-shadow: 0 0 6px rgba(0, 0, 0, 0.25);
+}
+
+.web_images {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.web_image {
+    position: relative;
+    border-radius: 16px;
+    overflow: hidden;
+    aspect-ratio: 5 / 7;
+    box-shadow: 0 0 6px rgba(0, 0, 0, 0.25);
+}
+
+/* La columna derecha va desfasada hacia abajo */
+.web_image:nth-child(even) {
+    margin-top: 40px;
+}

@@ -1,7 +1,7 @@
 "use client";
 
 import { InvitationType, InvitationUIBundle, NewInvitation } from "@/types/new_invitation";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import styles from "./invitation.module.css";
 import { Cover } from "../Cover/Cover";
 import { Greeting } from "../Greeting/Greeting";
@@ -30,6 +30,7 @@ import SongPlayer from "../SongPlayer/SongPlayer";
 import InvitationControlBar from "../InvitationControlBar/InvitationControlBar";
 import InvitationDock from "../InvitationDock/InvitationDock";
 import LanguageToggle from "../LanguageToggle/LanguageToggle";
+import { InvitationLayoutProvider, useIsLargeScreen } from "../layout/InvitationLayout";
 
 type invProps = {
   invitation: NewInvitation | null;
@@ -71,6 +72,22 @@ export default function Invitation({ password, invitationID, ui, lang, available
   const footerRef = useRef<HTMLDivElement>(null);
   const [heightSize, setHeightSize] = useState<number>(0);
   const supabase = createClient();
+
+  // ≥768 (iPad y escritorio): layout "Split + Dock". La portada queda fija a
+  // la izquierda (con el dock anclado a ella) y los módulos hacen scroll en
+  // su propia columna a la derecha. Debajo, la columna móvil de siempre.
+  const isSplit = useIsLargeScreen();
+  const [asideRect, setAsideRect] = useState<{ w: number; h: number } | null>(null);
+  const asideObserver = useRef<ResizeObserver | null>(null);
+  const asideRef = useCallback((el: HTMLElement | null) => {
+    asideObserver.current?.disconnect();
+    if (!el) return;
+    asideObserver.current = new ResizeObserver(([entry]) => {
+      setAsideRect({ w: Math.round(entry.contentRect.width), h: Math.round(entry.contentRect.height) });
+    });
+    asideObserver.current.observe(el);
+  }, []);
+  useEffect(() => () => asideObserver.current?.disconnect(), []);
 
   const [open, setOpen] = useState(false);
   const [footerVisible, setFooterVisible] = useState(false);
@@ -142,6 +159,12 @@ export default function Invitation({ password, invitationID, ui, lang, available
     const target = sectionRefs[scrollToSection]?.current;
     const container = scrollableContentRef.current;
     if (!target || !container) return;
+    // En el split la portada vive en el panel izquierdo, fuera del scroll:
+    // ir a ella equivale a volver al inicio de la columna de módulos.
+    if (!container.contains(target)) {
+      container.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
     // Evita que el scrollspy reporte las secciones intermedias mientras dura el scroll animado
     programmaticScrollGuardRef.current = Date.now() + 700;
     // Scroll manual acotado al contenedor: scrollIntoView() puede propagar el
@@ -228,7 +251,7 @@ export default function Invitation({ password, invitationID, ui, lang, available
     });
 
     return () => observer.disconnect();
-  }, [validated, invitation?.generals?.positions?.join(","), onSectionChange]);
+  }, [validated, isSplit, invitation?.generals?.positions?.join(","), onSectionChange]);
 
 
   const handlePosition = (id: number, invitation: NewInvitation, index: number) => {
@@ -250,7 +273,7 @@ export default function Invitation({ password, invitationID, ui, lang, available
       case 8:
         return <Notices key={index} ref={noticesRef} dev={false} invitation={invitation} />;
       case 9:
-        return <Gallery key={index} ref={galleryRef} dev={dev} invitation={invitation} />;
+        return <Gallery key={index} ref={galleryRef} dev={dev} invitation={invitation} ui={ui} />;
 
       default:
         break;
@@ -457,7 +480,7 @@ export default function Invitation({ password, invitationID, ui, lang, available
 
     container.addEventListener('scroll', onScroll, { passive: true });
     return () => container.removeEventListener('scroll', onScroll);
-  }, []);
+  }, [isSplit, loader]);
 
   // El dock (plan Pro) nunca debe tapar la portada: se oculta mientras la
   // portada llegue a la franja inferior de la pantalla, donde flota el dock.
@@ -465,6 +488,11 @@ export default function Invitation({ password, invitationID, ui, lang, available
   // rootMargin fijo: en Safari iOS el alto visible cambia con la barra del
   // navegador y esa medida inicial no era confiable.
   useEffect(() => {
+    // En el split la portada nunca está detrás del dock: viven lado a lado.
+    if (isSplit) {
+      setCoverBehindDock(false);
+      return;
+    }
     const container = scrollableContentRef.current;
     if (!container) return;
     const DOCK_BAND_PX = 100; // alto de la barra (68) + su margen inferior (20) + aire
@@ -488,7 +516,7 @@ export default function Invitation({ password, invitationID, ui, lang, available
       window.removeEventListener("resize", measure);
       window.visualViewport?.removeEventListener("resize", measure);
     };
-  }, [validated]);
+  }, [validated, isSplit]);
 
   useEffect(() => {
     const el = footerRef.current;
@@ -499,7 +527,7 @@ export default function Invitation({ password, invitationID, ui, lang, available
     );
     observer.observe(el);
     return () => observer.disconnect();
-  }, [validated]);
+  }, [validated, isSplit]);
 
 
 
@@ -525,153 +553,198 @@ export default function Invitation({ password, invitationID, ui, lang, available
   const tex = textureOverride ?? textures.find((t) => t.id === textureId);
   const showTexture = Boolean(textureOverride) || invitation.generals.texture !== null;
 
-  return (
+  const modules = validated && (
     <>
+      {invitation?.generals.positions.map((position, index) => handlePosition(position, invitation, index))}
+      {mongoID === "68ffdb9cd673a17f84312991" && (
+        <div
+          style={{
+            width: "80%",
+            alignSelf: "center",
+          }}
+        >
+          <img
+            src="/assets/AA.png"
+            alt=""
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+            }}
+          />
+        </div>
+      )}
+      <div ref={footerRef} style={{ width: '100%' }}>
+        <FooterLand invitation={invitation} />
+      </div>
+    </>
+  );
+
+  const lockedOverlay = (
+    <div
+      className={styles.inv_locked_blured}
+      style={{ pointerEvents: validated ? "none" : undefined, opacity: validated ? "0" : "1", backgroundColor: `${primary}20` }}
+    >
+      <div className={styles.locked_icon}>
+        <FaLock size={32} style={{ color: "#FFF" }} />
+      </div>
+      <span style={{ fontFamily: font }} className={styles.locked_title}>
+        {ui?.locked.title}
+      </span>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexDirection: "column",
+          gap: "8px",
+        }}
+      >
+        <span style={{ fontFamily: font }} className={styles.locked_text}>
+          {ui?.locked?.p1}
+        </span>
+        <span style={{ fontFamily: font }} className={styles.locked_text}>
+          {ui?.locked?.p2}
+        </span>
+      </div>
+      <Input
+        value={guestCode}
+        // length={6}
+        size="large"
+        onChange={(e) => setGuestCode(e.target.value)}
+        placeholder={ui?.locked.placeholder}
+        className={styles.locked_input}
+        style={{
+          backgroundColor: "#FFFFFF20",
+          boxShadow: "0px 0px 12px rgba(0,0,0,0.2)",
+          borderWidth: "2px",
+          color: "#FFF",
+          fontSize: "18px",
+          textAlign: "center",
+          maxWidth: "280px",
+          borderRadius: "99px",
+          minHeight: "56px",
+          fontFamily: font,
+        }}
+      />
+
+      <Button className={styles.locked_btn} style={btnStyle} onClick={() => onValidateUser(guestCode)}>
+        {ui?.locked.access}
+      </Button>
+    </div>
+  );
+
+  const textureOverlay = showTexture && tex && (
+    <TextureOverlay
+      // En el split la portada no está en el scroll: la textura cubre todo.
+      key={isSplit ? `split-${validated}` : "mobile"}
+      containerRef={scrollableContentRef as unknown as React.RefObject<HTMLElement>}
+      coverHeightPx={isSplit ? 0 : heightSize}
+      texture={{
+        image: tex.image,
+        opacity: tex.opacity,
+        blend: tex.blend,
+        filter: tex.filter,
+      }}
+      tileW={1024}
+      tileH={1024}
+    />
+  );
+
+  const songPlayer = validated && coverSong && (
+    <SongPlayer song={coverSong} accent={accent} secondary={secondary} dev={dev} inline={isSplit} />
+  );
+
+  // Plan Pro: un solo contenedor que se transforma (confirmación, pases, Lia, Photo Wall)
+  const dock = validated && plan === "pro" && (
+    <InvitationDock
+      invitation={invitation}
+      invitationID={invitationID}
+      ui={ui}
+      lang={lang}
+      type={type}
+      dev={dev}
+      guestInfo={guestInfo}
+      companions={allCompanions}
+      refreshGuest={refreshGuest}
+      onGuestCreated={onValidateUser}
+      hidden={isSplit ? false : footerVisible || coverBehindDock}
+      scrolledDown={isSplit ? false : scrolledDown}
+      container={isSplit ? asideRect ?? { w: 600, h: 800 } : null}
+    />
+  );
+
+  const controlBar = validated && plan !== "pro" && (
+    <InvitationControlBar
+      plan={plan}
+      dev={dev}
+      guestInfo={guestInfo}
+      ui={ui}
+      actions={actions}
+      primary={primary}
+      accent={accent}
+      phone_number={phone_number}
+      scrolledDown={isSplit ? false : scrolledDown}
+      hidden={isSplit ? false : footerVisible}
+      anchored={isSplit}
+      onOpenConfirm={() => setOpen(true)}
+    />
+  );
+
+  return (
+    <InvitationLayoutProvider value={isSplit ? "split" : "mobile"}>
       {contextHolder}
 
       {!dev && <LanguageToggle languages={availableLanguages} currentLang={lang} />}
 
-      <div
-        ref={scrollableContentRef}
-        className={`${styles.invitation_main_cont} scroll-invitation`}
-        style={{
-          backgroundColor: invitation.generals.colors.primary ?? "#FFF",
-          paddingBottom: "0px",
-          maxHeight: "100dvh",
-          position: "relative",
-        }}
-      >
+      {isSplit ? (
+        <div className={styles.split_shell} style={{ backgroundColor: primary }}>
+          <aside ref={asideRef} className={styles.split_aside}>
+            <Cover
+              variant="aside"
+              topSlot={songPlayer}
+              reserveDock={Boolean(validated)}
+              ui={ui}
+              lang={lang}
+              ref={coverRef}
+              dev={dev}
+              invitation={invitation}
+              height="100%"
+              validated={validated}
+            />
+            {dock}
+            {controlBar}
+          </aside>
 
-        <Cover ui={ui} lang={lang} ref={coverRef} dev={dev} invitation={invitation} height={"100vh"} validated={validated} />
-        {validated && coverSong && (
-          <SongPlayer song={coverSong} accent={accent} secondary={secondary} dev={dev} />
-        )}
-        {validated && (
-          <>
-            {invitation?.generals.positions.map((position, index) => handlePosition(position, invitation, index))}
-            {mongoID === "68ffdb9cd673a17f84312991" && (
-              <div
-                style={{
-                  width: "80%",
-                }}
-              >
-                <img
-                  src="/assets/AA.png"
-                  alt=""
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    objectFit: "cover",
-                  }}
-                />
-              </div>
-            )}
-            <div ref={footerRef} style={{ width: '100%' }}>
-              <FooterLand invitation={invitation} />
-            </div>
-          </>
-        )}
+          <main ref={scrollableContentRef} className={`${styles.split_main} scroll-invitation`}>
+            {modules}
+            {textureOverlay}
+          </main>
 
-        <div
-          className={styles.inv_locked_blured}
-          style={{ pointerEvents: validated ? "none" : undefined, opacity: validated ? "0" : "1", backgroundColor: `${primary}20` }}
-        >
-          <div className={styles.locked_icon}>
-            <FaLock size={32} style={{ color: "#FFF" }} />
-          </div>
-          <span style={{ fontFamily: font }} className={styles.locked_title}>
-            {ui?.locked.title}
-          </span>
+          {lockedOverlay}
+        </div>
+      ) : (
+        <>
           <div
+            ref={scrollableContentRef}
+            className={`${styles.invitation_main_cont} scroll-invitation`}
             style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              flexDirection: "column",
-              gap: "8px",
+              backgroundColor: invitation.generals.colors.primary ?? "#FFF",
+              paddingBottom: "0px",
+              maxHeight: "100dvh",
+              position: "relative",
             }}
           >
-            <span style={{ fontFamily: font }} className={styles.locked_text}>
-              {ui?.locked?.p1}
-            </span>
-            <span style={{ fontFamily: font }} className={styles.locked_text}>
-              {ui?.locked?.p2}
-            </span>
+            <Cover ui={ui} lang={lang} ref={coverRef} dev={dev} invitation={invitation} height={"100vh"} validated={validated} />
+            {songPlayer}
+            {modules}
+            {lockedOverlay}
+            {textureOverlay}
           </div>
-          <Input
-            value={guestCode}
-            // length={6}
-            size="large"
-            onChange={(e) => setGuestCode(e.target.value)}
-            placeholder={ui?.locked.placeholder}
-            className={styles.locked_input}
-            style={{
-              backgroundColor: "#FFFFFF20",
-              boxShadow: "0px 0px 12px rgba(0,0,0,0.2)",
-              borderWidth: "2px",
-              color: "#FFF",
-              fontSize: "18px",
-              textAlign: "center",
-              maxWidth: "280px",
-              borderRadius: "99px",
-              minHeight: "56px",
-              fontFamily: font,
-            }}
-          />
 
-          <Button className={styles.locked_btn} style={btnStyle} onClick={() => onValidateUser(guestCode)}>
-            {ui?.locked.access}
-          </Button>
-        </div>
-        {showTexture && tex && (
-          <TextureOverlay
-            containerRef={scrollableContentRef as unknown as React.RefObject<HTMLElement>}
-            coverHeightPx={heightSize}
-            texture={{
-              image: tex.image,
-              opacity: tex.opacity,
-              blend: tex.blend,
-              filter: tex.filter,
-            }}
-            tileW={1024}
-            tileH={1024}
-          />
-        )}
-
-      </div>
-
-      {/* Plan Pro: un solo contenedor que se transforma (confirmación, pases, Lia, Photo Wall) */}
-      {validated && plan === "pro" && (
-        <InvitationDock
-          invitation={invitation}
-          invitationID={invitationID}
-          ui={ui}
-          lang={lang}
-          type={type}
-          dev={dev}
-          guestInfo={guestInfo}
-          companions={allCompanions}
-          refreshGuest={refreshGuest}
-          onGuestCreated={onValidateUser}
-          hidden={footerVisible || coverBehindDock}
-          scrolledDown={scrolledDown}
-        />
-      )}
-
-      {validated && plan !== "pro" && (
-        <InvitationControlBar
-          plan={plan}
-          dev={dev}
-          guestInfo={guestInfo}
-          ui={ui}
-          actions={actions}
-          primary={primary}
-          accent={accent}
-          phone_number={phone_number}
-          scrolledDown={scrolledDown}
-          hidden={footerVisible}
-          onOpenConfirm={() => setOpen(true)}
-        />
+          {dock}
+          {controlBar}
+        </>
       )}
 
       <div style={{ opacity: animation ? 1 : 0 }} className={styles.animation_cont}>
@@ -728,6 +801,6 @@ export default function Invitation({ password, invitationID, ui, lang, available
           </div>
         </div>
       </SlideOverlay>
-    </>
+    </InvitationLayoutProvider>
   );
 }

@@ -8,3 +8,47 @@
       1px 1px 2px rgba(0,0,0,0.05),
       0 3px 2px rgba(0,0,0,0.08);
   }
+/* ── Layout web (≥768) ── */
+.web_grid {
+    width: 100%;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    gap: 32px;
+    align-items: center;
+    text-align: center;
+}
+
+/* Sin "&" que separe los dos lados: dos columnas parejas */
+.web_grid_plain {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    row-gap: 28px;
+}
+
+.web_side {
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+}
+
+.web_person {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.web_person_label {
+    font-size: 14px;
+    letter-spacing: 1px;
+    white-space: pre-line;
+}
+
+.web_person_name {
+    font-size: 20px;
+    line-height: 1.35;
+    white-space: pre-line;
+}
+
+.web_amp {
+    font-size: 56px;
+    line-height: 1;
+}

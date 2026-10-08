@@ -16,6 +16,12 @@ type CoverProps = {
   validated?: boolean;
   ui?: InvitationUIBundle | null;
   lang?: string | null;
+  // "aside": panel izquierdo fijo del layout web (≥768).
+  variant?: "full" | "aside";
+  // Solo en "aside": lo que va arriba del título (reproductor de la canción).
+  topSlot?: React.ReactNode;
+  // Solo en "aside": reserva el espacio inferior donde flota el dock.
+  reserveDock?: boolean;
 };
 
 const isVideo = (url: string) => /\.(mp4|webm|mov|m4v)(\?|$)/i.test(url);
@@ -28,7 +34,7 @@ const toArray = (src: string | string[] | null | undefined): string[] => {
 };
 
 export const Cover = forwardRef<HTMLDivElement, CoverProps>(function Cover(
-  { ui, lang, dev, invitation, height: _height, validated = true },
+  { ui, lang, dev, invitation, height: _height, validated = true, variant = "full", topSlot, reserveDock = false },
   ref
 ) {
   const cover = invitation?.cover;
@@ -56,6 +62,90 @@ export const Cover = forwardRef<HTMLDivElement, CoverProps>(function Cover(
   const width = useScreenWidth();
   const isLargeScreen = width >= 768;
 
+  const renderSlides = () =>
+    mediaItems.map((src, i) => (
+      <div
+        key={src + i}
+        className={styles.carouselSlide}
+        style={{ opacity: i === activeIndex ? 1 : 0 }}
+      >
+        <div className={styles.carouselInner}>
+          {isVideo(src) ? (
+            <video src={src} autoPlay muted loop playsInline className={styles.carouselVideo} />
+          ) : (
+            <Image
+              fill
+              priority={i === 0}
+              quality={100}
+              sizes={variant === "aside" ? "42vw" : "100vw"}
+              style={{ objectFit: "cover" }}
+              alt=""
+              src={src}
+            />
+          )}
+        </div>
+      </div>
+    ));
+
+  if (variant === "aside") {
+    return (
+      <div ref={ref} className={styles.aside_cover} style={{ background: generals?.colors.primary ?? "#FFFFFF" }}>
+        {mediaItems.length > 0 && (
+          <div className={styles.aside_media} style={{ transform: `scale(${cover?.image.zoom ?? 1})` }}>
+            {renderSlides()}
+          </div>
+        )}
+
+        {cover?.image.background ? (
+          <div
+            className={styles.aside_overlay}
+            style={{ background: `linear-gradient(to top, ${darker(generals?.colors.primary ?? "#FFFFFF", 0.2)}, transparent)` }}
+          />
+        ) : (
+          cover?.image.blur && <div className={styles.blur_cover} />
+        )}
+
+        {isCarousel && (
+          <div className={`${styles.carouselDots} ${styles.aside_dots}`}>
+            {mediaItems.map((_, i) => (
+              <button
+                key={i}
+                className={`${styles.dot} ${i === activeIndex ? styles.dotActive : ""}`}
+                onClick={() => setActiveIndex(i)}
+                aria-label={`Slide ${i + 1}`}
+              />
+            ))}
+          </div>
+        )}
+
+        <div className={styles.aside_content}>
+          <div className={styles.aside_top}>
+            {topSlot}
+            <span
+              translate="no"
+              className={`notranslate ${styles.aside_title}`}
+              style={{
+                color: cover?.title.text.color ?? lighter(generals?.colors.accent ?? "#000000", 0.6) ?? "#FFFFFF",
+                opacity: cover?.title.text.opacity,
+                fontFamily: cover?.title.text.typeFace,
+                fontWeight: cover?.title.text.weight,
+              }}
+            >
+              {cover?.title.text.value}
+            </span>
+          </div>
+
+          <div className={styles.aside_bottom}>
+            {cover?.date.active && (
+              <Countdown ui={ui} locale={lang} cover={cover} generals={generals} dev={dev} validated={validated} variant="aside" />
+            )}
+            {reserveDock && <div className={styles.aside_dock_space} />}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div ref={ref} className={styles.module_cover_container} style={{ position: "relative", zIndex: 10 }}>
       <div
@@ -73,36 +163,7 @@ export const Cover = forwardRef<HTMLDivElement, CoverProps>(function Cover(
               position: "relative",
             }}
           >
-            {mediaItems.map((src, i) => (
-              <div
-                key={src + i}
-                className={styles.carouselSlide}
-                style={{ opacity: i === activeIndex ? 1 : 0 }}
-              >
-                <div className={styles.carouselInner}>
-                  {isVideo(src) ? (
-                    <video
-                      src={src}
-                      autoPlay
-                      muted
-                      loop
-                      playsInline
-                      className={styles.carouselVideo}
-                    />
-                  ) : (
-                    <Image
-                      fill
-                      priority={i === 0}
-                      quality={100}
-                      sizes="100vw"
-                      style={{ objectFit: "cover" }}
-                      alt=""
-                      src={src}
-                    />
-                  )}
-                </div>
-              </div>
-            ))}
+            {renderSlides()}
           </div>
         )}
 

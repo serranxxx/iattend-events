@@ -1,0 +1,93 @@
+.wrapper {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 36px;
+}
+
+.header {
+    padding: 0 48px;
+    box-sizing: border-box;
+    align-items: end;
+}
+
+.count {
+    justify-self: end;
+    font-family: 'Poppins', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+/* Scroll libre, sin snap: se arrastra con el mouse o se desliza con trackpad/touch */
+.scroller {
+    width: 100%;
+    box-sizing: border-box;
+    display: flex;
+    gap: 16px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 4px 48px 12px;
+    scrollbar-width: none;
+    cursor: grab;
+    user-select: none;
+    touch-action: pan-x;
+}
+
+.scroller::-webkit-scrollbar {
+    display: none;
+}
+
+.dragging {
+    cursor: grabbing;
+}
+
+.column {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.photo {
+    position: relative;
+    width: 100%;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.35);
+    flex-shrink: 0;
+}
+
+.photo img {
+    pointer-events: none;
+}
+
+.progress_row {
+    padding: 0 48px;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.track {
+    position: relative;
+    flex: 1;
+    height: 2px;
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.thumb {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    border-radius: 2px;
+    transition: left 0.1s linear;
+}
+
+.hint {
+    font-family: 'Poppins', sans-serif;
+    font-size: 12px;
+    white-space: nowrap;
+}

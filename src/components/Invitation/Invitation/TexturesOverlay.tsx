@@ -81,18 +81,29 @@ export function TextureOverlay({
       preserveAspectRatio="none"
     >
       <defs>
-        <pattern id={patternId} patternUnits="userSpaceOnUse" width={tileW} height={tileH * 2} patternTransform={`scale(${scale})`}>
-          <image href={texSrc} x="0" y="0" width={tileW} height={tileH} preserveAspectRatio="none" imageRendering="crisp-edges" />
-          <image
-            href={texSrc}
-            x="0"
-            y="0"
-            width={tileW}
-            height={tileH}
-            preserveAspectRatio="none"
-            imageRendering="crisp-edges"
-            transform={`translate(0, ${2 * tileH}) scale(1, -1)`}
-          />
+        {/* Mosaico espejado en ambos ejes (2×2): cada copia continúa el borde
+            de la vecina, así no se ven cortes al repetir. En móvil solo se
+            repetía en vertical; en la columna web (más ancha que un tile)
+            también se repite en horizontal. */}
+        <pattern id={patternId} patternUnits="userSpaceOnUse" width={tileW * 2} height={tileH * 2} patternTransform={`scale(${scale})`}>
+          {[
+            { x: 1, y: 1 },
+            { x: -1, y: 1 },
+            { x: 1, y: -1 },
+            { x: -1, y: -1 },
+          ].map(({ x, y }) => (
+            <image
+              key={`${x}${y}`}
+              href={texSrc}
+              x="0"
+              y="0"
+              width={tileW}
+              height={tileH}
+              preserveAspectRatio="none"
+              imageRendering="crisp-edges"
+              transform={`translate(${x < 0 ? 2 * tileW : 0}, ${y < 0 ? 2 * tileH : 0}) scale(${x}, ${y})`}
+            />
+          ))}
         </pattern>
       </defs>
       <rect x="0" y="0" width="100%" height="100%" fill={`url(#${patternId})`} />

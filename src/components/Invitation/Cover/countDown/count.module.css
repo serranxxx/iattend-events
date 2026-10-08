@@ -74,3 +74,52 @@
         gap: 16px;
     }
   }
+/* ── Portada en el panel izquierdo del layout web ── */
+.aside {
+    max-width: 380px;
+    gap: 10px;
+}
+
+.aside .date_date {
+    font-size: 20px;
+}
+
+.aside .date_divider {
+    margin: 0;
+    opacity: 0.8;
+}
+
+.aside .date_row {
+    gap: 22px;
+    flex-wrap: nowrap;
+}
+
+.aside .date_col {
+    gap: 8px;
+}
+
+.aside .date_time {
+    font-size: 30px;
+    line-height: 1;
+}
+
+.aside .date_unit {
+    font-size: 13px;
+    font-weight: 400;
+}
+
+/* iPad vertical: el panel queda en ~340px */
+@media (max-width: 1023px) {
+    .aside .date_row {
+        gap: 12px;
+    }
+
+    .aside .date_time {
+        font-size: 26px;
+    }
+
+    .aside .date_unit {
+        font-size: 11px;
+        letter-spacing: 1px;
+    }
+}

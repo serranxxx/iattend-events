@@ -7,6 +7,10 @@ import OpenCard from "./OpenCard/OpenCard";
 import { Button } from "antd";
 import { FaDiamondTurnRight } from "react-icons/fa6";
 import Image from "next/image";
+import ItineraryWeb from "./ItineraryWeb/ItineraryWeb";
+import { useIsSplitLayout } from "../layout/InvitationLayout";
+import { WebSection } from "../layout/WebSection";
+import web from "../layout/web-section.module.css";
 
 type quoteProps = {
   dev: boolean;
@@ -41,6 +45,45 @@ export const Itinerary = forwardRef<HTMLDivElement, quoteProps>(function Greetin
 
   const hasContent = Boolean(content?.title?.trim()) || Boolean(content?.object?.length);
   const hasSeparator = Boolean(content?.dynamic_separator?.active);
+  const isSplit = useIsSplitLayout();
+
+  if (isSplit) {
+    if (!content.active || !generals || !(hasContent || hasSeparator)) return null;
+    const onBand = content?.dynamic_background?.active;
+    return (
+      <WebSection
+        ref={ref}
+        background={content.dynamic_background}
+        secondary={secondary}
+        maxWidth={960}
+        separator={content.dynamic_separator}
+        inverted={content.inverted}
+        generals={generals}
+      >
+        {hasContent && (
+          <div className={web.stack} style={{ gap: 48 }}>
+            <ItineraryWeb
+              invitation={invitation}
+              ui={ui}
+              dev={dev}
+              textColor={onBand && content.inverted ? primary : accent}
+              title={
+                <span
+                  className={web.title}
+                  style={{
+                    color: onBand ? (content.inverted ? primary : title.color) : title.color,
+                    fontFamily: title.font ?? "Poppins", fontWeight: title.weight, opacity: title.opacity,
+                  }}
+                >
+                  {content.title}
+                </span>
+              }
+            />
+          </div>
+        )}
+      </WebSection>
+    );
+  }
 
   return (
     <>

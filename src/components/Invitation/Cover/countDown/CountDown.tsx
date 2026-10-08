@@ -23,6 +23,8 @@ type CountdownProps = {
   validated?: boolean;
   ui?: InvitationUIBundle | null;
   locale?: string | null;
+  // "aside": tamaños del panel izquierdo del layout web.
+  variant?: "default" | "aside";
 };
 
 type Units = "days" | "hours" | "minutes" | "seconds";
@@ -82,7 +84,7 @@ const labels: Record<Units, { singular: string; plural: string }> = {
   seconds: { singular: "segundo", plural: "segundos" },
 };
 
-export default function Countdown({ ui, cover, generals, dev, validated = true, locale }: CountdownProps) {
+export default function Countdown({ ui, cover, generals, dev, validated = true, locale, variant = "default" }: CountdownProps) {
   const targetDate = useMemo(() => {
     const t = parseDateOnly(cover?.date?.value);
     return t && !isNaN(+t) ? t : null;
@@ -110,10 +112,11 @@ export default function Countdown({ ui, cover, generals, dev, validated = true, 
 
   const color = cover.date.color ?? lighter(generals?.colors.accent ?? "#FFFFFF", 0.6);
   const font = generals?.fonts.body?.typeFace ?? "Poppins";
+  const containerClass = `${styles.date_container} ${variant === "aside" ? styles.aside : ""}`;
 
   if (!targetDate) {
     return (
-      <div className={styles.date_container}>
+      <div className={containerClass}>
         <span className={styles.date_date} style={{ color, fontFamily: font }}>
           {cover?.date?.value ? formatDate(cover.date.value, locale) : "Fecha por definir"}
         </span>
@@ -122,7 +125,7 @@ export default function Countdown({ ui, cover, generals, dev, validated = true, 
   }
 
   return (
-    <div className={styles.date_container}>
+    <div className={containerClass}>
       <span className={styles.date_date} style={{ color, fontFamily: font }}>
         {formatDate(cover.date.value, locale)}
       </span>

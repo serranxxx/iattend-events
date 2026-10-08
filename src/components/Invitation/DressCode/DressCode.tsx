@@ -9,6 +9,9 @@ import { Button } from "antd";
 import { FaPinterest } from "react-icons/fa";
 import FadeLeft from "@/components/Motion/FadeLeft";
 import FadeIn from "@/components/Motion/FadeIn";
+import { useIsSplitLayout } from "../layout/InvitationLayout";
+import { WebSection } from "../layout/WebSection";
+import web from "../layout/web-section.module.css";
 
 type DresscodeProps = {
   dev: boolean;
@@ -60,6 +63,91 @@ export const DressCode = forwardRef<HTMLDivElement, DresscodeProps>(function Gre
     || (content?.images_active && Boolean(images_src?.length))
     || (content?.links_active && Boolean(content?.links?.length));
   const hasSeparator = Boolean(content?.dynamic_separator?.active);
+  const isSplit = useIsSplitLayout();
+
+  if (isSplit) {
+    if (!content.active || !generals || !(hasContent || hasSeparator)) return null;
+    const textColor = content.inverted ? primary : accent;
+    const images = content.images_active ? (images_src ?? []).filter(Boolean) : [];
+    const links = content.links_active ? (content.links ?? []) : [];
+    return (
+      <WebSection
+        ref={ref}
+        background={content.dynamic_background}
+        secondary={secondary}
+        maxWidth={960}
+        separator={content.dynamic_separator}
+        inverted={content.inverted}
+        generals={generals}
+      >
+        {hasContent && (
+          <div className={styles.web_grid}>
+            <FadeLeft>
+              <div className={`${styles.web_text} ${images.length === 0 ? styles.web_text_alone : ""}`}>
+                {content.title && (
+                  <span
+                    className={web.title}
+                    style={{ color: content.inverted ? primary : title.color, fontFamily: title.font ?? "Poppins", fontWeight: title.weight, opacity: title.opacity }}
+                  >
+                    {renderTextWithStrong(content.title)}
+                  </span>
+                )}
+                {content.description && (
+                  <p className={web.body} style={{ color: textColor, fontFamily: body.font ?? "Poppins", fontWeight: body.weight, opacity: body.opacity }}>
+                    {renderTextWithStrong(content.description)}
+                  </p>
+                )}
+                {content.colors?.length > 0 && (
+                  <div className={styles.web_palette}>
+                    {content.colors.map((color, index) => (
+                      <div
+                        key={index}
+                        className={styles.web_swatch}
+                        style={{ borderColor: content?.background ? secondary : primary, backgroundColor: color }}
+                      />
+                    ))}
+                  </div>
+                )}
+                {links.length > 0 && (
+                  <div className={styles.web_links}>
+                    {links.map((link, index) => (
+                      <a
+                        key={index}
+                        href={link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`${web.pill_btn} ${styles.web_link}`}
+                        style={{
+                          backgroundColor: content?.dynamic_background?.active ? (content?.inverted ? primary : secondary) : primary,
+                          color: accent,
+                          fontWeight: 400,
+                        }}
+                      >
+                        <FaPinterest />
+                        {ui?.buttons.inspiration}
+                      </a>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </FadeLeft>
+
+            {images.length > 0 && (
+              <FadeIn>
+                <div className={styles.web_images} style={{ width: "100%" }}>
+                  {images.map((image, index) => (
+                    <div key={index} className={styles.web_image}>
+                      <Image fill sizes="25vw" alt="" loading="lazy" src={image} style={{ objectFit: "cover" }} />
+                    </div>
+                  ))}
+                </div>
+              </FadeIn>
+            )}
+          </div>
+        )}
+      </WebSection>
+    );
+  }
 
   return content.active && generals && (hasContent || hasSeparator) ? (
     <>

@@ -18,6 +18,8 @@ type InvitationControlBarProps = {
   scrolledDown?: boolean;
   hidden?: boolean;
   onOpenConfirm: () => void;
+  // Layout web: dentro del panel de la portada en vez de fijo al viewport.
+  anchored?: boolean;
 };
 
 // Barra de los planes Lite y paperless. El plan Pro usa InvitationDock.
@@ -34,12 +36,13 @@ export default function InvitationControlBar({
   scrolledDown = false,
   hidden = false,
   onOpenConfirm,
+  anchored = false,
 }: InvitationControlBarProps) {
   if (hidden) return null;
   const isConfirmed = guestInfo?.state === 'confirmado' || guestInfo?.state === 'asistente';
   const showLite = isConfirmed && plan === 'lite';
 
-  const wrapperClass = `${styles.wrapper} ${scrolledDown ? styles.wrapperSmall : ''}`;
+  const wrapperClass = `${styles.wrapper} ${anchored ? styles.wrapperAnchored : ''} ${scrolledDown ? styles.wrapperSmall : ''}`;
 
   // --- Paperless plan ---
   if (plan === 'paperless') {

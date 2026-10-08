@@ -3,13 +3,16 @@ import React, { forwardRef } from "react";
 import { Separador } from "../Separator/Separator";
 import FadeLeft from "@/components/Motion/FadeLeft";
 import Image from "next/image";
+import { useIsSplitLayout } from "../layout/InvitationLayout";
+import { WebSection } from "../layout/WebSection";
+import web from "../layout/web-section.module.css";
 
 type DresscodeProps = {
   dev: boolean;
   invitation: NewInvitation;
 };
 
-export const Notices = forwardRef<HTMLDivElement, DresscodeProps>(function notices({ dev: _dev, invitation }, ref) {
+export const Notices = forwardRef<HTMLDivElement, DresscodeProps>(function Notices({ dev: _dev, invitation }, ref) {
   const content = invitation.notices;
   const generals = invitation.generals;
 
@@ -48,6 +51,50 @@ export const Notices = forwardRef<HTMLDivElement, DresscodeProps>(function notic
 
   const hasContent = Boolean(content?.title?.trim()) || Boolean(content?.notices?.length);
   const hasSeparator = Boolean(content?.dynamic_separator?.active);
+  const isSplit = useIsSplitLayout();
+
+  if (isSplit) {
+    if (!content.active || !generals || !(hasContent || hasSeparator)) return null;
+    return (
+      <WebSection
+        ref={ref}
+        background={content.dynamic_background}
+        secondary={secondary}
+        maxWidth={640}
+        separator={content.dynamic_separator}
+        inverted={content.inverted}
+        generals={generals}
+      >
+        {hasContent && (
+          <div className={web.stack}>
+            {content.title && (
+              <FadeLeft>
+                <span
+                  className={web.title}
+                  style={{ color: content.inverted ? primary : title.color, fontFamily: title.font ?? "Poppins", fontWeight: title.weight, opacity: title.opacity }}
+                >
+                  {content.title}
+                </span>
+              </FadeLeft>
+            )}
+            <FadeLeft>
+              <div style={{ display: "flex", flexDirection: "column", gap: 30 }}>
+                {(content.notices ?? []).map((item, index) => (
+                  <p
+                    key={index}
+                    className={web.body}
+                    style={{ color: content.inverted ? primary : accent, fontFamily: body.font ?? "Poppins", fontWeight: body.weight, opacity: body.opacity }}
+                  >
+                    {renderTextWithStrong(item ?? "")}
+                  </p>
+                ))}
+              </div>
+            </FadeLeft>
+          </div>
+        )}
+      </WebSection>
+    );
+  }
 
   return (
     <>

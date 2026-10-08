@@ -154,3 +154,93 @@
         box-shadow: 0px 0px 9px rgba(0, 0, 0, 0.25);
     }
 }
+/* ── Panel izquierdo del layout web (≥768): fijo, nunca hace scroll ── */
+.aside_cover {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+}
+
+.aside_media {
+    position: absolute;
+    inset: 0;
+}
+
+.aside_overlay {
+    position: absolute;
+    inset: 0;
+    mix-blend-mode: multiply;
+    pointer-events: none;
+}
+
+.aside_dots {
+    top: 52px;
+    bottom: auto;
+    left: auto;
+    right: 40px;
+    transform: none;
+}
+
+.aside_content {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 40px;
+    box-sizing: border-box;
+    pointer-events: none;
+}
+
+.aside_content > * {
+    pointer-events: auto;
+}
+
+.aside_top {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    text-align: center;
+}
+
+.aside_title {
+    width: 100%;
+    margin-top: 24px;
+    font-size: 76px;
+    line-height: 1;
+    text-align: center;
+    word-break: break-word;
+    text-shadow: 0 0 8px rgba(0, 0, 0, 0.5);
+}
+
+.aside_bottom {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+/* Espacio para la pastilla del dock, que flota encima */
+.aside_dock_space {
+    height: 72px;
+    flex-shrink: 0;
+}
+
+/* iPad vertical: el panel queda en ~340px */
+@media (max-width: 1023px) {
+    .aside_content {
+        padding: 32px 24px;
+    }
+
+    .aside_title {
+        font-size: 56px;
+    }
+
+    .aside_dots {
+        top: 44px;
+        right: 24px;
+    }
+}

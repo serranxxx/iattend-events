@@ -6,6 +6,9 @@ import React, { forwardRef } from "react";
 import { Separador } from "../Separator/Separator";
 import FadeLeft from "@/components/Motion/FadeLeft";
 import Image from "next/image";
+import { useIsSplitLayout } from "../layout/InvitationLayout";
+import { WebSection } from "../layout/WebSection";
+import web from "../layout/web-section.module.css";
 
 type GreetingProps = {
   dev: boolean;
@@ -48,6 +51,51 @@ export const Greeting = forwardRef<HTMLDivElement, GreetingProps>(function Greet
 
   const hasContent = Boolean(content?.title?.trim()) || Boolean(content?.description?.trim());
   const hasSeparator = Boolean(content?.dynamic_separator?.active);
+  const isSplit = useIsSplitLayout();
+
+  if (isSplit) {
+    if (!content?.active || !generals?.colors || !(hasContent || hasSeparator)) return null;
+    return (
+      <WebSection
+        ref={ref}
+        background={content.dynamic_background}
+        secondary={secondary}
+        maxWidth={640}
+        separator={content.dynamic_separator}
+        inverted={content.inverted}
+        generals={generals}
+      >
+        {hasContent && (
+          <div className={web.stack}>
+            <FadeLeft>
+              <span
+                className={`${web.title} ${web.title_lg}`}
+                style={{
+                  color: content.inverted ? primary : title.color,
+                  fontFamily: title.font ?? "Poppins",
+                  fontWeight: title.weight, opacity: title.opacity,
+                }}
+              >
+                {renderTextWithStrong(content.title ?? "")}
+              </span>
+            </FadeLeft>
+            <FadeLeft>
+              <p
+                className={`${web.body} ${web.body_lg}`}
+                style={{
+                  color: content.inverted ? primary : accent,
+                  fontFamily: body.font ?? "Poppins",
+                  fontWeight: body.weight, opacity: body.opacity,
+                }}
+              >
+                {renderTextWithStrong(content.description ?? "")}
+              </p>
+            </FadeLeft>
+          </div>
+        )}
+      </WebSection>
+    );
+  }
 
   return (
     <>

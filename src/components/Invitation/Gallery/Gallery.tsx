@@ -1,17 +1,22 @@
-import { NewInvitation } from "@/types/new_invitation";
+import { InvitationUIBundle, NewInvitation } from "@/types/new_invitation";
 import Image from "next/image";
 import React, { forwardRef } from "react";
 import { Separador } from "../Separator/Separator";
 import FanStack from "./FanStack";
 import FadeLeft from "@/components/Motion/FadeLeft";
 import FadeIn from "@/components/Motion/FadeIn";
+import GalleryWeb from "./GalleryWeb/GalleryWeb";
+import { useIsSplitLayout } from "../layout/InvitationLayout";
+import { WebSection } from "../layout/WebSection";
+import web from "../layout/web-section.module.css";
 
 type DresscodeProps = {
   dev: boolean;
   invitation: NewInvitation;
+  ui?: InvitationUIBundle | null;
 };
 
-export const Gallery = forwardRef<HTMLDivElement, DresscodeProps>(function gallery({ dev, invitation }, ref) {
+export const Gallery = forwardRef<HTMLDivElement, DresscodeProps>(function Gallery({ dev, invitation, ui }, ref) {
   const content = invitation.gallery;
   const generals = invitation.generals;
 
@@ -42,6 +47,41 @@ export const Gallery = forwardRef<HTMLDivElement, DresscodeProps>(function galle
 
   const hasContent = Boolean(content?.title?.trim()) || Boolean(images?.length);
   const hasSeparator = Boolean(content?.dynamic_separator?.active);
+  const isSplit = useIsSplitLayout();
+
+  if (isSplit) {
+    if (!content.active || !generals || !(hasContent || hasSeparator)) return null;
+    return (
+      <WebSection
+        ref={ref}
+        background={content.dynamic_background}
+        secondary={secondary}
+        bleed
+        separator={content.dynamic_separator}
+        inverted={content.inverted}
+        generals={generals}
+      >
+        {hasContent && (
+          <FadeIn>
+            <GalleryWeb
+              images={images ?? []}
+              ui={ui}
+              textColor={content.inverted ? primary : accent}
+              placeholder={`${secondary}30`}
+              title={
+                <span
+                  className={web.title}
+                  style={{ color: content.inverted ? primary : title.color, fontFamily: title.font ?? "Poppins", fontWeight: title.weight, opacity: title.opacity }}
+                >
+                  {renderTextWithStrong(content.title ?? "")}
+                </span>
+              }
+            />
+          </FadeIn>
+        )}
+      </WebSection>
+    );
+  }
 
   return (
     <>

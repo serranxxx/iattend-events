@@ -1,0 +1,132 @@
+/*
+ * Secciones del layout web (≥768, columna derecha del split).
+ * Los colores llegan en línea desde cada módulo (generals.colors).
+ */
+
+.section {
+    position: relative;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 104px 48px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 48px;
+    flex-shrink: 0;
+}
+
+.band {
+    padding: 88px 48px;
+}
+
+.band_shadow {
+    box-shadow: 0 0 12px rgba(0, 0, 0, 0.4);
+    z-index: 1;
+}
+
+.bleed {
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.flush {
+    padding: 0;
+}
+
+.inner {
+    width: 100%;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.separator_image {
+    z-index: 2;
+}
+
+/* ── Tipografía compartida ── */
+
+/* stretch: los wrappers de animación (FadeLeft/FadeIn) deben ocupar todo el
+   ancho; el centrado lo da text-align. */
+.stack {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 24px;
+    text-align: center;
+}
+
+.title {
+    font-size: 44px;
+    line-height: 1.1;
+    white-space: pre-line;
+}
+
+.title_lg {
+    font-size: 48px;
+}
+
+.body {
+    margin: 0;
+    font-size: 18px;
+    line-height: 1.7;
+    white-space: pre-line;
+    text-wrap: pretty;
+}
+
+.body_lg {
+    font-size: 19px;
+}
+
+/* Encabezado de 3 columnas: título al centro, controles a la derecha */
+.header_row {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 16px;
+}
+
+.header_side {
+    justify-self: end;
+    display: flex;
+    gap: 8px;
+}
+
+/* Botón circular con flecha (itinerario, destinos) */
+.round_btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 1px solid;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0;
+    transition: background 0.2s ease;
+}
+
+.round_btn:hover {
+    background: var(--hover-bg) !important;
+}
+
+/* Botón pill (Poppins, alto 44) */
+.pill_btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    height: 44px;
+    padding: 0 20px;
+    border-radius: 99px;
+    border: 1px solid transparent;
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: none;
+    cursor: pointer;
+    background: transparent;
+    white-space: nowrap;
+}

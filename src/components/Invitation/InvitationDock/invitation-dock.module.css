@@ -75,6 +75,12 @@
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
 }
 
+/* Layout web: anclado al panel de la portada, no al viewport. El scrim
+   cubre solo ese panel; el contenido de la derecha sigue visible. */
+.anchored {
+  position: absolute;
+}
+
 .morph_small {
   transform: translateX(-50%) scale(0.8);
 }

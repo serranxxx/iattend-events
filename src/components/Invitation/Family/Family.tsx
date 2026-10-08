@@ -4,6 +4,10 @@ import { Separador } from "../Separator/Separator";
 import FadeLeft from "@/components/Motion/FadeLeft";
 import { lighter } from "@/helpers/functions";
 import Image from "next/image";
+import styles from "./family.module.css";
+import { useIsSplitLayout } from "../layout/InvitationLayout";
+import { WebSection } from "../layout/WebSection";
+import web from "../layout/web-section.module.css";
 
 type peopleProps = {
   dev: boolean;
@@ -38,6 +42,67 @@ export const People = forwardRef<HTMLDivElement, peopleProps>(function Greeting(
 
   const hasContent = Boolean(content?.title?.trim()) || Boolean(content?.personas?.length);
   const hasSeparator = Boolean(content?.dynamic_separator?.active);
+  const isSplit = useIsSplitLayout();
+
+  if (isSplit) {
+    if (!content?.active || !generals?.colors || !(hasContent || hasSeparator)) return null;
+
+    const personas = content.personas ?? [];
+    // El "&" que el organizador escribe como persona divide los dos lados.
+    const ampIndex = personas.findIndex((p) => p.description?.trim() === "&");
+    const reversed = invitationID === "80d0c716-86e4-4c90-9e6d-9133d970d769";
+    const textColor = content.inverted ? primary : accent;
+    const labelColor = content.inverted ? primary : lighter(accent, 0.4) ?? "#000";
+
+    const renderPerson = (persona: (typeof personas)[number], index: number) => (
+      <div key={index} className={styles.web_person} style={{ flexDirection: reversed ? "column-reverse" : undefined }}>
+        {persona.title && (
+          <span className={styles.web_person_label} style={{ color: labelColor, fontFamily: body.font ?? "Poppins", opacity: body.opacity }}>
+            {persona.title}
+          </span>
+        )}
+        <span className={styles.web_person_name} style={{ color: textColor, fontFamily: body.font ?? "Poppins", opacity: body.opacity }}>
+          {persona.description}
+        </span>
+      </div>
+    );
+
+    return (
+      <WebSection
+        ref={ref}
+        background={content.dynamic_background}
+        secondary={secondary}
+        maxWidth={860}
+        separator={content.dynamic_separator}
+        inverted={content.inverted}
+        generals={generals}
+      >
+        {hasContent && (
+          <div className={web.stack} style={{ gap: 48 }}>
+            {content.title && (
+              <span
+                className={web.title}
+                style={{ color: content.inverted ? primary : title.color, fontFamily: title.font ?? "Poppins", fontWeight: title.weight, opacity: title.opacity }}
+              >
+                {content.title}
+              </span>
+            )}
+            <FadeLeft>
+              {ampIndex >= 0 ? (
+                <div className={styles.web_grid}>
+                  <div className={styles.web_side}>{personas.slice(0, ampIndex).map(renderPerson)}</div>
+                  <span className={styles.web_amp} style={{ color: textColor, fontFamily: title.font ?? "Poppins" }}>&amp;</span>
+                  <div className={styles.web_side}>{personas.slice(ampIndex + 1).map(renderPerson)}</div>
+                </div>
+              ) : (
+                <div className={`${styles.web_grid} ${styles.web_grid_plain}`}>{personas.map(renderPerson)}</div>
+              )}
+            </FadeLeft>
+          </div>
+        )}
+      </WebSection>
+    );
+  }
 
   return (
     <>
