@@ -15,6 +15,7 @@ import { ExtraInfo } from "./ExtraInfo/ExtraInfo";
 import { EventMap } from "./Map/Map";
 import { Attendees } from "./Attendees/Attendees";
 import { PrivateAccess } from "./PrivateAccess/PrivateAccess";
+import { FooterCompact } from "../FooterCompact/FooterCompact";
 
 type invProps = {
   info: PopEvent | null;
@@ -393,6 +394,8 @@ export default function PopEvents({ info, preview, password }: invProps) {
               <Attendees participants={participants} />
               <small style={{ fontSize: "12px", color: "#FFF", fontWeight: 400, fontFamily: "Poppins" }}>Asistentes</small>
             </div>
+
+            <FooterCompact />
           </div>
         )}
 
@@ -413,7 +416,6 @@ export default function PopEvents({ info, preview, password }: invProps) {
         </div>
       </div>
 
-      {/* {validated && <FooterLand color={primary} />} */}
     </>
   );
 }

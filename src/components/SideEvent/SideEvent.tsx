@@ -8,7 +8,7 @@ import { Button, Input, message } from "antd";
 import { LuCircleCheck, LuCircleX } from "react-icons/lu";
 import { simpleaddress } from "../Invitation/Itinerary/OpenCard/OpenCard";
 import WeatherWidget from "../Invitation/Itinerary/WeatherApi/WeatherWidget";
-import { FooterLand } from "../LandPage/Footer/Footer";
+import { FooterCompact } from "../FooterCompact/FooterCompact";
 import { FaLock } from "react-icons/fa";
 import { createClient } from "@/lib/supabase/client";
 import {  SideGuestSubabasePayload } from "@/types/guests";
@@ -656,9 +656,7 @@ export default function SideEvents({ info, password, preview }: invProps) {
               />
             }
 
-            <div className={styles.mapa_container}>
-              <FooterLand bordered={false} light />
-            </div>
+            <FooterCompact />
           </div>
         }
         <div
