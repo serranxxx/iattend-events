@@ -42,6 +42,9 @@ export function TextureOverlay({
     if (!cont || !svg) return;
 
     const recalc = () => {
+      // La propia textura cuenta en scrollHeight: se aplana antes de medir
+      // para que también se encoja cuando el contenido se hace más corto.
+      svg.setAttribute("height", "0");
       const total = cont.scrollHeight;
       // 👇 le sumamos un margen extra para que la textura sobresalga
       const overlayH = Math.max(0, total - coverHeightPx + extraMarginPx);
@@ -51,13 +54,39 @@ export function TextureOverlay({
       svg.setAttribute("viewBox", `0 0 ${cont.clientWidth} ${overlayH}`);
     };
 
-    recalc();
-    const ro = new ResizeObserver(recalc);
-    ro.observe(cont);
-    window.addEventListener("resize", recalc);
-    return () => {
+    // El contenedor tiene alto fijo y hace scroll por dentro: cuando el
+    // contenido crece (textos más largos, avisos nuevos desde el builder) su
+    // caja no cambia y un ResizeObserver sobre él nunca avisa. Por eso se
+    // observan también sus hijos y los cambios del DOM, juntando las
+    // mediciones en un frame.
+    let frame = 0;
+    const programar = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(recalc);
+    };
+
+    const ro = new ResizeObserver(programar);
+    const observarHijos = () => {
       ro.disconnect();
-      window.removeEventListener("resize", recalc);
+      ro.observe(cont);
+      Array.from(cont.children).forEach((hijo) => {
+        if (hijo !== svg) ro.observe(hijo);
+      });
+    };
+    const mo = new MutationObserver((cambios) => {
+      if (cambios.some((c) => c.type === "childList" && c.target === cont)) observarHijos();
+      programar();
+    });
+
+    recalc();
+    observarHijos();
+    mo.observe(cont, { childList: true, subtree: true, characterData: true });
+    window.addEventListener("resize", programar);
+    return () => {
+      cancelAnimationFrame(frame);
+      ro.disconnect();
+      mo.disconnect();
+      window.removeEventListener("resize", programar);
     };
   }, [coverHeightPx, containerRef, extraMarginPx]);
 
