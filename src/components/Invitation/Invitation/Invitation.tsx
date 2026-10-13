@@ -47,6 +47,8 @@ type invProps = {
   plan?: string;
   phone_number?: string | null;
   scrollToSection?: string | null;
+  // Cambia en cada pedido de scroll del host, aunque repita la sección
+  scrollKey?: number;
   onSectionChange?: (_section: string) => void;
   textures?: Texture[];
   giftBrands?: GiftBrand[];
@@ -57,7 +59,7 @@ type invProps = {
 
 
 
-export default function Invitation({ password, invitationID, ui, lang, availableLanguages, invitation, loader, type, mongoID, dev, plan, phone_number, scrollToSection, onSectionChange, textures = [], textureOverride = null, giftBrands = [] }: invProps) {
+export default function Invitation({ password, invitationID, ui, lang, availableLanguages, invitation, loader, type, mongoID, dev, plan, phone_number, scrollToSection, scrollKey, onSectionChange, textures = [], textureOverride = null, giftBrands = [] }: invProps) {
   const coverRef = useRef<HTMLDivElement>(null);
   const greetingRef = useRef<HTMLDivElement>(null);
   const peopleRef = useRef<HTMLDivElement>(null);
@@ -193,7 +195,7 @@ export default function Invitation({ password, invitationID, ui, lang, available
     settleTimer = setTimeout(waitForSettle, 100);
 
     return () => clearTimeout(settleTimer);
-  }, [scrollToSection]);
+  }, [scrollToSection, scrollKey]);
 
   // Scrollspy: avisa al host qué sección está a la vista mientras el invitado navega libremente
   useEffect(() => {

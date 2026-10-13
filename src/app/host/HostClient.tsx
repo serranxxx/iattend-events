@@ -29,6 +29,10 @@ export default function HostClient({ textures, giftBrands }: Props) {
   const [fontOverride, setFontOverride] = useState<FontOverride[] | null>(null);
   const [hostOrigin, setHostOrigin] = useState<string | null>(null);
   const [scrollToSection, setScrollToSection] = useState<string | null>(null);
+  // Cuenta cada pedido de scroll: el builder puede pedir la misma sección otra
+  // vez (el invitado se movió entre medio) y con solo el nombre no cambiaría
+  // el estado y la invitación no se movería.
+  const [scrollKey, setScrollKey] = useState(0);
   const [lang, setLang] = useState<string | null>(null);
   const [ui, setUi] = useState<InvitationUIBundle>(uiES as InvitationUIBundle);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -73,6 +77,7 @@ export default function HostClient({ textures, giftBrands }: Props) {
       }
       if (type === "HOST_SCROLL_TO" && payload?.section) {
         setScrollToSection(payload.section as string);
+        setScrollKey((k) => k + 1);
       }
     }
     window.addEventListener("message", onMessage);
@@ -138,6 +143,7 @@ export default function HostClient({ textures, giftBrands }: Props) {
         ui={ui}
         lang={lang}
         scrollToSection={scrollToSection}
+        scrollKey={scrollKey}
         onSectionChange={handleSectionChange}
         textures={textures}
         giftBrands={giftBrands}
