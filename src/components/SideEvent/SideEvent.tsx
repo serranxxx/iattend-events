@@ -12,7 +12,7 @@ import { FooterCompact } from "../FooterCompact/FooterCompact";
 import { FaLock } from "react-icons/fa";
 import { createClient } from "@/lib/supabase/client";
 import {  SideGuestSubabasePayload } from "@/types/guests";
-import { darker, fechasDelEvento, formatEventDateTime, getEventDateOnly } from "@/helpers/functions";
+import { darker, getEventDateOnly, lineasDeFechas } from "@/helpers/functions";
 import confetti from "canvas-confetti";
 import { AnimatePresence, motion } from "motion/react";
 
@@ -380,8 +380,8 @@ export default function SideEvents({ info, password, preview }: invProps) {
               }}
             >
               {/* Un Flash puede tener varias fechas: una por renglón. */}
-              {fechasDelEvento(info?.body).map((raw) => (
-                <span key={raw}>{formatEventDateTime(raw, { state: info?.body.address?.state, timezone: info?.body.timezone })}</span>
+              {lineasDeFechas(info?.body, { state: info?.body.address?.state, timezone: info?.body.timezone }).map((linea) => (
+                <span key={linea}>{linea}</span>
               ))}
               {info?.body.place_name ? (
                 <span>{info.body.place_name}</span>

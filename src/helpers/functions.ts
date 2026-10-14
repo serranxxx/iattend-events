@@ -193,6 +193,39 @@ export function fechasDelEvento(body: { hour?: string | null; dates?: string[] |
   return body?.hour ? [body.hour] : [];
 }
 
+// Contraparte de `lineasDeFechas` en iattend-vite (src/helpers/assets/eventDateTime.js).
+// Renglones de fecha de un evento: si varias fechas comparten mes y hora, se
+// juntan en uno ("26 y 27 de noviembre, 18:00"; con tres, "14, 15 y 16 de
+// …"). Si cambian el mes o la hora, cada una va en su renglón con su día de la
+// semana, como una sola fecha.
+export function lineasDeFechas(
+  body: { hour?: string | null; dates?: string[] | null } | null | undefined,
+  opts?: { state?: string | null; timezone?: string | null }
+): string[] {
+  const fechas = fechasDelEvento(body);
+  const partes = fechas.map((raw) => raw.trim().match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/));
+  if (fechas.length < 2 || fechas.some(isAbsoluteInstant) || partes.some((p) => !p)) {
+    return fechas.map((raw) => formatEventDateTime(raw, opts)).filter(Boolean);
+  }
+
+  const grupos: { clave: string; items: { p: RegExpMatchArray; raw: string }[] }[] = [];
+  (partes as RegExpMatchArray[]).forEach((p, i) => {
+    const clave = `${p[1]}-${p[2]} ${p[4]}:${p[5]}`;
+    const ultimo = grupos[grupos.length - 1];
+    if (ultimo && ultimo.clave === clave) ultimo.items.push({ p, raw: fechas[i] });
+    else grupos.push({ clave, items: [{ p, raw: fechas[i] }] });
+  });
+
+  return grupos.map(({ items }) => {
+    if (items.length === 1) return formatWallClock(items[0].raw);
+    const [, y, m, , hh, mm] = items[0].p;
+    const { month } = getWeekdayAndMonth(Number(y), Number(m), Number(items[0].p[3]));
+    const dias = items.map(({ p }) => Number(p[3]));
+    const lista = `${dias.slice(0, -1).join(", ")} y ${dias[dias.length - 1]}`;
+    return `${lista} de ${month}, ${hh}:${mm}`;
+  });
+}
+
 // Extrae solo la fecha (YYYY-MM-DD, en la zona del venue) de la fecha/hora de
 // un evento, para poder buscar ese día dentro del forecast del clima. Sigue
 // la misma convención de dos formatos que `formatEventDateTime`.
