@@ -184,6 +184,15 @@ export function formatEventDateTime(
   return formatWallClock(raw);
 }
 
+// Fechas de un side event: la lista de un Flash con varias fechas
+// (`body.dates`) o la única (`body.hour`). Contraparte de `fechasDelEvento`
+// en iattend-vite (src/helpers/assets/eventDateTime.js).
+export function fechasDelEvento(body: { hour?: string | null; dates?: string[] | null } | null | undefined): string[] {
+  const lista = Array.isArray(body?.dates) ? body!.dates!.filter(Boolean) : [];
+  if (lista.length) return lista;
+  return body?.hour ? [body.hour] : [];
+}
+
 // Extrae solo la fecha (YYYY-MM-DD, en la zona del venue) de la fecha/hora de
 // un evento, para poder buscar ese día dentro del forecast del clima. Sigue
 // la misma convención de dos formatos que `formatEventDateTime`.

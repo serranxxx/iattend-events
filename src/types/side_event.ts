@@ -1,6 +1,10 @@
 export type SideEventBody = {
   font: string;
   hour: string;
+  // Eventos Flash con varias fechas (ej. 14 y 15 de octubre, cada una con su
+  // hora): horas de pared ordenadas; `hour` siempre es la primera. Ausente
+  // cuando hay una sola fecha.
+  dates?: string[] | null;
   // Huso horario IANA del venue (ej. "America/Tijuana"), resuelto por
   // iattend-vite a partir del estado de la dirección al guardar. Ausente
   // en eventos guardados antes de este cambio.
