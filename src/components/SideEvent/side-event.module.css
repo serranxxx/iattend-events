@@ -10,6 +10,10 @@
   position: sticky;
   top: 0;
   min-height: 100vmax;
+  /* iOS Safari (barra flotante): al abrir, 100vmax sale del alto sin la zona
+     bajo la barra y el fondo gris se asomaba abajo. 100lvh es el alto con las
+     barras escondidas. */
+  min-height: max(100vmax, 100lvh);
   width: 100%;
   overflow: hidden;
   z-index: 1;

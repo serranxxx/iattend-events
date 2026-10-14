@@ -341,7 +341,12 @@ export default function SideEvents({ info, password, preview }: invProps) {
       {contextHolder}
       {/* Con video de fondo se apagan los desenfoques en vivo (con_video): se
           recalculaban en cada cuadro del video y lo trababan. */}
-      <div className={`${styles.side_event_main_cont} ${info?.body.video ? styles.con_video : ""}`}>
+      <div
+        className={`${styles.side_event_main_cont} ${info?.body.video ? styles.con_video : ""}`}
+        // Lo que se asome detrás de la portada (p. ej. bajo la barra de Safari)
+        // es el color del tema oscurecido, no el gris de arranque.
+        style={info?.body.color ? { backgroundColor: darker(info.body.color, 0.8) ?? undefined, backgroundImage: "none" } : undefined}
+      >
         <div className={styles.hero}>
           {/* Flash con video de fondo: en bucle y sin sonido; la imagen es su cuadro fijo. */}
           {info?.body.video ? (
