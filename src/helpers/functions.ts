@@ -226,6 +226,34 @@ export function lineasDeFechas(
   });
 }
 
+// Mini itinerario de un Flash, ordenado por día y hora. Con varias fechas se
+// agrupa por día ("jue. 26 de noviembre"); con una, un solo grupo sin título.
+// Los momentos sin nombre no se muestran. Contraparte de `itinerarioPorDia`
+// en iattend-vite (src/helpers/assets/eventDateTime.js).
+type Momento = { id: string; name: string; time: string | null; icon: number | null; date?: string | null };
+export function itinerarioPorDia(
+  body: { hour?: string | null; dates?: string[] | null; itinerary?: Momento[] | null } | null | undefined
+): { dia: string | null; titulo: string | null; momentos: Momento[] }[] {
+  const momentos = (Array.isArray(body?.itinerary) ? body!.itinerary! : []).filter((m) => String(m?.name ?? "").trim());
+  if (!momentos.length) return [];
+  const dias = [...new Set(fechasDelEvento(body).map((f) => String(f).slice(0, 10)))];
+  const porHora = (a: Momento, b: Momento) => String(a.time ?? "99:99").localeCompare(String(b.time ?? "99:99"));
+  if (dias.length < 2) return [{ dia: null, titulo: null, momentos: [...momentos].sort(porHora) }];
+
+  return dias
+    .map((dia) => {
+      const [y, m, d] = dia.split("-").map(Number);
+      const { weekday, month } = getWeekdayAndMonth(y, m, d);
+      return {
+        dia,
+        titulo: `${weekday}. ${d} de ${month}`,
+        // Un momento sin día (o de un día que ya no está) va en el primero.
+        momentos: momentos.filter((x) => (x.date && dias.includes(x.date) ? x.date : dias[0]) === dia).sort(porHora),
+      };
+    })
+    .filter((g) => g.momentos.length);
+}
+
 // Extrae solo la fecha (YYYY-MM-DD, en la zona del venue) de la fecha/hora de
 // un evento, para poder buscar ese día dentro del forecast del clima. Sigue
 // la misma convención de dos formatos que `formatEventDateTime`.

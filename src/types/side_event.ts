@@ -13,6 +13,9 @@ export type SideEventBody = {
   // Eventos Flash: video de fondo (como el Save the Date). Con video, `image`
   // es su cuadro fijo y la imagen del link.
   video?: string | null;
+  // Mini itinerario de un Flash: icon es el índice del catálogo del
+  // itinerario (helpers/icons); date solo si el evento tiene varias fechas.
+  itinerary?: { id: string; name: string; time: string | null; icon: number | null; date?: string | null }[] | null;
   title: {
     font: string;
     size: number;
