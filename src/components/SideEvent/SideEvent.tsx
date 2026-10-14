@@ -340,7 +340,20 @@ export default function SideEvents({ info, password, preview }: invProps) {
       {contextHolder}
       <div className={styles.side_event_main_cont}>
         <div className={styles.hero}>
-          {info?.body.image && <Image className={styles.hero_bg} fill src={info?.body.image} alt="" style={{ objectFit: "cover" }} />}
+          {/* Flash con video de fondo: en bucle y sin sonido; la imagen es su cuadro fijo. */}
+          {info?.body.video ? (
+            <video
+              className={styles.hero_bg}
+              src={info.body.video}
+              poster={info.body.image || undefined}
+              autoPlay
+              muted
+              loop
+              playsInline
+            />
+          ) : (
+            info?.body.image && <Image className={styles.hero_bg} fill src={info?.body.image} alt="" style={{ objectFit: "cover" }} />
+          )}
           <div className={styles.blur_cover}></div>
           <div className={styles.shadow}></div>
         </div>

@@ -10,6 +10,9 @@ export type SideEventBody = {
   // en eventos guardados antes de este cambio.
   timezone?: string | null;
   image: string;
+  // Eventos Flash: video de fondo (como el Save the Date). Con video, `image`
+  // es su cuadro fijo y la imagen del link.
+  video?: string | null;
   title: {
     font: string;
     size: number;
