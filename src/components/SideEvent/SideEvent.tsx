@@ -705,6 +705,8 @@ export default function SideEvents({ info, password, preview }: invProps) {
                 isSide={true}
                 color={`${darker(info?.body.color ?? '#000', 0.8) ?? "#000000"}80`}
                 eventDate={getEventDateOnly(info?.body.hour, { state: info?.body?.address?.state, timezone: info?.body?.timezone })}
+                // Flash (sin invitación): el clima siempre, aunque falten días.
+                siempre={!info?.invitation_id}
               />
             }
 

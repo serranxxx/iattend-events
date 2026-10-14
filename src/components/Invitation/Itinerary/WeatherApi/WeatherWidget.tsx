@@ -45,9 +45,13 @@ type CardProps = {
   // buscar ese día dentro del forecast en vez de asumir "hoy". Si no se
   // pasa, se conserva el comportamiento anterior (día actual).
   eventDate?: string | null;
+  // Eventos Flash: el widget se muestra siempre. Mientras el pronóstico no
+  // alcanza la fecha del evento, enseña el clima de hoy en vez del aviso
+  // "Pronóstico aún no disponible"; cuando la alcanza, el del día del evento.
+  siempre?: boolean;
 };
 
-export default function WeatherWidget({ invitation, item, isSide, color, radius, eventDate }: CardProps) {
+export default function WeatherWidget({ invitation, item, isSide, color, radius, eventDate, siempre }: CardProps) {
   const [weather, setWeather] = useState<WeatherResponse | null>(null);
   const key = "fa4d2a7fce5841d5a51205220251009";
 
@@ -65,7 +69,8 @@ export default function WeatherWidget({ invitation, item, isSide, color, radius,
 
   const forecastDays = weather.forecast?.forecastday ?? [];
   const todayStr = weather.location?.localtime?.slice(0, 10);
-  const matchedDay = eventDate ? forecastDays.find((d) => d.date === eventDate) : forecastDays[0];
+  const delEvento = eventDate ? forecastDays.find((d) => d.date === eventDate) : forecastDays[0];
+  const matchedDay = delEvento ?? (siempre ? forecastDays[0] : undefined);
   const isToday = !!matchedDay && matchedDay.date === todayStr;
 
   // El evento cae fuera de la ventana de pronóstico que devolvió la API
