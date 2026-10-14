@@ -630,6 +630,28 @@ export default function SideEvents({ info, password, preview }: invProps) {
               </div>
             )}
 
+            {/* Mini itinerario de un Flash, arriba de Cómo llegar. */}
+            {itinerarioPorDia(info?.body).length > 0 && (
+              <div className={styles.mapa_container} style={{ padding: "14px 18px", gap: 10 }}>
+                <span className={styles.itinerario_titulo}>Itinerario</span>
+                {itinerarioPorDia(info?.body).map((grupo) => (
+                  <div className={styles.itinerario_dia} key={grupo.dia ?? "unico"}>
+                    {grupo.titulo && <span className={styles.itinerario_dia_titulo}>{grupo.titulo}</span>}
+                    {grupo.momentos.map((m) => {
+                      const Icono = (m.icon != null ? getItineraryIcon(m.icon as never) : undefined) ?? LuBadgeHelp;
+                      return (
+                        <div className={styles.itinerario_momento} key={m.id}>
+                          <span className={styles.itinerario_icono}><Icono size={18} /></span>
+                          <span className={styles.itinerario_nombre}>{m.name}</span>
+                          {m.time && <span className={styles.itinerario_hora}>{m.time}</span>}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ))}
+              </div>
+            )}
+
             {info?.body.address.street &&
               info?.body.address.number &&
               info?.body.address.neighborhood &&
@@ -663,28 +685,6 @@ export default function SideEvents({ info, password, preview }: invProps) {
               )}
 
 
-
-            {/* Mini itinerario de un Flash, debajo de Cómo llegar. */}
-            {itinerarioPorDia(info?.body).length > 0 && (
-              <div className={styles.mapa_container} style={{ padding: "14px 18px", gap: 10 }}>
-                <span className={styles.itinerario_titulo}>Itinerario</span>
-                {itinerarioPorDia(info?.body).map((grupo) => (
-                  <div className={styles.itinerario_dia} key={grupo.dia ?? "unico"}>
-                    {grupo.titulo && <span className={styles.itinerario_dia_titulo}>{grupo.titulo}</span>}
-                    {grupo.momentos.map((m) => {
-                      const Icono = (m.icon != null ? getItineraryIcon(m.icon as never) : undefined) ?? LuBadgeHelp;
-                      return (
-                        <div className={styles.itinerario_momento} key={m.id}>
-                          <span className={styles.itinerario_icono}><Icono size={18} /></span>
-                          <span className={styles.itinerario_nombre}>{m.name}</span>
-                          {m.time && <span className={styles.itinerario_hora}>{m.time}</span>}
-                        </div>
-                      );
-                    })}
-                  </div>
-                ))}
-              </div>
-            )}
 
             {
               info?.body.address.city && !info?.body.hideWeather &&
