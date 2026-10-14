@@ -378,3 +378,32 @@
   }
 
 }
+
+/* PNG de un Flash sobre la portada: capa del alto de la pantalla, centrada y
+   del ancho de la columna (como la pieza del editor), que se mueve con la
+   página. El hero es z 1 (sticky) y las tarjetas z 2: "detrás" va en 1
+   (después del hero en el DOM, así queda encima de él) y "delante" en 3. */
+.stickers_capa {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(100%, 450px);
+  height: 100svh;
+  pointer-events: none;
+}
+
+.stickers_atras {
+  z-index: 1;
+}
+
+.stickers_delante {
+  z-index: 3;
+}
+
+.sticker {
+  position: absolute;
+  height: auto;
+  user-select: none;
+}
+

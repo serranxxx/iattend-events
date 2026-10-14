@@ -13,6 +13,10 @@ export type SideEventBody = {
   // Eventos Flash: video de fondo (como el Save the Date). Con video, `image`
   // es su cuadro fijo y la imagen del link.
   video?: string | null;
+  // PNG sobre la portada de un Flash: x/y centro en % del ancho y del alto de
+  // la pantalla, w en % del ancho, rot en grados, z delante o detrás de las
+  // tarjetas. Se mueven con la página.
+  stickers?: { id: string; url: string; x: number; y: number; w: number; rot?: number; z?: "front" | "back"; opacity?: number }[] | null;
   // Mini itinerario de un Flash: icon es el índice del catálogo del
   // itinerario (helpers/icons); date solo si el evento tiene varias fechas.
   itinerary?: { id: string; name: string; time: string | null; icon: number | string | null; date?: string | null; place?: string | null }[] | null;

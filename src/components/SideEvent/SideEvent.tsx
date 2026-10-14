@@ -359,6 +359,34 @@ export default function SideEvents({ info, password, preview }: invProps) {
           <div className={styles.shadow}></div>
         </div>
 
+        {/* PNG de un Flash sobre la portada: capa del alto de la pantalla que
+            se mueve con la página; "detrás" queda entre el fondo y las tarjetas. */}
+        {(["back", "front"] as const).map((capa) => {
+          const lista = (info?.body.stickers ?? []).filter((st) => (st.z === "back" ? "back" : "front") === capa);
+          if (!lista.length) return null;
+          return (
+            <div key={capa} aria-hidden className={`${styles.stickers_capa} ${capa === "back" ? styles.stickers_atras : styles.stickers_delante}`}>
+              {lista.map((st) => (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  key={st.id}
+                  src={st.url}
+                  alt=""
+                  draggable={false}
+                  className={styles.sticker}
+                  style={{
+                    left: `${st.x}%`,
+                    top: `${st.y}%`,
+                    width: `${st.w}%`,
+                    transform: `translate(-50%, -50%) rotate(${st.rot ?? 0}deg)`,
+                    opacity: st.opacity ?? 1,
+                  }}
+                />
+              ))}
+            </div>
+          );
+        })}
+
         {
           validated &&
 
