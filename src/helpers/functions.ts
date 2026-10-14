@@ -230,7 +230,7 @@ export function lineasDeFechas(
 // agrupa por día ("jue. 26 de noviembre"); con una, un solo grupo sin título.
 // Los momentos sin nombre no se muestran. Contraparte de `itinerarioPorDia`
 // en iattend-vite (src/helpers/assets/eventDateTime.js).
-type Momento = { id: string; name: string; time: string | null; icon: number | null; date?: string | null };
+type Momento = { id: string; name: string; time: string | null; icon: number | string | null; date?: string | null };
 export function itinerarioPorDia(
   body: { hour?: string | null; dates?: string[] | null; itinerary?: Momento[] | null } | null | undefined
 ): { dia: string | null; titulo: string | null; momentos: Momento[] }[] {
