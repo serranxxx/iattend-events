@@ -75,7 +75,7 @@ export async function generateMetadata({ params }: { params: Promise<RouteParams
   if (!row || !row.active) {
     return {
       title: "I attend",
-      description: "Plan with ease",
+      description: "I attend - Your event handled",
     };
   }
 

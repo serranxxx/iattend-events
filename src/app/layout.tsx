@@ -7,7 +7,7 @@ import { GoogleFontsLoader } from "@/components/GoogleFontsLoader";
 
 export const metadata: Metadata = {
   title: "I attend",
-  description: "Plan with ease",
+  description: "I attend - Your event handled",
   keywords: ["invitaciones digitales", "bodas", "fiestas", "I attend"],
   icons: {
     icon: [

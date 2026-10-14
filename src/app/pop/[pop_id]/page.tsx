@@ -40,7 +40,7 @@ type PageProps = {
 //   if (!data) {
 //     return {
 //       title: "I attend",
-//       description: "Plan with ease",
+//       description: "I attend - Your event handled",
 //     };
 //   }
 

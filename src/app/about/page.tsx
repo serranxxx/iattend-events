@@ -27,7 +27,7 @@ export const metadata: Metadata = {
   creator: "I attend",
   metadataBase: new URL("https://iattend.site"),
   openGraph: {
-    title: "I attend | Plan with ease",
+    title: "I attend | Your event handled",
     description:
       "A modern guest management platform to plan events, manage RSVPs, and send paperless invitations effortlessly.",
     url: "https://iattend.site",

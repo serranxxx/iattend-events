@@ -40,7 +40,7 @@ export async function generateMetadata({ params }: { params: Promise<RouteParams
   if (!data) {
     return {
       title: "I attend",
-      description: "Plan with ease",
+      description: "I attend - Your event handled",
     };
   }
 
@@ -49,10 +49,15 @@ export async function generateMetadata({ params }: { params: Promise<RouteParams
   const rawImage = sideEvent.url_image ?? sideEvent.body?.image;
   const url_image = typeof rawImage === "string" ? rawImage : undefined;
 
+  // La línea bajo el título en la vista previa del link (WhatsApp).
+  const description = "I attend - Your event handled";
+
   return {
     title,
+    description,
     openGraph: {
       title,
+      description,
       images: url_image
         ? [{ url: url_image, width: 1200, height: 630, alt: title }]
         : undefined,
@@ -60,6 +65,7 @@ export async function generateMetadata({ params }: { params: Promise<RouteParams
     twitter: {
       card: "summary_large_image",
       title,
+      description,
       images: url_image ? [url_image] : undefined,
     },
     icons: {
