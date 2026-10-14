@@ -612,23 +612,6 @@ export default function SideEvents({ info, password, preview }: invProps) {
               )}
             </AnimatePresence>
 
-            {info?.body.extras && (
-              <div className={styles.mapa_container} style={{ padding: "12px 18px" }}>
-                <span
-                  style={{
-                    color: "#FFFFFF",
-                    whiteSpace: "pre-line",
-                    textAlign: "center",
-                    fontFamily: "Poppins",
-                    fontSize: "14px",
-                    mixBlendMode: "soft-light",
-                  }}
-                >
-                  {renderTextWithStrong(info.body.extras ?? "")}
-                </span>
-              </div>
-            )}
-
             {/* Itinerario de un Flash (widget), arriba de Cómo llegar. */}
             {info?.body && itinerarioPorDia(info.body).length > 0 && <ItinerarioWidget body={info.body} />}
 
@@ -665,6 +648,24 @@ export default function SideEvents({ info, password, preview }: invProps) {
               )}
 
 
+
+            {/* Notas: debajo de Cómo llegar. */}
+            {info?.body.extras && (
+              <div className={styles.mapa_container} style={{ padding: "12px 18px" }}>
+                <span
+                  style={{
+                    color: "#FFFFFF",
+                    whiteSpace: "pre-line",
+                    textAlign: "center",
+                    fontFamily: "Poppins",
+                    fontSize: "14px",
+                    mixBlendMode: "soft-light",
+                  }}
+                >
+                  {renderTextWithStrong(info.body.extras ?? "")}
+                </span>
+              </div>
+            )}
 
             {
               info?.body.address.city && !info?.body.hideWeather &&
