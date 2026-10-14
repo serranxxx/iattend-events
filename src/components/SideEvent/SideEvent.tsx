@@ -339,7 +339,9 @@ export default function SideEvents({ info, password, preview }: invProps) {
   return (
     <>
       {contextHolder}
-      <div className={styles.side_event_main_cont}>
+      {/* Con video de fondo se apagan los desenfoques en vivo (con_video): se
+          recalculaban en cada cuadro del video y lo trababan. */}
+      <div className={`${styles.side_event_main_cont} ${info?.body.video ? styles.con_video : ""}`}>
         <div className={styles.hero}>
           {/* Flash con video de fondo: en bucle y sin sonido; la imagen es su cuadro fijo. */}
           {info?.body.video ? (
@@ -351,6 +353,7 @@ export default function SideEvents({ info, password, preview }: invProps) {
               muted
               loop
               playsInline
+              preload="auto"
             />
           ) : (
             info?.body.image && <Image className={styles.hero_bg} fill src={info?.body.image} alt="" style={{ objectFit: "cover" }} />

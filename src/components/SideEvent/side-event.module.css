@@ -407,3 +407,22 @@
   user-select: none;
 }
 
+/* Video de fondo (Flash): los backdrop-filter de la portada, la columna y las
+   tarjetas se recalculan en cada cuadro del video y lo traban, sobre todo en
+   celular. Con video se apagan en toda la página (las tarjetas conservan su
+   tinte semitransparente) y el fondo no hace zoom al hacer scroll. */
+.con_video * {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+.con_video .blur_cover {
+  background: linear-gradient(to bottom, transparent 40%, rgba(0, 0, 0, 0.18) 80%);
+}
+
+.con_video .hero_bg {
+  transform: none;
+  transition: none;
+  will-change: auto;
+}
+
