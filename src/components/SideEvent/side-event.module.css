@@ -426,3 +426,10 @@
   will-change: auto;
 }
 
+/* Sin desenfoque, el título, las fechas y el lugar quedan directo sobre el
+   video: una sombra sutil los separa del fondo. */
+.con_video .col,
+.con_video .col * {
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.45);
+}
+

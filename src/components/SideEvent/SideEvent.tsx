@@ -398,7 +398,9 @@ export default function SideEvents({ info, password, preview }: invProps) {
             style={
               {
                 "--blur-color": `${info?.body.color ?? "#000000"}`,
-                "--blur-color--dark": `${darker(info?.body.color ?? "#000", 0.8) ?? "#000000"}80`,
+                // Con video no hay desenfoque detrás de las tarjetas: más opacas
+                // (85% en vez de 50%) para que se sigan leyendo.
+                "--blur-color--dark": `${darker(info?.body.color ?? "#000", 0.8) ?? "#000000"}${info?.body.video ? "D9" : "80"}`,
               } as React.CSSProperties
             }
           >
