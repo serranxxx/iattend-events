@@ -13,7 +13,7 @@ import { FaLock } from "react-icons/fa";
 import { createClient } from "@/lib/supabase/client";
 import {  SideGuestSubabasePayload } from "@/types/guests";
 import { darker, getEventDateOnly, itinerarioPorDia, lineasDeFechas } from "@/helpers/functions";
-import { IconoMomento } from "./IconoMomento";
+import { ItinerarioWidget } from "./ItinerarioWidget";
 import confetti from "canvas-confetti";
 import { AnimatePresence, motion } from "motion/react";
 
@@ -629,24 +629,8 @@ export default function SideEvents({ info, password, preview }: invProps) {
               </div>
             )}
 
-            {/* Mini itinerario de un Flash, arriba de Cómo llegar. */}
-            {itinerarioPorDia(info?.body).length > 0 && (
-              <div className={styles.mapa_container} style={{ padding: "14px 18px", gap: 10 }}>
-                <span className={styles.itinerario_titulo}>Itinerario</span>
-                {itinerarioPorDia(info?.body).map((grupo) => (
-                  <div className={styles.itinerario_dia} key={grupo.dia ?? "unico"}>
-                    {grupo.titulo && <span className={styles.itinerario_dia_titulo}>{grupo.titulo}</span>}
-                    {grupo.momentos.map((m) => (
-                      <div className={styles.itinerario_momento} key={m.id}>
-                        <span className={styles.itinerario_icono}><IconoMomento icon={m.icon} /></span>
-                        <span className={styles.itinerario_nombre}>{m.name}</span>
-                        {m.time && <span className={styles.itinerario_hora}>{m.time}</span>}
-                      </div>
-                    ))}
-                  </div>
-                ))}
-              </div>
-            )}
+            {/* Itinerario de un Flash (widget), arriba de Cómo llegar. */}
+            {info?.body && itinerarioPorDia(info.body).length > 0 && <ItinerarioWidget body={info.body} />}
 
             {info?.body.address.street &&
               info?.body.address.number &&

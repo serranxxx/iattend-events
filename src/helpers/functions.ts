@@ -227,17 +227,18 @@ export function lineasDeFechas(
 }
 
 // Mini itinerario de un Flash, en el orden en que el organizador lo acomodó. Con varias fechas se
-// agrupa por día ("jue. 26 de noviembre"); con una, un solo grupo sin título.
+// agrupa por día ("jue. 26 de noviembre"); con una, un solo grupo sin título
+// (con su día).
 // Los momentos sin nombre no se muestran. Contraparte de `itinerarioPorDia`
 // en iattend-vite (src/helpers/assets/eventDateTime.js).
-type Momento = { id: string; name: string; time: string | null; icon: number | string | null; date?: string | null };
+type Momento = { id: string; name: string; time: string | null; icon: number | string | null; date?: string | null; place?: string | null };
 export function itinerarioPorDia(
   body: { hour?: string | null; dates?: string[] | null; itinerary?: Momento[] | null } | null | undefined
 ): { dia: string | null; titulo: string | null; momentos: Momento[] }[] {
   const momentos = (Array.isArray(body?.itinerary) ? body!.itinerary! : []).filter((m) => String(m?.name ?? "").trim());
   if (!momentos.length) return [];
   const dias = [...new Set(fechasDelEvento(body).map((f) => String(f).slice(0, 10)))];
-  if (dias.length < 2) return [{ dia: null, titulo: null, momentos }];
+  if (dias.length < 2) return [{ dia: dias[0] ?? null, titulo: null, momentos }];
 
   return dias
     .map((dia) => {

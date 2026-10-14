@@ -15,7 +15,7 @@ export type SideEventBody = {
   video?: string | null;
   // Mini itinerario de un Flash: icon es el índice del catálogo del
   // itinerario (helpers/icons); date solo si el evento tiene varias fechas.
-  itinerary?: { id: string; name: string; time: string | null; icon: number | string | null; date?: string | null }[] | null;
+  itinerary?: { id: string; name: string; time: string | null; icon: number | string | null; date?: string | null; place?: string | null }[] | null;
   title: {
     font: string;
     size: number;
