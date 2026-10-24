@@ -16,6 +16,7 @@ import { darker, getEventDateOnly, itinerarioPorDia, lineasDeFechas, sombraDeTex
 import { ItinerarioWidget } from "./ItinerarioWidget";
 import confetti from "canvas-confetti";
 import { AnimatePresence, motion } from "motion/react";
+import SongPlayer from "@/components/Invitation/SongPlayer/SongPlayer";
 
 // Lienzo de los PNG de un Flash: la pieza del editor (iattend-vite, SideCanvas,
 // 390×700) escalada para cubrir la pantalla y centrada, como object-fit:
@@ -395,6 +396,11 @@ export default function SideEvents({ info, password, preview }: invProps) {
   return (
     <>
       {contextHolder}
+      {/* Canción de un Flash: el mismo reproductor compacto del Save the Date
+          (disco arriba a la izquierda; gira mientras suena). */}
+      {info?.body.song && (
+        <SongPlayer song={info.body.song} accent="#FFFFFF" secondary="#FFFFFF" dev={false} compact />
+      )}
       {/* Con video de fondo se apagan los desenfoques en vivo (con_video): se
           recalculaban en cada cuadro del video y lo trababan. */}
       <div

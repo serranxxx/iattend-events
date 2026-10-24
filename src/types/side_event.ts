@@ -31,6 +31,9 @@ export type SideEventBody = {
     // Sombra del título, 0–100 (sombraDeTexto). Ausente = la de siempre.
     shadow?: number | null;
   };
+  // Canción de un Flash (mismo formato que la del Save the Date; la toca
+  // SongPlayer). Ausente = sin canción.
+  song?: { id: string; source?: "spotify" | "upload"; name: string; artist: string; albumArt?: string; previewUrl?: string | null } | null;
   // Velo del color del tema sobre la portada y los PNG (detrás del texto),
   // 0–100. Ausente o 0 = sin velo.
   veil?: number | null;
