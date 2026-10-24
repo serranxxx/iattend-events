@@ -324,3 +324,23 @@ export function buttonsColorText(hex: string) {
 
   return newHex;
 }
+
+
+// Sombra de los textos de la portada de un side event (título, fecha y
+// lugar), de 0 (sin sombra) a 100. `undefined` = la sombra de siempre.
+// Misma fórmula que iattend-vite/src/helpers/assets/functions.js.
+export const sombraDeTexto = (n?: number | null): string | undefined => {
+  if (n === undefined || n === null) return undefined;
+  if (n <= 0) return "none";
+  const k = n / 100;
+  return `0 1px ${(2 + 4 * k).toFixed(1)}px rgba(0, 0, 0, ${(0.25 + 0.45 * k).toFixed(2)}), 0 0 ${Math.round(12 + 20 * k)}px rgba(0, 0, 0, ${(0.2 + 0.5 * k).toFixed(2)})`;
+};
+
+// Velo del fondo de un side event: el color del tema (#rrggbb) con la opacidad
+// de `veil` (0–100). Sin velo, undefined. Misma regla que
+// iattend-vite/src/helpers/assets/functions.js.
+export const colorDeVelo = (color?: string | null, veil?: number | null): string | undefined => {
+  if (!veil || veil <= 0 || !/^#[0-9a-f]{6}$/i.test(color ?? "")) return undefined;
+  const alfa = Math.round((Math.min(100, veil) / 100) * 255).toString(16).padStart(2, "0");
+  return `${color}${alfa}`;
+};

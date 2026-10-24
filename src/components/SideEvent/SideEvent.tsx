@@ -1,7 +1,7 @@
 "use client";
 
 import { SideEvent } from "@/types/side_event";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import styles from "./side-event.module.css";
 import Image from "next/image";
 import { Button, Input, message } from "antd";
@@ -12,10 +12,32 @@ import { FooterCompact } from "../FooterCompact/FooterCompact";
 import { FaLock } from "react-icons/fa";
 import { createClient } from "@/lib/supabase/client";
 import {  SideGuestSubabasePayload } from "@/types/guests";
-import { darker, getEventDateOnly, itinerarioPorDia, lineasDeFechas } from "@/helpers/functions";
+import { darker, getEventDateOnly, itinerarioPorDia, lineasDeFechas, sombraDeTexto, colorDeVelo } from "@/helpers/functions";
 import { ItinerarioWidget } from "./ItinerarioWidget";
 import confetti from "canvas-confetti";
 import { AnimatePresence, motion } from "motion/react";
+
+// Lienzo de los PNG de un Flash: la pieza del editor (iattend-vite, SideCanvas,
+// 390×700) escalada para cubrir la pantalla y centrada, como object-fit:
+// cover. Así los PNG conservan su tamaño respecto a la pantalla aunque el
+// teléfono sea más alargado (se recorta un poco a los lados). Misma regla que
+// lienzoCover en iattend-vite/src/modules/SideEvents/stickersFlashData.js.
+const PIEZA_ANCHO = 390;
+const PIEZA_ALTO = 700;
+// `sizes` de un PNG que ocupa w% del lienzo. El lienzo mide lo de la columna
+// (hasta 450 px) y en pantallas alargadas un poco más (cover): se pide con
+// 25% de holgura para que no salga borroso.
+const tamanoDeSticker = (w: number) => {
+  const vw = Math.min(100, Math.ceil(w * 1.25));
+  return `(max-width: 450px) ${vw}vw, ${Math.ceil(450 * (w / 100) * 1.25)}px`;
+};
+
+const lienzoCover = (ancho: number, alto: number) => {
+  const escala = Math.max(ancho / PIEZA_ANCHO, alto / PIEZA_ALTO);
+  const width = PIEZA_ANCHO * escala;
+  const height = PIEZA_ALTO * escala;
+  return { left: (ancho - width) / 2, top: (alto - height) / 2, width, height };
+};
 
 type invProps = {
   info: SideEvent | null;
@@ -31,6 +53,14 @@ export default function SideEvents({ info, password, preview }: invProps) {
   const [guestInfo, setGuestInfo] = useState<SideGuestSubabasePayload | null>(null);
   const [companions, setCompanions] = useState<SideGuestSubabasePayload[]>([]);
   const [confirmStep, setConfirmStep] = useState<boolean>(false);
+  // Zona segura de los PNG de un Flash: lo que baje a los botones de confirmar
+  // se desvanece. `limiteStickers`: px del techo de la capa a los botones.
+  const capaStickersRef = useRef<HTMLDivElement>(null);
+  const botonesRef = useRef<HTMLDivElement>(null);
+  const [limiteStickers, setLimiteStickers] = useState<number | null>(null);
+  // Lienzo de los PNG (px dentro de la capa): la pieza del editor escalada
+  // para cubrir la pantalla, ver lienzoCover.
+  const [lienzoStickers, setLienzoStickers] = useState<{ left: number; top: number; width: number; height: number } | null>(null);
   const [draftCompanions, setDraftCompanions] = useState<SideGuestSubabasePayload[]>([]);
   const [draftMainName, setDraftMainName] = useState<string>("");
   const [draftMainRejected, setDraftMainRejected] = useState<boolean>(false);
@@ -214,6 +244,32 @@ export default function SideEvents({ info, password, preview }: invProps) {
     });
   }, []);
 
+  // Mide la capa de PNG (del alto de la pantalla) para su lienzo y dónde
+  // empiezan los botones respecto a ella. Con el paso de acompañantes abierto
+  // no hay botones: se queda el último límite.
+  useLayoutEffect(() => {
+    const medir = () => {
+      const capa = capaStickersRef.current;
+      if (!capa) return;
+      const c = capa.getBoundingClientRect();
+      setLienzoStickers(lienzoCover(c.width, c.height));
+      const botones = botonesRef.current;
+      if (botones) setLimiteStickers(Math.max(0, botones.getBoundingClientRect().top - c.top));
+    };
+    medir();
+    // Los botones entran con una animación de 0.25 s que los mueve 12 px.
+    const t = window.setTimeout(medir, 300);
+    window.addEventListener("resize", medir);
+    const ro = new ResizeObserver(medir);
+    if (botonesRef.current?.parentElement) ro.observe(botonesRef.current.parentElement);
+    if (capaStickersRef.current) ro.observe(capaStickersRef.current);
+    return () => {
+      window.clearTimeout(t);
+      window.removeEventListener("resize", medir);
+      ro.disconnect();
+    };
+  }, [validated, confirmStep, info]);
+
   const handleConfirmAttendance = () => {
     if (!guestInfo) return;
 
@@ -368,32 +424,54 @@ export default function SideEvents({ info, password, preview }: invProps) {
         </div>
 
         {/* PNG de un Flash sobre la portada: capa del alto de la pantalla que
-            se mueve con la página; "detrás" queda entre el fondo y las tarjetas. */}
-        {(["back", "front"] as const).map((capa) => {
-          const lista = (info?.body.stickers ?? []).filter((st) => (st.z === "back" ? "back" : "front") === capa);
-          if (!lista.length) return null;
-          return (
-            <div key={capa} aria-hidden className={`${styles.stickers_capa} ${capa === "back" ? styles.stickers_atras : styles.stickers_delante}`}>
-              {lista.map((st) => (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
+            se mueve con la página. Todos van detrás del título, la fecha y el
+            lugar; lo que baje a los botones de confirmar se recorta, salvo que
+            el organizador haya dejado la zona libre. */}
+        {/* Los ocultos (`hidden`) los dejó el organizador guardados sin mostrar. */}
+        {(info?.body.stickers ?? []).some((st) => !st.hidden) && (
+          <div
+            ref={capaStickersRef}
+            aria-hidden
+            className={styles.stickers_capa}
+            style={limiteStickers !== null && !info?.body.stickers_zona_libre ? (() => {
+              // Se desvanecen en los 32 px de arriba de los botones (mismo
+              // difuminado que el editor, SideCanvas).
+              const mascara = `linear-gradient(to bottom, #000 ${Math.max(0, limiteStickers - 32)}px, transparent ${limiteStickers}px)`;
+              return { maskImage: mascara, WebkitMaskImage: mascara };
+            })() : undefined}
+          >
+            {/* Hasta medir la pantalla no se pinta, para que no brinquen. */}
+            <div className={styles.stickers_lienzo} style={lienzoStickers ?? { visibility: "hidden" }}>
+              {/* Por el optimizador de Next, como la portada: cada teléfono
+                  recibe WebP/AVIF del ancho que ocupa el PNG (un PNG pegado
+                  pesaba ~1 MB; así ~100 KB). Van en la primera pantalla, con
+                  prioridad. width/height solo dan la proporción inicial: el
+                  alto real sale de la imagen (height: auto). */}
+              {(info?.body.stickers ?? []).filter((st) => !st.hidden).map((st) => (
+                <Image
                   key={st.id}
                   src={st.url}
                   alt=""
+                  width={1200}
+                  height={1200}
+                  quality={80}
+                  priority
+                  sizes={tamanoDeSticker(st.w)}
                   draggable={false}
                   className={styles.sticker}
                   style={{
                     left: `${st.x}%`,
                     top: `${st.y}%`,
                     width: `${st.w}%`,
+                    height: "auto",
                     transform: `translate(-50%, -50%) rotate(${st.rot ?? 0}deg)`,
                     opacity: st.opacity ?? 1,
                   }}
                 />
               ))}
             </div>
-          );
-        })}
+          </div>
+        )}
 
         {
           validated &&
@@ -409,196 +487,205 @@ export default function SideEvents({ info, password, preview }: invProps) {
               } as React.CSSProperties
             }
           >
-            <span
-              style={{
-                fontFamily: info?.body.title.font,
-                fontWeight: info?.body.title.weight,
-                fontSize: `${info?.body.title.size}px`,
-                lineHeight: info?.body.title.line_height,
-                opacity: info?.body.title.opacity,
-                textAlign: "center",
-                color: "#FFF",
-                textShadow: "0px 0px 18px rgba(0, 0, 0, 0.35)",
-              }}
-            >
-              {info?.name}
-            </span>
-
-            <div
-              className={styles.col}
-              style={{
-                fontFamily: 'Poppins',
-                zIndex: 99,
-              }}
-            >
-              {/* Un Flash puede tener varias fechas: una por renglón. */}
-              {lineasDeFechas(info?.body, { state: info?.body.address?.state, timezone: info?.body.timezone }).map((linea) => (
-                <span key={linea}>{linea}</span>
-              ))}
-              {info?.body.place_name ? (
-                <span>{info.body.place_name}</span>
-              ) : (
-                <>
-                  <span>
-                    {info?.body.address.street} {info?.body.address.number},
-                  </span>
-                  <span>
-                    {info?.body.address.state} {info?.body.address.country}
-                  </span>
-                </>
-              )}
-            </div>
-
-
-            <AnimatePresence mode="wait">
-            {confirmStep ? (
-              <motion.div
-                key="confirm-step"
-                initial={{ opacity: 0, y: 12, scale: 0.98 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -12, scale: 0.98 }}
-                transition={{ duration: 0.25, ease: "easeInOut" }}
-                className={styles.mapa_container}
-                style={{ padding: "18px", gap: "12px" }}
+            {/* Primera pantalla: título, fecha, lugar y botones de confirmar,
+                con los botones al fondo de la pantalla (16 px abajo). Lo demás
+                (itinerario, cómo llegar, notas…) queda abajo, al hacer scroll.
+                El editor (iattend-vite, SideCanvas) acomoda la pieza igual. */}
+            <div className={styles.primera_pantalla} style={{ "--velo": colorDeVelo(info?.body.color, info?.body.veil) } as React.CSSProperties}>
+              <span
+                style={{
+                  fontFamily: info?.body.title.font,
+                  fontWeight: info?.body.title.weight,
+                  fontSize: `${info?.body.title.size}px`,
+                  lineHeight: info?.body.title.line_height,
+                  opacity: info?.body.title.opacity,
+                  textAlign: "center",
+                  color: "#FFF",
+                  textShadow: sombraDeTexto(info?.body.title.shadow) ?? "0px 0px 18px rgba(0, 0, 0, 0.35)",
+                }}
               >
-                <span
-                  style={{
-                    color: "#FFFFFF",
-                    textAlign: "center",
-                    fontFamily: "Poppins",
-                    fontSize: "12px",
-                    opacity: 0.7,
-                  }}
-                >
-                  Confirma tu asistencia
-                </span>
-                <div style={{ display: "flex", alignItems: "center", gap: "8px", width: "100%" }}>
-                  <Input
-                    value={draftMainName}
-                    disabled={draftMainRejected}
-                    onChange={(e) => setDraftMainName(e.target.value)}
-                    placeholder="Tu nombre"
-                    className={styles.locked_input}
-                    style={{
-                      backgroundColor: "#FFFFFF20",
-                      borderWidth: "1px",
-                      color: "#FFF",
-                      fontSize: "14px",
-                      fontWeight: 700,
-                      textAlign: "center",
-                      borderRadius: "12px",
-                      minHeight: "44px",
-                      fontFamily: 'Poppins',
-                      flex: 1,
-                      opacity: draftMainRejected ? 0.5 : 1,
-                    }}
-                  />
-                  {draftMainRejected ? (
-                    <Button onClick={() => setDraftMainRejected(false)} style={undoButtonStyle}>
-                      Deshacer
-                    </Button>
-                  ) : (
-                    <Button icon={<LuCircleX size={16} />} onClick={() => setDraftMainRejected(true)} style={rejectButtonStyle}>
-                      No asistirá
-                    </Button>
-                  )}
-                </div>
-                {draftCompanions.map((c, index) => {
-                  const isRejected = c.state === "rechazado";
+                {info?.name}
+              </span>
 
-                  return (
-                    <div key={c.id ?? index} style={{ display: "flex", alignItems: "center", gap: "8px", width: "100%" }}>
-                      <Input
-                        value={c.name ?? ""}
-                        disabled={isRejected}
-                        onChange={(e) =>
-                          setDraftCompanions((prev) => prev.map((dc, i) => (i === index ? { ...dc, name: e.target.value } : dc)))
-                        }
-                        placeholder={`Acompañante de ${draftMainName || guestInfo?.name}`}
-                        className={styles.locked_input}
-                        style={{
-                          backgroundColor: "#FFFFFF20",
-                          borderWidth: "1px",
-                          color: "#FFF",
-                          fontSize: "14px",
-                          borderRadius: "12px",
-                          minHeight: "44px",
-                          fontFamily: 'Poppins',
-                          flex: 1,
-                          opacity: isRejected ? 0.5 : 1,
-                        }}
-                      />
-                      {isRejected ? (
-                        <Button
-                          onClick={() =>
-                            setDraftCompanions((prev) => prev.map((dc, i) => (i === index ? { ...dc, state: "esperando" } : dc)))
-                          }
-                          style={undoButtonStyle}
-                        >
-                          Deshacer
-                        </Button>
-                      ) : (
-                        <Button
-                          icon={<LuCircleX size={16} />}
-                          onClick={() =>
-                            setDraftCompanions((prev) => prev.map((dc, i) => (i === index ? { ...dc, state: "rechazado" } : dc)))
-                          }
-                          style={rejectButtonStyle}
-                        >
-                          No asistirá
-                        </Button>
-                      )}
-                    </div>
-                  );
-                })}
-                {draftCompanions.some((c) => !c.name || c.name.trim() === "") && (
+              <div
+                className={styles.col}
+                style={{
+                  fontFamily: 'Poppins',
+                  zIndex: 99,
+                  // Sombra elegida en el editor; sin ella, la del CSS (.col / .con_video).
+                  ...(sombraDeTexto(info?.body.details_shadow) ? { "--sombra-detalles": sombraDeTexto(info?.body.details_shadow) } : {}),
+                } as React.CSSProperties}
+              >
+                {/* Un Flash puede tener varias fechas: una por renglón. */}
+                {lineasDeFechas(info?.body, { state: info?.body.address?.state, timezone: info?.body.timezone }).map((linea) => (
+                  <span key={linea}>{linea}</span>
+                ))}
+                {info?.body.place_name ? (
+                  <span>{info.body.place_name}</span>
+                ) : (
+                  <>
+                    <span>
+                      {info?.body.address.street} {info?.body.address.number},
+                    </span>
+                    <span>
+                      {info?.body.address.state} {info?.body.address.country}
+                    </span>
+                  </>
+                )}
+              </div>
+
+
+              <AnimatePresence mode="wait">
+              {confirmStep ? (
+                <motion.div
+                  key="confirm-step"
+                  initial={{ opacity: 0, y: 12, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -12, scale: 0.98 }}
+                  transition={{ duration: 0.25, ease: "easeInOut" }}
+                  className={styles.mapa_container}
+                  style={{ padding: "18px", gap: "12px" }}
+                >
                   <span
                     style={{
                       color: "#FFFFFF",
                       textAlign: "center",
                       fontFamily: "Poppins",
                       fontSize: "12px",
-                      fontStyle: "italic",
                       opacity: 0.7,
                     }}
                   >
-                    A los acompañantes sin nombre se les asignará &quot;Acompañante de {draftMainName || guestInfo?.name}&quot;
+                    Confirma tu asistencia
                   </span>
-                )}
-                <Button className={styles.locked_btn} style={{ ...btnStyle, width: "100%" }} onClick={confirmWithCompanions}>
-                  Confirmar
-                </Button>
-                <Button type="text" onClick={cancelConfirmStep} style={{ color: "#FFFFFF", opacity: 0.7 }}>
-                  Cancelar
-                </Button>
-              </motion.div>
-            ) : (
-              <motion.div
-                key="buttons-step"
-                initial={{ opacity: 0, y: -12, scale: 0.98 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 12, scale: 0.98 }}
-                transition={{ duration: 0.25, ease: "easeInOut" }}
-                className={styles.buttons_cont}
-              >
-                {
-                  guestInfo?.state !== 'rechazado' &&
-                  <Button onClick={handleConfirmAttendance} style={{ height: '64px', borderRadius: guestInfo?.state === 'confirmado' ? '99px' : '99px 0px 0px 99px' }} icon={guestInfo?.state !== 'confirmado' && <LuCircleCheck size={18} style={{ opacity: "0.5" }} />} type="text" className={styles.side_buttons}>
-                    {
-                      guestInfo?.state === 'confirmado' ? 'Asistencia confirmada' : 'Asistiré'
-                    }
-                  </Button>
-                }
-                {
-                  guestInfo?.state !== 'confirmado' &&
-                  <Button onClick={() => updateGuestStatus(guestInfo?.state === 'rechazado' ? 'creado' : 'rechazado')} style={{ height: '64px', borderRadius: guestInfo?.state === 'rechazado' ? '99px' : '0px 99px 99px 0px' }} icon={guestInfo?.state !== 'rechazado' && <LuCircleX size={18} style={{ opacity: "0.5" }} />} type="text" className={styles.side_buttons}>
-                    {guestInfo?.state === 'rechazado' ? 'Asistencia declinada' : 'No asistiré'}
-                  </Button>
-                }
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px", width: "100%" }}>
+                    <Input
+                      value={draftMainName}
+                      disabled={draftMainRejected}
+                      onChange={(e) => setDraftMainName(e.target.value)}
+                      placeholder="Tu nombre"
+                      className={styles.locked_input}
+                      style={{
+                        backgroundColor: "#FFFFFF20",
+                        borderWidth: "1px",
+                        color: "#FFF",
+                        fontSize: "14px",
+                        fontWeight: 700,
+                        textAlign: "center",
+                        borderRadius: "12px",
+                        minHeight: "44px",
+                        fontFamily: 'Poppins',
+                        flex: 1,
+                        opacity: draftMainRejected ? 0.5 : 1,
+                      }}
+                    />
+                    {draftMainRejected ? (
+                      <Button onClick={() => setDraftMainRejected(false)} style={undoButtonStyle}>
+                        Deshacer
+                      </Button>
+                    ) : (
+                      <Button icon={<LuCircleX size={16} />} onClick={() => setDraftMainRejected(true)} style={rejectButtonStyle}>
+                        No asistirá
+                      </Button>
+                    )}
+                  </div>
+                  {draftCompanions.map((c, index) => {
+                    const isRejected = c.state === "rechazado";
 
-              </motion.div>
-            )}
-            </AnimatePresence>
+                    return (
+                      <div key={c.id ?? index} style={{ display: "flex", alignItems: "center", gap: "8px", width: "100%" }}>
+                        <Input
+                          value={c.name ?? ""}
+                          disabled={isRejected}
+                          onChange={(e) =>
+                            setDraftCompanions((prev) => prev.map((dc, i) => (i === index ? { ...dc, name: e.target.value } : dc)))
+                          }
+                          placeholder={`Acompañante de ${draftMainName || guestInfo?.name}`}
+                          className={styles.locked_input}
+                          style={{
+                            backgroundColor: "#FFFFFF20",
+                            borderWidth: "1px",
+                            color: "#FFF",
+                            fontSize: "14px",
+                            borderRadius: "12px",
+                            minHeight: "44px",
+                            fontFamily: 'Poppins',
+                            flex: 1,
+                            opacity: isRejected ? 0.5 : 1,
+                          }}
+                        />
+                        {isRejected ? (
+                          <Button
+                            onClick={() =>
+                              setDraftCompanions((prev) => prev.map((dc, i) => (i === index ? { ...dc, state: "esperando" } : dc)))
+                            }
+                            style={undoButtonStyle}
+                          >
+                            Deshacer
+                          </Button>
+                        ) : (
+                          <Button
+                            icon={<LuCircleX size={16} />}
+                            onClick={() =>
+                              setDraftCompanions((prev) => prev.map((dc, i) => (i === index ? { ...dc, state: "rechazado" } : dc)))
+                            }
+                            style={rejectButtonStyle}
+                          >
+                            No asistirá
+                          </Button>
+                        )}
+                      </div>
+                    );
+                  })}
+                  {draftCompanions.some((c) => !c.name || c.name.trim() === "") && (
+                    <span
+                      style={{
+                        color: "#FFFFFF",
+                        textAlign: "center",
+                        fontFamily: "Poppins",
+                        fontSize: "12px",
+                        fontStyle: "italic",
+                        opacity: 0.7,
+                      }}
+                    >
+                      A los acompañantes sin nombre se les asignará &quot;Acompañante de {draftMainName || guestInfo?.name}&quot;
+                    </span>
+                  )}
+                  <Button className={styles.locked_btn} style={{ ...btnStyle, width: "100%" }} onClick={confirmWithCompanions}>
+                    Confirmar
+                  </Button>
+                  <Button type="text" onClick={cancelConfirmStep} style={{ color: "#FFFFFF", opacity: 0.7 }}>
+                    Cancelar
+                  </Button>
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="buttons-step"
+                  initial={{ opacity: 0, y: -12, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 12, scale: 0.98 }}
+                  transition={{ duration: 0.25, ease: "easeInOut" }}
+                  className={styles.buttons_cont}
+                  ref={botonesRef}
+                >
+                  {
+                    guestInfo?.state !== 'rechazado' &&
+                    <Button onClick={handleConfirmAttendance} style={{ height: '64px', borderRadius: guestInfo?.state === 'confirmado' ? '99px' : '99px 0px 0px 99px' }} icon={guestInfo?.state !== 'confirmado' && <LuCircleCheck size={18} style={{ opacity: "0.5" }} />} type="text" className={styles.side_buttons}>
+                      {
+                        guestInfo?.state === 'confirmado' ? 'Asistencia confirmada' : 'Asistiré'
+                      }
+                    </Button>
+                  }
+                  {
+                    guestInfo?.state !== 'confirmado' &&
+                    <Button onClick={() => updateGuestStatus(guestInfo?.state === 'rechazado' ? 'creado' : 'rechazado')} style={{ height: '64px', borderRadius: guestInfo?.state === 'rechazado' ? '99px' : '0px 99px 99px 0px' }} icon={guestInfo?.state !== 'rechazado' && <LuCircleX size={18} style={{ opacity: "0.5" }} />} type="text" className={styles.side_buttons}>
+                      {guestInfo?.state === 'rechazado' ? 'Asistencia declinada' : 'No asistiré'}
+                    </Button>
+                  }
+
+                </motion.div>
+              )}
+              </AnimatePresence>
+            </div>
 
             <AnimatePresence>
               {!confirmStep && guestInfo?.name && (

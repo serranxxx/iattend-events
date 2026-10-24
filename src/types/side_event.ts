@@ -13,10 +13,12 @@ export type SideEventBody = {
   // Eventos Flash: video de fondo (como el Save the Date). Con video, `image`
   // es su cuadro fijo y la imagen del link.
   video?: string | null;
+  // true: los PNG pueden pasar sobre los botones de confirmar sin recortarse.
+  stickers_zona_libre?: boolean | null;
   // PNG sobre la portada de un Flash: x/y centro en % del ancho y del alto de
-  // la pantalla, w en % del ancho, rot en grados, z delante o detrás de las
-  // tarjetas. Se mueven con la página.
-  stickers?: { id: string; url: string; x: number; y: number; w: number; rot?: number; z?: "front" | "back"; opacity?: number }[] | null;
+  // la pantalla, w en % del ancho, rot en grados. Van detrás del título, la
+  // fecha y el lugar (z es legado, ya no se usa). Se mueven con la página.
+  stickers?: { id: string; url: string; x: number; y: number; w: number; rot?: number; z?: "front" | "back"; opacity?: number; hidden?: boolean }[] | null;
   // Mini itinerario de un Flash: icon es el índice del catálogo del
   // itinerario (helpers/icons); date solo si el evento tiene varias fechas.
   itinerary?: { id: string; name: string; time: string | null; icon: number | string | null; date?: string | null; place?: string | null }[] | null;
@@ -26,7 +28,14 @@ export type SideEventBody = {
     weight: number;
     opacity: number;
     line_height: number;
+    // Sombra del título, 0–100 (sombraDeTexto). Ausente = la de siempre.
+    shadow?: number | null;
   };
+  // Velo del color del tema sobre la portada y los PNG (detrás del texto),
+  // 0–100. Ausente o 0 = sin velo.
+  veil?: number | null;
+  // Sombra de la fecha y el lugar, 0–100. Ausente = la del CSS.
+  details_shadow?: number | null;
   address: SideAddress;
   color: string;
   extras: string | null;
