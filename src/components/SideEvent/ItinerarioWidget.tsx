@@ -182,7 +182,7 @@ export const ItinerarioWidget = ({ body }: { body: Body }) => {
                   <div className={styles.nodo}>
                     <span className={styles.linea} style={{ height: 8, flex: "none", visibility: i === 0 ? "hidden" : undefined }} />
                     <span className={styles.circulo}>
-                      <IconoMomento icon={m.icon} size={18} />
+                      <IconoMomento icon={m.icon} size={22} />
                     </span>
                     <span className={styles.linea} style={{ visibility: i === g.momentos.length - 1 ? "hidden" : undefined }} />
                   </div>

@@ -34,6 +34,8 @@ export type SideEventBody = {
   // Canción de un Flash (mismo formato que la del Save the Date; la toca
   // SongPlayer). Ausente = sin canción.
   song?: { id: string; source?: "spotify" | "upload"; name: string; artist: string; albumArt?: string; previewUrl?: string | null } | null;
+  // Efecto animado de un Flash (components/SideEvent/Efectos.tsx).
+  effect?: { type: "sparkles" | "confetti" | "bubbles" | "snow" | "petals"; intensity?: number; color?: "theme" | "white" | "gold" | "multi" } | null;
   // Velo del color del tema sobre la portada y los PNG (detrás del texto),
   // 0–100. Ausente o 0 = sin velo.
   veil?: number | null;

@@ -1,0 +1,134 @@
+/* Clima de un side event (handoff design_handoff_widgets_liquid_glass →
+   "Clima"). Tinte profundo del tema: --vidrio-profundo, lo define .info_cont
+   en side-event.module.css. */
+
+.clima {
+  position: relative;
+  width: 100%;
+  max-width: 450px;
+  box-sizing: border-box;
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  overflow: hidden;
+  border-radius: 32px;
+  background: var(--vidrio-profundo, linear-gradient(165deg, rgba(20, 80, 170, 0.72), rgba(70, 140, 220, 0.42)));
+  -webkit-backdrop-filter: blur(24px) saturate(200%);
+  backdrop-filter: blur(24px) saturate(200%);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    inset 0 0 40px rgba(255, 255, 255, 0.06),
+    0 16px 38px rgba(10, 30, 90, 0.35);
+  color: #fff;
+  font-family: Poppins, sans-serif;
+  text-align: left;
+}
+
+/* Resplandor de sol arriba a la derecha. */
+.resplandor {
+  position: absolute;
+  top: -60px;
+  right: -40px;
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 214, 110, 0.55), rgba(255, 214, 110, 0) 65%);
+  pointer-events: none;
+}
+
+.arriba {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.izquierda {
+  display: flex;
+  flex-direction: column;
+}
+
+.ciudad {
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.temperatura {
+  font-size: 64px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.derecha {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  text-align: right;
+}
+
+.condicion {
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.rango {
+  font-size: 12px;
+  opacity: 0.85;
+}
+
+/* Pronóstico: franja de vidrio secundario con 6 días. */
+.franja {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 4px;
+  padding: 8px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+.celda {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 0;
+  border-radius: 16px;
+  border: 1px solid transparent;
+}
+
+/* El día del evento, en relieve. */
+.celdaEvento {
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0.15));
+  border-color: rgba(255, 255, 255, 0.55);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.8), 0 6px 14px rgba(10, 30, 90, 0.25);
+}
+
+.celdaDia {
+  font-size: 12px;
+  font-weight: 500;
+  opacity: 0.85;
+}
+
+.celdaTemp {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* El evento todavía no entra en el pronóstico. */
+.sinPronostico {
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 160px;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 500;
+}

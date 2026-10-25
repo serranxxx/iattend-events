@@ -7,7 +7,6 @@ import Image from "next/image";
 import { Button, Input, message } from "antd";
 import { LuCircleCheck, LuCircleX } from "react-icons/lu";
 import { simpleaddress } from "../Invitation/Itinerary/OpenCard/OpenCard";
-import WeatherWidget from "../Invitation/Itinerary/WeatherApi/WeatherWidget";
 import { FooterCompact } from "../FooterCompact/FooterCompact";
 import { FaLock } from "react-icons/fa";
 import { createClient } from "@/lib/supabase/client";
@@ -17,6 +16,8 @@ import { ItinerarioWidget } from "./ItinerarioWidget";
 import confetti from "canvas-confetti";
 import { AnimatePresence, motion } from "motion/react";
 import SongPlayer from "@/components/Invitation/SongPlayer/SongPlayer";
+import Efectos from "./Efectos";
+import ClimaVidrio from "./ClimaVidrio";
 
 // Lienzo de los PNG de un Flash: la pieza del editor (iattend-vite, SideCanvas,
 // 390×700) escalada para cubrir la pantalla y centrada, como object-fit:
@@ -32,6 +33,32 @@ const tamanoDeSticker = (w: number) => {
   const vw = Math.min(100, Math.ceil(w * 1.25));
   return `(max-width: 450px) ${vw}vw, ${Math.ceil(450 * (w / 100) * 1.25)}px`;
 };
+
+// Horas (0–23) del día del evento en que pasa algo, para resaltarlas en el
+// clima: la de inicio (hora de pared "YYYY-MM-DD HH:mm") y las de las
+// actividades del itinerario de ese día.
+const horasDelEvento = (body: SideEvent["body"] | undefined, dia: string | null) => {
+  if (!body) return [];
+  const horas: number[] = [];
+  const inicio = /^\d{4}-\d{2}-\d{2} (\d{2}):/.exec(String(body.hour ?? ""));
+  if (inicio) horas.push(Number(inicio[1]));
+  const grupos = itinerarioPorDia(body);
+  const grupo = grupos.find((g) => g.dia === dia) ?? (grupos.length === 1 ? grupos[0] : null);
+  for (const m of grupo?.momentos ?? []) {
+    const h = /^(\d{1,2}):/.exec(String(m.time ?? ""));
+    if (h) horas.push(Number(h[1]));
+  }
+  return [...new Set(horas)].sort((a, b) => a - b);
+};
+
+// "Luis Alberto" → "LA" (avatar de la tarjeta del invitado).
+const iniciales = (nombre?: string | null) =>
+  (nombre ?? "")
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((p) => p[0]?.toUpperCase() ?? "")
+    .join("") || "?";
 
 const lienzoCover = (ancho: number, alto: number) => {
   const escala = Math.max(ancho / PIEZA_ANCHO, alto / PIEZA_ALTO);
@@ -54,11 +81,27 @@ export default function SideEvents({ info, password, preview }: invProps) {
   const [guestInfo, setGuestInfo] = useState<SideGuestSubabasePayload | null>(null);
   const [companions, setCompanions] = useState<SideGuestSubabasePayload[]>([]);
   const [confirmStep, setConfirmStep] = useState<boolean>(false);
-  // Zona segura de los PNG de un Flash: lo que baje a los botones de confirmar
-  // se desvanece. `limiteStickers`: px del techo de la capa a los botones.
+  // Evento público (`type: 'open'`, candado abierto en el editor): cualquiera
+  // con el link entra sin código y, para confirmar, da su nombre y el de sus
+  // acompañantes (POST /api/side-events/:id/confirmacion-publica). Su código
+  // queda en localStorage para que al volver vea y cambie su respuesta.
+  const esPublico = info?.type === "open";
+  const [registro, setRegistro] = useState<"confirmado" | "rechazado" | null>(null);
+  const [regNombre, setRegNombre] = useState("");
+  const [regAcompanantes, setRegAcompanantes] = useState<string[]>([]);
+  const [regEnviando, setRegEnviando] = useState(false);
+  const claveRegistro = info?.id ? `iattend_side_event_${info.id}` : null;
+  // Fondo de la página y barra de Safari: el color de la invitación al 80%.
+  // El fundido de abajo de la portada termina en este mismo color, para que
+  // no quede línea. Mismo valor en el editor.
+  const colorFondoPagina = darker(info?.body.color ?? "#000000", 0.8) ?? info?.body.color;
+  // Capa de los PNG de un Flash (para medir su lienzo).
   const capaStickersRef = useRef<HTMLDivElement>(null);
+  // La página hace scroll dentro de este contenedor (de la pantalla visible
+  // exacta), no en la ventana: así en iOS 26 Safari nada sube detrás de la
+  // barra de estado; se corta justo donde empieza.
+  const paginaRef = useRef<HTMLDivElement>(null);
   const botonesRef = useRef<HTMLDivElement>(null);
-  const [limiteStickers, setLimiteStickers] = useState<number | null>(null);
   // Lienzo de los PNG (px dentro de la capa): la pieza del editor escalada
   // para cubrir la pantalla, ver lienzoCover.
   const [lienzoStickers, setLienzoStickers] = useState<{ left: number; top: number; width: number; height: number } | null>(null);
@@ -79,6 +122,19 @@ export default function SideEvents({ info, password, preview }: invProps) {
     letterSpacing: "2px",
     boxShadow: "0px 0px 12px rgba(0,0,0,0.2)",
     fontFamily: 'Poppins',
+  };
+
+  // Campos del registro público: mismos que el paso de acompañantes.
+  const registroInputStyle: React.CSSProperties = {
+    backgroundColor: "#FFFFFF20",
+    borderWidth: "1px",
+    color: "#FFF",
+    // 16 px: con menos, iOS hace zoom al enfocar el campo.
+    fontSize: "16px",
+    borderRadius: "12px",
+    minHeight: "48px",
+    fontFamily: "Poppins",
+    width: "100%",
   };
 
   const rejectButtonStyle: React.CSSProperties = {
@@ -160,7 +216,10 @@ export default function SideEvents({ info, password, preview }: invProps) {
     }
   };
 
-  const onMagicLogin = async (code: string) => {
+  // `recordado`: el código salió del localStorage de un evento público. Si ya
+  // no existe (el organizador borró al invitado) se olvida sin avisar y queda
+  // la invitación para registrarse otra vez.
+  const onMagicLogin = async (code: string, recordado = false) => {
 
     // console.log('getting guest ----')
     try {
@@ -177,6 +236,10 @@ export default function SideEvents({ info, password, preview }: invProps) {
       }
 
       if (!data) {
+        if (recordado) {
+          if (claveRegistro) window.localStorage.removeItem(claveRegistro);
+          return;
+        }
         messageApi.error(`Código incorrecto`);
         return
       }
@@ -245,17 +308,15 @@ export default function SideEvents({ info, password, preview }: invProps) {
     });
   }, []);
 
-  // Mide la capa de PNG (del alto de la pantalla) para su lienzo y dónde
-  // empiezan los botones respecto a ella. Con el paso de acompañantes abierto
-  // no hay botones: se queda el último límite.
+  // Mide la capa de PNG (del alto de la pantalla) para su lienzo. La portada
+  // ocupa toda la pantalla, sin zona segura: los botones flotan encima.
   useLayoutEffect(() => {
     const medir = () => {
       const capa = capaStickersRef.current;
       if (!capa) return;
-      const c = capa.getBoundingClientRect();
-      setLienzoStickers(lienzoCover(c.width, c.height));
-      const botones = botonesRef.current;
-      if (botones) setLimiteStickers(Math.max(0, botones.getBoundingClientRect().top - c.top));
+      // Tamaño de layout (offset*), no getBoundingClientRect: ese incluye el
+      // zoom del scroll y, medido a media página, descentraba los PNG.
+      setLienzoStickers(lienzoCover(capa.offsetWidth, capa.offsetHeight));
     };
     medir();
     // Los botones entran con una animación de 0.25 s que los mueve 12 px.
@@ -272,7 +333,10 @@ export default function SideEvents({ info, password, preview }: invProps) {
   }, [validated, confirmStep, info]);
 
   const handleConfirmAttendance = () => {
-    if (!guestInfo) return;
+    if (!guestInfo) {
+      if (esPublico) setRegistro("confirmado");
+      return;
+    }
 
     if (guestInfo.state === 'confirmado') {
       updateGuestStatus('creado');
@@ -289,6 +353,54 @@ export default function SideEvents({ info, password, preview }: invProps) {
 
     updateGuestStatus('confirmado');
     onClick(); // si esto cierra modal, avanza paso, etc.
+  };
+
+  const enviarRegistro = async () => {
+    if (!registro || !info?.id || regEnviando) return;
+    if (!regNombre.trim()) {
+      messageApi.error("Escribe tu nombre");
+      return;
+    }
+    setRegEnviando(true);
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_IATTEND_API_URL}/side-events/${info.id}/confirmacion-publica`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nombre: regNombre.trim(),
+          // Sin nombre, "Acompañante de …", como en el paso de acompañantes.
+          acompanantes: registro === "confirmado"
+            ? regAcompanantes.map((n) => n.trim() || `Acompañante de ${regNombre.trim()}`)
+            : [],
+          estado: registro,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        messageApi.error(data.msg || "No se pudo enviar tu respuesta");
+        return;
+      }
+      setGuestInfo(data.invitado);
+      setCompanions(data.acompanantes ?? []);
+      if (claveRegistro) window.localStorage.setItem(claveRegistro, data.invitado.password);
+      if (registro === "confirmado") onClick();
+      setRegistro(null);
+    } catch (error) {
+      console.log(error);
+      messageApi.error("No se pudo enviar tu respuesta");
+    } finally {
+      setRegEnviando(false);
+    }
+  };
+
+  // Teléfono compartido: otra persona se registra con su nombre. El registro
+  // anterior se queda en la lista del organizador; solo se olvida aquí.
+  const olvidarRegistro = () => {
+    if (claveRegistro) window.localStorage.removeItem(claveRegistro);
+    setGuestInfo(null);
+    setCompanions([]);
+    setRegNombre("");
+    setRegAcompanantes([]);
   };
 
   const cancelConfirmStep = () => {
@@ -351,18 +463,62 @@ export default function SideEvents({ info, password, preview }: invProps) {
   };
 
 
+  // La barra de Safari (arriba, y lo que se asoma al rebotar el scroll) toma
+  // el color de la invitación: fondo del documento y meta theme-color.
   useEffect(() => {
-    const onScroll = () => {
-      const scrollY = window.scrollY;
-
-      // ajusta estos valores a tu gusto
-      const scale = Math.min(1 + scrollY / 1000, 1.8);
-      document.documentElement.style.setProperty("--bg-scale", scale.toString());
+    const color = colorFondoPagina;
+    if (!color) return;
+    const html = document.documentElement;
+    const fondoAnterior = html.style.backgroundColor;
+    html.style.backgroundColor = color;
+    document.body.style.backgroundColor = color;
+    let meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
+    const metaAnterior = meta?.content ?? null;
+    if (!meta) {
+      meta = document.createElement("meta");
+      meta.name = "theme-color";
+      document.head.appendChild(meta);
+    }
+    meta.content = color;
+    return () => {
+      html.style.backgroundColor = fondoAnterior;
+      document.body.style.backgroundColor = "";
+      if (meta) {
+        if (metaAnterior === null) meta.remove();
+        else meta.content = metaAnterior;
+      }
     };
+  }, [colorFondoPagina]);
 
-    window.addEventListener("scroll", onScroll);
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+  // Al subir los botones la portada se acerca: zoom de 1 a 1.5 en el 60% de
+  // la pantalla de scroll, desde el centro. Cada cuadro solo toca el transform
+  // de la foto, los PNG y los efectos ([data-zoom]): nada de variables de
+  // toda la página, que recalculaban todos los estilos y lo trababan.
+  useEffect(() => {
+    let cuadro = 0;
+    let ultima = -1;
+    const pagina = paginaRef.current;
+    if (!pagina) return;
+    const aplicar = () => {
+      const avance = Math.min(1, Math.max(0, pagina.scrollTop / (pagina.clientHeight * 0.6)));
+      const escala = Math.round((1 + 0.5 * avance) * 1000) / 1000;
+      if (escala === ultima) return;
+      ultima = escala;
+      document.querySelectorAll<HTMLElement>("[data-zoom]").forEach((el) => {
+        el.style.transform = `scale(${escala})`;
+      });
+    };
+    const onScroll = () => {
+      cancelAnimationFrame(cuadro);
+      cuadro = requestAnimationFrame(aplicar);
+    };
+    aplicar();
+    pagina.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      cancelAnimationFrame(cuadro);
+      pagina.removeEventListener("scroll", onScroll);
+    };
+  }, [validated, info?.body.effect?.type]);
 
   useEffect(() => {
 
@@ -372,6 +528,9 @@ export default function SideEvents({ info, password, preview }: invProps) {
       if (info?.type === "open") {
 
         setValidated(true);
+        // Ya se había registrado desde este teléfono: se le muestra su respuesta.
+        const guardado = claveRegistro ? window.localStorage.getItem(claveRegistro) : null;
+        if (guardado) onMagicLogin(guardado, true);
         // setAnimation(true)
       } else {
         setValidated(false);
@@ -384,14 +543,6 @@ export default function SideEvents({ info, password, preview }: invProps) {
 
   }, []);
 
-  const companionsLabel = (() => {
-    if (companions.length > 1) return `+${companions.length} acompañantes`;
-    if (companions.length === 1) {
-      const only = companions[0];
-      return only.name && only.name.trim() !== "" ? `+ ${only.name}` : "+1 acompañante";
-    }
-    return null;
-  })();
 
   return (
     <>
@@ -404,6 +555,7 @@ export default function SideEvents({ info, password, preview }: invProps) {
       {/* Con video de fondo se apagan los desenfoques en vivo (con_video): se
           recalculaban en cada cuadro del video y lo trababan. */}
       <div
+        ref={paginaRef}
         className={`${styles.side_event_main_cont} ${info?.body.video ? styles.con_video : ""}`}
         // Lo que se asome detrás de la portada (p. ej. bajo la barra de Safari)
         // es el color del tema oscurecido, no el gris de arranque.
@@ -414,6 +566,7 @@ export default function SideEvents({ info, password, preview }: invProps) {
           {info?.body.video ? (
             <video
               className={styles.hero_bg}
+              data-zoom
               src={info.body.video}
               poster={info.body.image || undefined}
               autoPlay
@@ -423,28 +576,31 @@ export default function SideEvents({ info, password, preview }: invProps) {
               preload="auto"
             />
           ) : (
-            info?.body.image && <Image className={styles.hero_bg} fill src={info?.body.image} alt="" style={{ objectFit: "cover" }} />
+            info?.body.image && <Image className={styles.hero_bg} data-zoom fill src={info?.body.image} alt="" style={{ objectFit: "cover" }} />
           )}
           <div className={styles.blur_cover}></div>
           <div className={styles.shadow}></div>
         </div>
 
-        {/* PNG de un Flash sobre la portada: capa del alto de la pantalla que
-            se mueve con la página. Todos van detrás del título, la fecha y el
-            lugar; lo que baje a los botones de confirmar se recorta, salvo que
-            el organizador haya dejado la zona libre. */}
+        {/* Portada fija: no se mueve con el scroll (como la foto, que es
+            sticky). Lleva los PNG, los efectos, el velo y el título, la fecha y
+            el lugar; los botones y las tarjetas (.info_cont, z 2) suben encima
+            al hacer scroll. */}
+        <div className={styles.portada_fija}>
+        {/* Columna de la pieza (450 px como máximo): en pantallas anchas los
+            PNG y los efectos se quedan en ella y su zoom se recorta a sus
+            orillas; el velo, el tinte y el fundido sí cubren todo el ancho. */}
+        <div className={styles.columna_fija}>
+        {/* PNG de un Flash sobre la portada: capa del alto de la pantalla,
+            sin recorte (la portada ocupa toda la pantalla y los botones flotan
+            encima). Van detrás del título, la fecha y el lugar. */}
         {/* Los ocultos (`hidden`) los dejó el organizador guardados sin mostrar. */}
         {(info?.body.stickers ?? []).some((st) => !st.hidden) && (
           <div
             ref={capaStickersRef}
             aria-hidden
             className={styles.stickers_capa}
-            style={limiteStickers !== null && !info?.body.stickers_zona_libre ? (() => {
-              // Se desvanecen en los 32 px de arriba de los botones (mismo
-              // difuminado que el editor, SideCanvas).
-              const mascara = `linear-gradient(to bottom, #000 ${Math.max(0, limiteStickers - 32)}px, transparent ${limiteStickers}px)`;
-              return { maskImage: mascara, WebkitMaskImage: mascara };
-            })() : undefined}
+            data-zoom
           >
             {/* Hasta medir la pantalla no se pinta, para que no brinquen. */}
             <div className={styles.stickers_lienzo} style={lienzoStickers ?? { visibility: "hidden" }}>
@@ -479,6 +635,39 @@ export default function SideEvents({ info, password, preview }: invProps) {
           </div>
         )}
 
+        {/* Efectos animados (panel Efectos del editor): encima de la portada
+            y los PNG, debajo del texto y los botones (.info_cont, z 2). */}
+        {info?.body.effect?.type && (
+          <div aria-hidden className={styles.stickers_capa} data-zoom>
+            <Efectos effect={info.body.effect} colorTema={info.body.color} />
+          </div>
+        )}
+
+        </div>
+
+        {/* Velo opcional del panel Fondo: tiñe la portada y los PNG, detrás
+            del texto. */}
+        {colorDeVelo(info?.body.color, info?.body.veil) && (
+          <div aria-hidden className={styles.velo_fijo} style={{ background: colorDeVelo(info?.body.color, info?.body.veil) }} />
+        )}
+
+        <div
+          aria-hidden
+          className={styles.tinte_fijo}
+          style={{ "--blur-color": info?.body.color ?? "#000000" } as React.CSSProperties}
+        />
+
+        {/* Fundido inferior: en iOS 26 Safari no pinta nada bajo su barra
+            flotante (ahí solo se ve el fondo de la página), así que la portada
+            se funde con ese mismo color en vez de cortarse en seco. */}
+        <div
+          aria-hidden
+          className={styles.fundido_inferior}
+          style={{ "--fondo-pagina": colorFondoPagina ?? "#000000" } as React.CSSProperties}
+        />
+
+        </div>
+
         {
           validated &&
 
@@ -494,10 +683,11 @@ export default function SideEvents({ info, password, preview }: invProps) {
             }
           >
             {/* Primera pantalla: título, fecha, lugar y botones de confirmar,
-                con los botones al fondo de la pantalla (16 px abajo). Lo demás
-                (itinerario, cómo llegar, notas…) queda abajo, al hacer scroll.
-                El editor (iattend-vite, SideCanvas) acomoda la pieza igual. */}
-            <div className={styles.primera_pantalla} style={{ "--velo": colorDeVelo(info?.body.color, info?.body.veil) } as React.CSSProperties}>
+                con los botones al fondo de la pantalla (16 px abajo). Al hacer
+                scroll todo esto y lo demás (itinerario, cómo llegar, notas…)
+                sube encima de la portada fija. El editor (iattend-vite,
+                SideCanvas) acomoda la pieza igual. */}
+            <div className={styles.primera_pantalla}>
               <span
                 style={{
                   fontFamily: info?.body.title.font,
@@ -539,8 +729,6 @@ export default function SideEvents({ info, password, preview }: invProps) {
                   </>
                 )}
               </div>
-
-
               <AnimatePresence mode="wait">
               {confirmStep ? (
                 <motion.div
@@ -574,7 +762,7 @@ export default function SideEvents({ info, password, preview }: invProps) {
                         backgroundColor: "#FFFFFF20",
                         borderWidth: "1px",
                         color: "#FFF",
-                        fontSize: "14px",
+                        fontSize: "16px",
                         fontWeight: 700,
                         textAlign: "center",
                         borderRadius: "12px",
@@ -611,7 +799,8 @@ export default function SideEvents({ info, password, preview }: invProps) {
                             backgroundColor: "#FFFFFF20",
                             borderWidth: "1px",
                             color: "#FFF",
-                            fontSize: "14px",
+                            // 16 px: con menos, iOS hace zoom al enfocar el campo.
+                            fontSize: "16px",
                             borderRadius: "12px",
                             minHeight: "44px",
                             fontFamily: 'Poppins',
@@ -663,7 +852,74 @@ export default function SideEvents({ info, password, preview }: invProps) {
                     Cancelar
                   </Button>
                 </motion.div>
-              ) : (
+              ) : registro ? (
+                <motion.div
+                  key="registro-step"
+                  initial={{ opacity: 0, y: 12, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -12, scale: 0.98 }}
+                  transition={{ duration: 0.25, ease: "easeInOut" }}
+                  className={styles.registro}
+                >
+                  <span className={styles.registro_titulo}>
+                    {registro === "confirmado" ? "¿Quiénes vienen?" : "¿Quién no podrá venir?"}
+                  </span>
+                  <Input
+                    value={regNombre}
+                    onChange={(e) => setRegNombre(e.target.value)}
+                    placeholder="Tu nombre"
+                    maxLength={80}
+                    autoFocus
+                    className={styles.locked_input}
+                    style={registroInputStyle}
+                  />
+                  {registro === "confirmado" && (
+                    <>
+                      {regAcompanantes.map((nombre, i) => (
+                        <div key={i} style={{ display: "flex", alignItems: "center", gap: "8px", width: "100%" }}>
+                          <Input
+                            value={nombre}
+                            onChange={(e) => setRegAcompanantes((prev) => prev.map((n, j) => (j === i ? e.target.value : n)))}
+                            placeholder={`Acompañante ${i + 1}`}
+                            maxLength={80}
+                            className={styles.locked_input}
+                            style={{ ...registroInputStyle, flex: 1 }}
+                          />
+                          <Button
+                            type="text"
+                            aria-label="Quitar acompañante"
+                            icon={<LuCircleX size={18} />}
+                            onClick={() => setRegAcompanantes((prev) => prev.filter((_, j) => j !== i))}
+                            style={{ color: "#FFFFFF", opacity: 0.8 }}
+                          />
+                        </div>
+                      ))}
+                      {regAcompanantes.length < 10 && (
+                        <Button
+                          type="text"
+                          onClick={() => setRegAcompanantes((prev) => [...prev, ""])}
+                          style={{ color: "#FFFFFF", fontFamily: "Poppins" }}
+                        >
+                          + Agregar acompañante
+                        </Button>
+                      )}
+                    </>
+                  )}
+                  <Button
+                    className={styles.locked_btn}
+                    style={{ ...btnStyle, width: "100%" }}
+                    loading={regEnviando}
+                    onClick={enviarRegistro}
+                  >
+                    {registro === "confirmado" ? "Confirmar asistencia" : "Enviar respuesta"}
+                  </Button>
+                  <Button type="text" onClick={() => setRegistro(null)} style={{ color: "#FFFFFF", opacity: 0.7 }}>
+                    Cancelar
+                  </Button>
+                </motion.div>
+              ) : guestInfo?.state === 'confirmado' ? null : (
+                // Ya confirmó: sin botón de "Asistencia confirmada"; su tarjeta
+                // de invitado (abajo) ya lo dice.
                 <motion.div
                   key="buttons-step"
                   initial={{ opacity: 0, y: -12, scale: 0.98 }}
@@ -675,15 +931,12 @@ export default function SideEvents({ info, password, preview }: invProps) {
                 >
                   {
                     guestInfo?.state !== 'rechazado' &&
-                    <Button onClick={handleConfirmAttendance} style={{ height: '64px', borderRadius: guestInfo?.state === 'confirmado' ? '99px' : '99px 0px 0px 99px' }} icon={guestInfo?.state !== 'confirmado' && <LuCircleCheck size={18} style={{ opacity: "0.5" }} />} type="text" className={styles.side_buttons}>
-                      {
-                        guestInfo?.state === 'confirmado' ? 'Asistencia confirmada' : 'Asistiré'
-                      }
+                    <Button onClick={handleConfirmAttendance} style={{ height: '64px', borderRadius: '99px 0px 0px 99px' }} icon={<LuCircleCheck size={18} style={{ opacity: "0.5" }} />} type="text" className={styles.side_buttons}>
+                      Asistiré
                     </Button>
                   }
                   {
-                    guestInfo?.state !== 'confirmado' &&
-                    <Button onClick={() => updateGuestStatus(guestInfo?.state === 'rechazado' ? 'creado' : 'rechazado')} style={{ height: '64px', borderRadius: guestInfo?.state === 'rechazado' ? '99px' : '0px 99px 99px 0px' }} icon={guestInfo?.state !== 'rechazado' && <LuCircleX size={18} style={{ opacity: "0.5" }} />} type="text" className={styles.side_buttons}>
+                    <Button onClick={() => (!guestInfo && esPublico ? setRegistro("rechazado") : updateGuestStatus(guestInfo?.state === 'rechazado' ? 'creado' : 'rechazado'))} style={{ height: '64px', borderRadius: guestInfo?.state === 'rechazado' ? '99px' : '0px 99px 99px 0px' }} icon={guestInfo?.state !== 'rechazado' && <LuCircleX size={18} style={{ opacity: "0.5" }} />} type="text" className={styles.side_buttons}>
                       {guestInfo?.state === 'rechazado' ? 'Asistencia declinada' : 'No asistiré'}
                     </Button>
                   }
@@ -701,43 +954,30 @@ export default function SideEvents({ info, password, preview }: invProps) {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -12, scale: 0.98 }}
                   transition={{ duration: 0.25, ease: "easeInOut" }}
-                  className={styles.mapa_container}
-                  style={{ padding: "12px 18px" }}
+                  className={`${styles.tarjeta} ${styles.invitado}`}
                 >
-                  <span
-                    style={{
-                      color: "#FFFFFF",
-                      textAlign: "center",
-                      fontFamily: "Poppins",
-                      fontSize: "12px",
-                      opacity: 0.7,
-                    }}
-                  >
-                    Invitación dirigida a
+                  {/* Avatar flotante con las iniciales del invitado. */}
+                  <span className={styles.invitado_avatar} aria-hidden>
+                    <span>{iniciales(guestInfo.name)}</span>
                   </span>
-                  <span
-                    style={{
-                      color: "#FFFFFF",
-                      textAlign: "center",
-                      fontFamily: "Poppins",
-                      fontSize: "16px",
-                      fontWeight: 700,
-                    }}
-                  >
-                    {guestInfo.name}
+                  <span className={styles.invitado_etiqueta}>
+                    {esPublico ? "Registrado como" : "Invitación dirigida a"}
                   </span>
-                  {guestInfo.has_companion && companionsLabel && (
-                    <span
-                      style={{
-                        color: "#FFFFFF",
-                        textAlign: "center",
-                        fontFamily: "Poppins",
-                        fontSize: "14px",
-                        opacity: 0.85,
-                      }}
-                    >
-                      {companionsLabel}
-                    </span>
+                  <span className={styles.invitado_nombre}>{guestInfo.name}</span>
+                  {guestInfo.has_companion && companions.some((c) => c.state !== "rechazado") && (
+                    <div className={styles.invitado_acompanantes}>
+                      {companions.filter((c) => c.state !== "rechazado").map((c, i) => (
+                        <span key={c.id ?? i} className={`${styles.chip_vidrio} ${styles.invitado_chip}`}>
+                          <span className={styles.invitado_chip_mas} aria-hidden>+</span>
+                          <span>{c.name?.trim() || "Acompañante"}</span>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  {esPublico && (
+                    <button type="button" onClick={olvidarRegistro} className={styles.invitado_no_eres}>
+                      ¿No eres {guestInfo.name}?
+                    </button>
                   )}
                 </motion.div>
               )}
@@ -753,28 +993,50 @@ export default function SideEvents({ info, password, preview }: invProps) {
               info?.body.address.city &&
               info?.body.address.state &&
               info?.body.address.country && (
-                <div className={styles.mapa_container}>
-                  <Button className={styles.get_there} type="text">
-                    Como llegar
-                  </Button>
-                  <iframe
-                    title="Mapa"
-                    width="100%"
-                    height="100%"
-                    // style={{ borderColor: content.inverted ? primary : secondary }}
-                    loading="lazy"
-                    allowFullScreen
-                    referrerPolicy="no-referrer-when-downgrade"
-                    src={simpleaddress(
-                      info?.body.address.street,
-                      info?.body.address.number,
-                      info?.body.address.neighborhood,
-                      info?.body.address.zipcode,
-                      info?.body.address.city,
-                      info?.body.address.state,
-                      info?.body.address.country
-                    )}
-                  />
+                <div className={`${styles.tarjeta} ${styles.llegar}`}>
+                  <div className={styles.llegar_cabecera}>
+                    <div className={styles.llegar_textos}>
+                      <span className={styles.llegar_titulo}>Cómo llegar</span>
+                      <span className={styles.llegar_direccion}>
+                        {[`${info.body.address.street} ${info.body.address.number}`.trim(), info.body.address.city].filter(Boolean).join(", ")}
+                      </span>
+                    </div>
+                    <a
+                      className={`${styles.relieve} ${styles.llegar_abrir}`}
+                      href={info.body.address.url || `https://maps.google.com/?q=${encodeURIComponent([info.body.place_name, info.body.address.street, info.body.address.number, info.body.address.city, info.body.address.state].filter(Boolean).join(" "))}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Abrir
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" aria-hidden>
+                        <path d="M7 17L17 7M9 7h8v8" />
+                      </svg>
+                    </a>
+                  </div>
+                  <div className={styles.llegar_mapa}>
+                    <iframe
+                      title="Mapa"
+                      loading="lazy"
+                      allowFullScreen
+                      referrerPolicy="no-referrer-when-downgrade"
+                      src={simpleaddress(
+                        info?.body.address.street,
+                        info?.body.address.number,
+                        info?.body.address.neighborhood,
+                        info?.body.address.zipcode,
+                        info?.body.address.city,
+                        info?.body.address.state,
+                        info?.body.address.country
+                      )}
+                    />
+                    <div className={styles.llegar_etiqueta}>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                        <path d="M12 21s-7-6.5-7-12a7 7 0 0 1 14 0c0 5.5-7 12-7 12z" />
+                        <circle cx="12" cy="9" r="2.5" />
+                      </svg>
+                      <span>{info.body.place_name || info.body.address.neighborhood}</span>
+                    </div>
+                  </div>
                 </div>
               )}
 
@@ -800,11 +1062,10 @@ export default function SideEvents({ info, password, preview }: invProps) {
 
             {
               info?.body.address.city && !info?.body.hideWeather &&
-              <WeatherWidget
-                item={info?.body}
-                isSide={true}
-                color={`${darker(info?.body.color ?? '#000', 0.8) ?? "#000000"}80`}
-                eventDate={getEventDateOnly(info?.body.hour, { state: info?.body?.address?.state, timezone: info?.body?.timezone })}
+              <ClimaVidrio
+                ciudad={info.body.address.city}
+                horasEvento={horasDelEvento(info.body, getEventDateOnly(info?.body.hour, { state: info?.body?.address?.state, timezone: info?.body?.timezone }))}
+                fechaEvento={getEventDateOnly(info?.body.hour, { state: info?.body?.address?.state, timezone: info?.body?.timezone })}
                 // Flash (sin invitación): el clima siempre, aunque falten días.
                 siempre={!info?.invitation_id}
               />
