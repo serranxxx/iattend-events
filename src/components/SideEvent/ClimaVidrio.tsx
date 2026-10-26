@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CloudOff } from "lucide-react";
 import styles from "./clima.module.css";
 
 /*
@@ -9,9 +8,10 @@ import styles from "./clima.module.css";
   "Clima"): tarjeta de vidrio con el tinte profundo del tema, resplandor de
   sol, temperatura grande y pronóstico por hora: 6 horas alrededor del evento
   (desde una antes de que empiece) con el rango del evento resaltado (de la
-  primera a la última hora: inicio y actividades del itinerario). Del día del
-  evento si ya está en el pronóstico; si no, de hoy. Misma API que
-  WeatherWidget (el de las invitaciones, que no se toca), en español.
+  primera a la última hora: inicio y actividades del itinerario). Solo
+  aparece cuando el pronóstico ya alcanza el día del evento; antes, oculto.
+  Misma API que WeatherWidget (el de las invitaciones, que no se toca), en
+  español.
 */
 
 type Condicion = { text: string; icon: string; code?: number };
@@ -69,16 +69,13 @@ type Props = {
   ciudad: string;
   // Fecha del evento (YYYY-MM-DD, en la zona del lugar).
   fechaEvento?: string | null;
-  // Flash: se muestra siempre; si el pronóstico aún no alcanza el día del
-  // evento, enseña el de hoy.
-  siempre?: boolean;
   // Horas (0–23) del día del evento en que pasa algo: inicio y actividades.
   horasEvento?: number[];
 };
 
 const hh = (h: Hora) => Number(h.time.slice(11, 13));
 
-export default function ClimaVidrio({ ciudad, fechaEvento, siempre, horasEvento = [] }: Props) {
+export default function ClimaVidrio({ ciudad, fechaEvento, horasEvento = [] }: Props) {
   const [clima, setClima] = useState<Respuesta | null>(null);
 
   useEffect(() => {
@@ -93,27 +90,18 @@ export default function ClimaVidrio({ ciudad, fechaEvento, siempre, horasEvento 
 
   const dias = clima.forecast.forecastday ?? [];
   const hoy = clima.location?.localtime?.slice(0, 10);
-  const iEvento = fechaEvento ? dias.findIndex((d) => d.date === fechaEvento) : -1;
-  const delEvento = iEvento >= 0 ? dias[iEvento] : null;
-  const elegido = delEvento ?? (siempre || !fechaEvento ? dias[0] : null);
-
-  // El evento cae más allá del pronóstico disponible.
-  if (!elegido) {
-    return (
-      <div className={`${styles.clima} ${styles.sinPronostico}`}>
-        <CloudOff size={26} style={{ opacity: 0.8 }} />
-        <span>Pronóstico aún no disponible</span>
-      </div>
-    );
-  }
+  // Solo el clima del día del evento: si el pronóstico todavía no llega a
+  // ese día (o el evento ya pasó), no se muestra nada. Antes caía al de hoy
+  // y confundía: parecía el clima del evento.
+  const elegido = fechaEvento ? dias.find((d) => d.date === fechaEvento) : null;
+  if (!elegido) return null;
 
   const esHoy = elegido.date === hoy;
   const temp = Math.round(esHoy ? clima.current.temp_c : elegido.day.avgtemp_c);
   const condicion = esHoy ? clima.current.condition : elegido.day.condition;
 
   // Por hora, siempre alrededor del evento: 6 horas desde una antes de que
-  // empiece (o desde las 9 si no hay hora), sin pasarse de las 23. Del día
-  // del evento si ya está en el pronóstico; si no, de hoy a esas mismas horas.
+  // empiece (o desde las 9 si no hay hora), sin pasarse de las 23.
   // Se resalta el rango del evento completo (de la primera a la última hora:
   // inicio y actividades), p. ej. 16 a 18.
   const primera = horasEvento.length ? Math.min(...horasEvento) : null;

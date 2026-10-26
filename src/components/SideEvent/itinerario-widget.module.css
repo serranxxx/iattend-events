@@ -46,7 +46,10 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  /* Con varios días el chip es largo ("26 – 28 nov · 10 actividades") y se
+     salía de la tarjeta: si no cabe junto al título, baja a su propia línea. */
+  flex-wrap: wrap;
+  gap: 8px 12px;
 }
 
 .titulo {
@@ -57,6 +60,10 @@
 /* Chip "14 nov · 2 actividades" (vidrio secundario). */
 .resumen {
   flex: none;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  text-overflow: ellipsis;
   padding: 6px 12px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.2);

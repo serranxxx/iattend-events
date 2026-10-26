@@ -121,14 +121,3 @@
   font-size: 14px;
   font-weight: 600;
 }
-
-/* El evento todavía no entra en el pronóstico. */
-.sinPronostico {
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  min-height: 160px;
-  text-align: center;
-  font-size: 15px;
-  font-weight: 500;
-}

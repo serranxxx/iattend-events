@@ -1066,8 +1066,6 @@ export default function SideEvents({ info, password, preview }: invProps) {
                 ciudad={info.body.address.city}
                 horasEvento={horasDelEvento(info.body, getEventDateOnly(info?.body.hour, { state: info?.body?.address?.state, timezone: info?.body?.timezone }))}
                 fechaEvento={getEventDateOnly(info?.body.hour, { state: info?.body?.address?.state, timezone: info?.body?.timezone })}
-                // Flash (sin invitación): el clima siempre, aunque falten días.
-                siempre={!info?.invitation_id}
               />
             }
 
