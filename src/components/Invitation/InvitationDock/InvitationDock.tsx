@@ -221,6 +221,23 @@ export default function InvitationDock({
 
   const isCard = phase === "form" || phase === "success" || phase === "tour" || phase === "declined";
   const isPanel = phase === "tool";
+
+  // El scrim solo existe mientras la tarjeta está abierta (y 400ms más, su
+  // desvanecido): un elemento fijo a pantalla completa, aun transparente u
+  // oculto, hace que Safari (iOS 26) deje sólida su barra de abajo.
+  const scrimOn = isCard || isPanel;
+  const [scrimMounted, setScrimMounted] = useState(scrimOn);
+  const [scrimShown, setScrimShown] = useState(scrimOn);
+  useEffect(() => {
+    if (scrimOn) {
+      setScrimMounted(true);
+      const frame = requestAnimationFrame(() => setScrimShown(true));
+      return () => cancelAnimationFrame(frame);
+    }
+    setScrimShown(false);
+    const timeout = setTimeout(() => setScrimMounted(false), 400);
+    return () => clearTimeout(timeout);
+  }, [scrimOn]);
   const isPhotos = isPanel && tool === "photos";
   const isCompact = phase === "pill" || phase === "bar";
 
@@ -424,11 +441,13 @@ export default function InvitationDock({
 
   return (
     <>
-      <div
-        className={`${styles.scrim} ${anchored ? styles.anchored : ""} ${isCard || isPanel ? styles.scrim_visible : ""}`}
-        onClick={close}
-        aria-hidden
-      />
+      {scrimMounted && (
+        <div
+          className={`${styles.scrim} ${anchored ? styles.anchored : ""} ${scrimShown ? styles.scrim_visible : ""}`}
+          onClick={close}
+          aria-hidden
+        />
+      )}
 
       <div
         className={morphClass}

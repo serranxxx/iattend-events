@@ -6,19 +6,25 @@
  */
 
 /* ── Scrim ── */
+/* Cerrado también va `visibility: hidden` (al terminar de desvanecerse): un
+   elemento fijo a pantalla completa, aunque sea transparente, hace que Safari
+   (iOS 26) deje sólida su barra de abajo y no la vuelva a soltar. */
 .scrim {
   position: fixed;
   inset: 0;
   z-index: 1000;
   background: rgba(30, 12, 10, 0.32);
   opacity: 0;
+  visibility: hidden;
   pointer-events: none;
-  transition: opacity 0.4s ease;
+  transition: opacity 0.4s ease, visibility 0s linear 0.4s;
 }
 
 .scrim_visible {
   opacity: 1;
+  visibility: visible;
   pointer-events: auto;
+  transition: opacity 0.4s ease, visibility 0s linear 0s;
 }
 
 /* ── Contenedor que se transforma ── */

@@ -20,6 +20,26 @@
 }
 
 
+/* Footer de la invitación. 22px arriba = la otra mitad del espacio entre
+   bloques. */
+.invitation_footer {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  padding: 22px 24px 32px;
+  box-sizing: border-box;
+}
+
+/* iPhone / iPad (Safari y navegadores de iOS): la barra de abajo flota encima
+   del final de la página y, como la invitación hace scroll por dentro, no se
+   esconde. Se deja su alto (~80px) más la zona del indicador de inicio para
+   que el footer se alcance a ver. */
+@supports (-webkit-touch-callout: none) {
+  .invitation_footer {
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 88px);
+  }
+}
+
 .invitation_locked_cont {
   display: flex;
   align-items: center;

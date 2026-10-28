@@ -788,14 +788,10 @@ export default function Invitation({ password, invitationID, ui, lang, available
           color de texto del tema en vez de blanco. */}
       <div
         ref={footerRef}
-        style={{
-          width: "100%",
-          display: "flex",
-          justifyContent: "center",
-          // 22px arriba = la otra mitad del espacio entre bloques.
-          padding: "22px 24px 32px",
-          boxSizing: "border-box",
-        }}
+        // Abajo deja espacio para la barra de Safari en iPhone (ver
+        // .invitation_footer): la invitación tiene su propio scroll, Safari no
+        // esconde su barra y esta flota encima de lo último de la página.
+        className={styles.invitation_footer}
       >
         <FooterCompact color={invitation?.generals?.colors?.accent ?? "#1B1B1B"} />
       </div>
