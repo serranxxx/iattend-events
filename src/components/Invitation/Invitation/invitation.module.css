@@ -5,7 +5,10 @@
   align-items: center;
   justify-content: flex-start;
 
-  gap: 44px;
+  /* Sin gap: los bloques van seguidos y el espacio entre ellos es su padding
+     (22px arriba y abajo = los 44px de antes). Así las zonas del editor se
+     tocan y no queda hueco sin dueño entre una y otra. */
+  gap: 0;
   box-sizing: border-box;
   width: 100%;
   overflow-x: hidden;
@@ -242,4 +245,211 @@
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: contain;
+}
+
+/* ── Modo edición (/host desde el editor de iattend-vite) ─────────────── */
+/* Cada módulo es una zona: se toca para elegirlo en el editor. Lo de adentro
+   no recibe clics (nada de abrir tarjetas o deslizar galerías mientras se
+   edita), salvo los textos que se escriben directo sobre la pieza. */
+/* Espacio entre bloques (ver .invitation_main_cont). La portada va pegada
+   arriba. Solo en el layout de celular: el de pantalla grande no tenía gap. */
+.invitation_main_cont > [data-module-zone] {
+  padding: 22px 0;
+  box-sizing: border-box;
+}
+
+.invitation_main_cont > [data-module-zone="cover"] {
+  padding-top: 0;
+}
+
+/* Separador entre dos bloques (no es parte de ninguno). El margen le da
+   aire contra las cajas de los bloques de arriba y abajo. */
+.betweenBlocks {
+  margin: 16px 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Sección publicada (con o sin elementos sueltos): misma caja que la zona del editor
+   (la capa se mide contra ella). */
+.layerHost {
+  position: relative;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Zona sobre la que se va a soltar un elemento arrastrado desde el editor. */
+.editZone[data-drop-target]::after {
+  border-style: solid;
+  border-color: rgba(201, 184, 240, 0.95);
+  box-shadow: 0 0 0 4px rgba(201, 184, 240, 0.22);
+}
+
+.editZone {
+  position: relative;
+  width: 100%;
+  cursor: pointer;
+  /* Igual que la columna de la invitación: un módulo con fondo angosto
+     (dynamic_background.width < 100 %) va centrado, no pegado a la izq. */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.editZone > * {
+  pointer-events: none;
+}
+
+/* Arrastrar sobre la pieza no debe seleccionar texto ni "levantar" fotos:
+   eso era lo que pintaba toda la invitación de azul al mover un bloque. Solo
+   el texto que se está escribiendo vuelve a seleccionarse. */
+.editZone,
+.editZone * {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.editZone [data-edit-field]:focus,
+.editZone [data-edit-field]:focus * {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.editZone img,
+.editZone video {
+  -webkit-user-drag: none;
+  user-drag: none;
+}
+
+.editZone [data-edit-field],
+.editZone [data-edit-hit] {
+  pointer-events: auto;
+}
+
+.editZone::after {
+  content: "";
+  position: absolute;
+  inset: 6px;
+  border: 2px dashed transparent;
+  /* Misma curva que la tarjeta del lienzo (36px, el marco va 6px adentro). */
+  border-radius: 30px;
+  pointer-events: none;
+  z-index: 20;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.editZone:hover::after {
+  border-color: rgba(255, 255, 255, 0.55);
+}
+
+.editZone[data-selected]::after {
+  border-style: solid;
+  border-color: #CDBEF7;
+  box-shadow: 0 0 0 4px rgba(205, 190, 247, 0.28);
+}
+
+/* Textos que se escriben encima (EditableText): borde punteado siempre, para
+   que se vea qué se puede tocar; sólido al escribir. */
+.editZone [data-edit-field] {
+  outline: 2px dashed rgba(205, 190, 247, 0.75);
+  outline-offset: 6px;
+  border-radius: 8px;
+  cursor: text;
+}
+
+.editZone [data-edit-field]:focus {
+  outline-style: solid;
+  outline-color: #CDBEF7;
+  box-shadow: 0 0 0 10px rgba(205, 190, 247, 0.22);
+}
+
+/* Herramientas del módulo elegido (fondo, separador): botones morados en
+   columna, arriba a la izquierda de la zona, como la "T" del título. */
+.zoneTools {
+  position: absolute;
+  top: 14px;
+  left: 10px;
+  z-index: 25;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.zoneTool {
+  width: 32px;
+  height: 32px;
+  border-radius: 99px;
+  border: 2px solid #FFFFFF;
+  background: #AAC187; /* light-green-500 del design system */
+  color: #FFFFFF;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(12, 23, 27, 0.3);
+}
+
+/* Un módulo deshabilitado y vacío no tendría alto: deja lugar al botón. */
+.editZone[data-disabled] {
+  min-height: 120px;
+  justify-content: center;
+}
+
+.zoneDimmed {
+  opacity: 0.35;
+  filter: grayscale(0.6);
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Botones de vidrio (ocultar / activar): discretos, no CTA. */
+.zoneGlass {
+  height: 32px;
+  min-width: 32px;
+  padding: 0;
+  border-radius: 99px;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: #29262D;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(12, 23, 27, 0.12);
+  transition: background 0.15s ease;
+}
+
+.zoneGlass:hover {
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.zoneToolsRight {
+  left: auto;
+  right: 10px;
+}
+
+/* "Activar …" sobre el módulo deshabilitado, al centro. */
+.zoneActivate {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 25;
+  padding: 0 14px 0 12px;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.zoneTool:hover {
+  background: #8FA271;
 }

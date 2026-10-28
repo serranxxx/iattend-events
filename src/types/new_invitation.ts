@@ -1,3 +1,4 @@
+import type { BlurSettings, ShadowSettings } from "@/components/Invitation/Cover/coverEffects";
 /* eslint-disable no-unused-vars */
 // types/invitation.ts
 
@@ -128,6 +129,10 @@ export interface CoverSection {
     dev: string | string[] | null;
     background: boolean | null;
     blur: boolean | null;
+    // Ajustes de los efectos (ver Cover/coverEffects.ts). Opcionales: sin
+    // ellos la sombra y el desenfoque se ven como siempre.
+    shadow_settings?: ShadowSettings | null;
+    blur_settings?: BlurSettings | null;
     position: { x: number; y: number };
     zoom: number;
   };
@@ -157,16 +162,23 @@ export type DynamicSeparator = {
   type: DynamicSeparatorType;      // default "single"
   single: DynamicSeparatorSingle;
   image: DynamicSeparatorImage;
+  color?: string | null;           // color propio (editor); vacío = textos del tema. single.color es un valor viejo sin uso
 };
 
 export type DynamicBackgroundShape = "square" | string;
 
 export type DynamicBackground = {
   active: boolean;         // same as module.background
-  color: string;           // generals.colors.secondary
+  color: string;           // valor viejo sin uso (#939faf en casi todas): no pintar con él
+  // Color propio del fondo del módulo (editor). Vacío = generals.colors.secondary.
+  custom_color?: string | null;
   shape?: DynamicBackgroundShape; // default "square"
   shadow?: boolean;        // default false
-  texture?: number | null; // default null
+  texture?: number | null; // textura propia del bloque (id de `textures`), aparte de la general
+  image?: string | null;   // imagen de fondo del bloque (va encima del color)
+  image_opacity?: number | null; // 0–1, default 1
+  texture_opacity?: number | null; // intensidad de la textura del bloque, 0.1–1 (default 1)
+  padding_y?: number | null; // relleno arriba / abajo de la caja en px (sin valor = el de la hoja, 24)
   border_radius?: number;  // default 0
   width: number;          // default "100%"
 };
@@ -329,6 +341,38 @@ export interface Generals {
 // }
 
 /** Modelo raíz que usas en Next */
+// Elementos sueltos que el organizador pone encima de una sección desde el
+// editor de escritorio (iattend-vite, herramientas Elementos y Stickers).
+// Posición en % de la sección: x / y = centro, w = ancho. Ver
+// components/Invitation/SectionLayer/SectionLayer.tsx.
+export type LayerItemKind = "sticker" | "icon" | "text" | "line" | "separator" | "shape";
+export interface LayerItem {
+  id: string;
+  kind: LayerItemKind;
+  url?: string; // sticker
+  icon?: string; // nombre del ícono de lucide
+  text?: string;
+  // texto: "title" | "subtitle" | "body"; línea: "solid" | "dashed" | "dotted" | "double";
+  // separador: su número ("1" … "14", los mismos de generals.separator)
+  variant?: string;
+  color?: string | null; // null = color de textos del tema
+  font?: string | null; // texto: tipografía propia; null = la del tema
+  // forma: variant = "square" | "circle" | "rect" | "triangle" | "star"; color = relleno
+  // ("transparent" = sin relleno); ar = alto / ancho (se estira); borde aparte.
+  ar?: number | null;
+  stroke?: string | null;
+  strokeWidth?: number | null;
+  z?: "front" | "back" | null; // plano: delante (default) o detrás del contenido del bloque
+  radius?: number | null; // esquinas de cuadrado / rectángulo, px a 390 de ancho (999 = píldora)
+  x: number;
+  y: number;
+  w: number;
+  rot?: number;
+  opacity?: number;
+}
+// Llave = sección ("cover", "greeting", "family", "quote", …).
+export type Decorations = Record<string, LayerItem[] | undefined>;
+
 export interface NewInvitation {
   // _id: Id;                 // opcional en creación; presente en lecturas
   // userID: Id;
@@ -344,6 +388,7 @@ export interface NewInvitation {
   notices: NoticesSection;
   gallery: GallerySection;
   generals: Generals;
+  decorations?: Decorations | null;
   // invitation: InvitationMeta;
 
   // createdAt?: string;      // si usas timestamps de Mongoose

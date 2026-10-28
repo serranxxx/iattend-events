@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import Image from "next/image";
 import { Button, Drawer } from "antd";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { FaDiamondTurnRight } from "react-icons/fa6";
+import { Navigation as FaDiamondTurnRight } from 'lucide-react';
 import { InvitationUIBundle, ItineraryItem, NewInvitation } from "@/types/new_invitation";
 import { buttonsColorText, lighter } from "@/helpers/functions";
 import OpenCard from "../OpenCard/OpenCard";

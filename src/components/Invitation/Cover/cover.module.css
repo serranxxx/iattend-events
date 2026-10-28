@@ -244,3 +244,114 @@
         right: 24px;
     }
 }
+
+/* ── Modo edición: título y fecha como bloques que se tocan y arrastran ── */
+.titleBlock {
+    position: relative;
+    width: 100%;
+}
+
+/* Borde punteado siempre visible (como los Eventos Flash); sólido con halo
+   al elegir el bloque. El texto editable de adentro no lleva su propio borde. */
+.editBlock {
+    position: relative;
+    outline: 2px dashed rgba(205, 190, 247, 0.75);
+    outline-offset: 8px;
+    border-radius: 12px;
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    transition: outline-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.editBlock[data-selected] {
+    outline-style: solid;
+    outline-color: #CDBEF7;
+    box-shadow: 0 0 0 12px rgba(205, 190, 247, 0.22);
+}
+
+.editBlock[data-dragging] {
+    cursor: grabbing;
+    opacity: 0.85;
+}
+
+.editBlock [data-edit-field] {
+    outline: none !important;
+    position: relative;
+    z-index: 3;
+}
+
+/* Con el título enfocado (escribiendo) vuelve la selección de texto. */
+.editBlock:has([data-edit-field]:focus) {
+    user-select: text;
+    -webkit-user-select: text;
+    cursor: text;
+}
+
+/* Botón de herramienta pegado a la esquina del bloque (morado, "T"):
+   abre la tipografía del título en el editor. */
+.fieldTool {
+    position: absolute;
+    top: -24px;
+    left: -24px;
+    width: 32px;
+    height: 32px;
+    border-radius: 99px;
+    border: 2px solid #FFFFFF;
+    background: #AAC187; /* light-green-500 del design system */
+    color: #FFFFFF;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    z-index: 4;
+    box-shadow: 0 4px 12px rgba(12, 23, 27, 0.3);
+}
+
+.fieldTool:hover {
+    background: #8FA271;
+}
+
+/* Retícula 3×3 de cuadrantes del título (con el título elegido) */
+.editGrid {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    gap: 4px;
+    padding: 4px;
+    box-sizing: border-box;
+    z-index: 1;
+    pointer-events: none;
+}
+
+/* Dos ranuras (arriba / abajo del título) para la fecha (con la fecha elegida) */
+.editSlots {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    grid-template-rows: 1fr 1fr;
+    gap: 4px;
+    padding: 4px;
+    box-sizing: border-box;
+    z-index: 1;
+    pointer-events: none;
+}
+
+.editCell {
+    border: 1px dashed rgba(255, 255, 255, 0.45);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.04);
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.editCell[data-hover] {
+    background: rgba(205, 190, 247, 0.3);
+    border-color: #CDBEF7;
+}
+
+.editCell[data-current] {
+    border-style: solid;
+    border-color: rgba(205, 190, 247, 0.9);
+}

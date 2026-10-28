@@ -85,6 +85,15 @@ function writeCache(fonts: FontRow[], ts: number) {
   }
 }
 
+// Familias que hay cargadas (las de la tabla `fonts` en caché o el
+// respaldo): las usa el selector de tipografía de los textos sueltos
+// (SectionLayer).
+export function loadedFontFamilies(): string[] {
+  const cache = typeof window !== "undefined" ? readCache() : null;
+  const list = cache?.fonts?.length ? cache.fonts : FALLBACK_FONTS;
+  return [...new Set(list.map((f) => f.family))].sort((a, b) => a.localeCompare(b));
+}
+
 export function GoogleFontsLoader() {
   useEffect(() => {
     const cache = readCache();

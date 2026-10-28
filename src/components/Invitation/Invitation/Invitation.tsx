@@ -19,18 +19,23 @@ import type { GiftBrand } from "@/lib/giftBrands/cache";
 import { TextureOverlay } from "./TexturesOverlay";
 import { Button, Input, message } from "antd";
 import Confirm from "../Confirm/Confirm";
-import { FaLock } from "react-icons/fa";
-import { IoClose } from "react-icons/io5";
+import { Lock as FaLock } from 'lucide-react';
+import { X as IoClose } from 'lucide-react';
 import SlideOverlay from "@/components/SlideOverlay/SlideOverlay";
 import { GuestSubabasePayload } from "@/types/guests";
 import { createClient } from "@/lib/supabase/client";
 import AnimatedPath from "@/components/Motion/AnimatedPath";
-import { FooterLand } from "@/components/LandPage/Footer/Footer";
+import { FooterCompact } from "@/components/FooterCompact/FooterCompact";
 import SongPlayer from "../SongPlayer/SongPlayer";
 import InvitationControlBar from "../InvitationControlBar/InvitationControlBar";
 import InvitationDock from "../InvitationDock/InvitationDock";
 import LanguageToggle from "../LanguageToggle/LanguageToggle";
 import { InvitationLayoutProvider, useIsLargeScreen } from "../layout/InvitationLayout";
+import { useBrowserBarsColor } from "@/hooks/useBrowserBarsColor";
+import { Eye, EyeOff, Paintbrush } from "lucide-react";
+import { SectionLayer } from "../SectionLayer/SectionLayer";
+import { ModuleTexturesContext } from "../ModuleBackdrop";
+import { ModuleSeparator } from "../ModuleSeparator";
 
 type invProps = {
   invitation: NewInvitation | null;
@@ -53,13 +58,45 @@ type invProps = {
   textures?: Texture[];
   giftBrands?: GiftBrand[];
   textureOverride?: Texture | null;
+  // Modo edición (solo desde /host, el editor de iattend-vite): cada módulo es
+  // una zona que se toca para elegirlo en el editor, y algunos textos se
+  // escriben directo sobre la pieza. Ver docs/entorno-edicion.md en vite.
+  editMode?: boolean;
+  selectedSection?: string | null;
+  onSelectSection?: (_section: string, _field?: string) => void;
+  onFieldChange?: (_path: string, _value: unknown) => void;
+  onFieldTool?: (_field: string, _rect: { x: number; y: number; w: number; h: number }, _section?: string) => void;
+  // Se soltó la parte elegida de la portada (título/fecha) sin elegir otra
+  // cosa: el editor solo esconde sus herramientas, no cambia de módulo.
+  onClearField?: () => void;
+};
+
+// Módulos con herramientas de fondo y separador sobre la pieza (modo edición).
+const TOOL_SECTIONS = new Set(["greeting", "family", "quote", "itinerary", "dresscode", "gifts", "destinations", "notices", "gallery"]);
+
+// Sección del editor que corresponde a cada módulo de `generals.positions`
+// (mismos nombres que el scrollspy de abajo).
+const SECTION_BY_MODULE: Record<number, string> = {
+  1: "greeting", 2: "family", 3: "quote", 4: "itinerary", 5: "dresscode",
+  6: "gifts", 7: "destinations", 8: "notices", 9: "gallery",
+};
+
+// Llave de cada módulo en la invitación (donde vive su `active`) y su nombre
+// para el botón "Activar …" del modo edición.
+const MODULE_KEY: Record<number, keyof NewInvitation> = {
+  1: "greeting", 2: "people", 3: "quote", 4: "itinerary", 5: "dresscode",
+  6: "gifts", 7: "destinations", 8: "notices", 9: "gallery",
+};
+const MODULE_NAME: Record<"es" | "en", Record<number, string>> = {
+  es: { 1: "Bienvenida", 2: "Personas", 3: "Cita", 4: "Itinerario", 5: "Dresscode", 6: "Regalos", 7: "Destinos", 8: "Avisos", 9: "Galería" },
+  en: { 1: "Welcome", 2: "People", 3: "Quote", 4: "Itinerary", 5: "Dress code", 6: "Gifts", 7: "Destinations", 8: "Notices", 9: "Gallery" },
 };
 
 
 
 
 
-export default function Invitation({ password, invitationID, ui, lang, availableLanguages, invitation, loader, type, mongoID, dev, plan, phone_number, scrollToSection, scrollKey, onSectionChange, textures = [], textureOverride = null, giftBrands = [] }: invProps) {
+export default function Invitation({ password, invitationID, ui, lang, availableLanguages, invitation, loader, type, mongoID, dev, plan, phone_number, scrollToSection, scrollKey, onSectionChange, textures = [], textureOverride = null, giftBrands = [], editMode = false, selectedSection = null, onSelectSection, onFieldChange, onFieldTool, onClearField }: invProps) {
   const coverRef = useRef<HTMLDivElement>(null);
   const greetingRef = useRef<HTMLDivElement>(null);
   const peopleRef = useRef<HTMLDivElement>(null);
@@ -138,6 +175,17 @@ export default function Invitation({ password, invitationID, ui, lang, available
   const font = invitation?.generals.fonts.body?.typeFace ?? "Poppins";
   const coverSong = invitation?.cover?.song;
 
+  // Franjas de Safari (hora y barra de abajo) del color de la portada mientras
+  // se ve; al bajar, del color de la invitación. Solo en el layout móvil.
+  const coverMedia = invitation?.cover?.image?.prod;
+  useBrowserBarsColor({
+    enabled: !dev && !isSplit,
+    coverUrl: (Array.isArray(coverMedia) ? coverMedia[0] : coverMedia) || null,
+    pageColor: primary,
+    coverRef,
+    scrollRef: scrollableContentRef,
+  });
+
   // const scrollableContentRef = useRef<HTMLDivElement | null>(null);
 
   const programmaticScrollGuardRef = useRef(0);
@@ -172,8 +220,12 @@ export default function Invitation({ password, invitationID, ui, lang, available
     // Scroll manual acotado al contenedor: scrollIntoView() puede propagar el
     // "hacer visible" al documento padre (y hasta al padre del iframe cuando se
     // embebe en el wizard/preview), causando un scroll indeseado fuera de aquí.
-    const targetTop = target.getBoundingClientRect().top - container.getBoundingClientRect().top + container.scrollTop;
-    container.scrollTo({ top: targetTop, behavior: "smooth" });
+    // En modo edición se deja aire arriba: el editor pone sus chips encima de
+    // la pieza y, con el módulo pegado arriba, tapaban sus botones (fondo,
+    // separador). La portada no lo necesita: va hasta arriba.
+    const headroom = editMode && scrollToSection !== "cover" && scrollToSection !== "generals" ? 64 : 0;
+    const targetTop = target.getBoundingClientRect().top - container.getBoundingClientRect().top + container.scrollTop - headroom;
+    container.scrollTo({ top: Math.max(0, targetTop), behavior: "smooth" });
 
     // Bug conocido de WebKit/iOS: tras un scrollTo({behavior:'smooth'}) sobre un
     // contenedor con -webkit-overflow-scrolling:touch, el momentum scroll se queda
@@ -256,26 +308,177 @@ export default function Invitation({ password, invitationID, ui, lang, available
   }, [validated, isSplit, invitation?.generals?.positions?.join(","), onSectionChange]);
 
 
+  // Zona del modo edición: envuelve un módulo para que tocarlo lo elija en el
+  // editor. Fuera del modo edición devuelve el módulo tal cual.
+  // `module` (id de positions) solo para los módulos: con él aparece el botón
+  // de deshabilitar, y si está deshabilitado se dibuja opaco con "Activar …".
+  // Elementos sueltos de la sección (stickers, íconos, textos, líneas): la
+  // capa va encima del módulo. Fuera del modo edición solo se monta si hay algo.
+  const layerFor = (section: string) => (
+    <SectionLayer
+      section={section}
+      items={invitation?.decorations?.[section] ?? []}
+      editMode={editMode}
+      accent={invitation?.generals?.colors?.accent ?? "#29262D"}
+      titleFont={invitation?.generals?.fonts?.titles?.typeFace ?? invitation?.generals?.fonts?.body?.typeFace}
+      bodyFont={invitation?.generals?.fonts?.body?.typeFace}
+      palette={[
+        invitation?.generals?.colors?.primary,
+        invitation?.generals?.colors?.secondary,
+        invitation?.generals?.colors?.accent,
+        invitation?.generals?.colors?.actions,
+        invitation?.generals?.fonts?.titles?.color,
+        "#FFFFFF",
+        "#000000",
+      ].filter((c): c is string => Boolean(c))}
+      onChange={(list) => onFieldChange?.(`decorations.${section}`, list)}
+    />
+  );
+
+  const zone = (section: string, node: React.ReactNode, key?: React.Key, module?: { path: string; name: string; disabled: boolean }) => {
+    // Fuera del modo edición también va envuelto: el espacio entre bloques es
+    // su padding (data-module-zone), no un gap del contenedor.
+    if (!editMode) {
+      return (
+        <div key={key} className={styles.layerHost} data-module-zone={section}>
+          {/* Antes del módulo: sus elementos "detrás" quedan bajo el contenido. */}
+          {invitation?.decorations?.[section]?.length ? layerFor(section) : null}
+          {node}
+        </div>
+      );
+    }
+    const selected = selectedSection === section;
+    const openTool = (field: string) => (e: React.MouseEvent<HTMLButtonElement>) => {
+      e.stopPropagation();
+      const r = e.currentTarget.getBoundingClientRect();
+      onFieldTool?.(field, { x: r.left, y: r.top, w: r.width, h: r.height }, section);
+    };
+    return (
+      <div
+        key={key}
+        className={styles.editZone}
+        data-edit-zone={section}
+        data-module-zone={section}
+        data-selected={selected || undefined}
+        data-disabled={module?.disabled || undefined}
+        onClick={(e) => { e.stopPropagation(); onSelectSection?.(section); }}
+      >
+        {/* Capa de elementos sueltos antes del módulo (ver section-layer.module.css). */}
+        {!module?.disabled && layerFor(section)}
+        {/* Herramientas del módulo elegido: el fondo arriba a la izquierda (el
+            separador se toca directo en la pieza) y ocultar arriba a la derecha. */}
+        {selected && module && !module.disabled && TOOL_SECTIONS.has(section) && (
+          <div className={styles.zoneTools} data-edit-hit>
+            <button type="button" className={styles.zoneTool} data-edit-hit aria-label="Fondo" title="Fondo" onClick={openTool("background")}>
+              <Paintbrush size={15} strokeWidth={2.2} />
+            </button>
+          </div>
+        )}
+        {selected && module && !module.disabled && (
+          <div className={`${styles.zoneTools} ${styles.zoneToolsRight}`} data-edit-hit>
+            <button
+              type="button"
+              className={styles.zoneGlass}
+              data-edit-hit
+              aria-label={`Deshabilitar ${module.name}`}
+              title={`Deshabilitar ${module.name}`}
+              onClick={(e) => { e.stopPropagation(); onFieldChange?.(`${module.path}.active`, false); }}
+            >
+              <EyeOff size={15} strokeWidth={2} />
+            </button>
+          </div>
+        )}
+        {module?.disabled ? (
+          <>
+            {/* Deshabilitado: no desaparece mientras se edita, se ve opaco. En
+                la invitación publicada sigue sin mostrarse. */}
+            <div className={styles.zoneDimmed}>{node}</div>
+            <button
+              type="button"
+              className={`${styles.zoneGlass} ${styles.zoneActivate}`}
+              data-edit-hit
+              onClick={(e) => { e.stopPropagation(); onFieldChange?.(`${module.path}.active`, true); onSelectSection?.(section); }}
+            >
+              <Eye size={15} strokeWidth={2} />
+              Activar {module.name}
+            </button>
+          </>
+        ) : node}
+      </div>
+    );
+  };
+
+  // Separador de un módulo: va entre bloques, fuera de su zona (antes cada
+  // módulo lo pintaba al pie de su propio bloque).
+  const separatorAfter = (id: number, index: number, shown: boolean) => {
+    const section = SECTION_BY_MODULE[id];
+    if (!invitation) return null;
+    const content = invitation[MODULE_KEY[id]] as { dynamic_separator?: Parameters<typeof ModuleSeparator>[0]["separator"] } | undefined;
+    if (!section || !shown || (!editMode && !content?.dynamic_separator?.active)) return null;
+    return (
+      <div key={`sep-${index}`} className={styles.betweenBlocks} data-separator-of={section}>
+        <ModuleSeparator
+          separator={content?.dynamic_separator}
+          generals={invitation.generals}
+          // Va sobre el fondo de la invitación, no sobre el del bloque:
+          // "Invertir color" del bloque ya no le toca.
+          inverted={false}
+          editMode={editMode}
+          section={section}
+          onFieldTool={(field, rect, sec) => { onFieldTool?.(field, rect, sec); onSelectSection?.(section); }}
+        />
+      </div>
+    );
+  };
+
   const handlePosition = (id: number, invitation: NewInvitation, index: number) => {
+    const block = blockAt(id, invitation, index);
+    const content = invitation[MODULE_KEY[id]] as { active?: boolean } | undefined;
+    // En edición se ve aunque esté apagado (el bloque se dibuja opaco); el
+    // separador de un bloque apagado no.
+    const sep = separatorAfter(id, index, Boolean(content?.active));
+    return sep ? [block, sep] : block;
+  };
+
+  const blockAt = (id: number, invitation: NewInvitation, index: number) => {
+    const section = SECTION_BY_MODULE[id];
+    if (editMode && section) {
+      const key = MODULE_KEY[id];
+      const content = invitation[key] as { active?: boolean } | undefined;
+      const disabled = !content?.active;
+      // Para dibujarlo opaco hay que dibujarlo: cada módulo se esconde solo
+      // si `active` es falso, así que aquí se le pasa encendido.
+      const shown = disabled ? ({ ...invitation, [key]: { ...content, active: true } } as NewInvitation) : invitation;
+      const name = MODULE_NAME[lang === "en" ? "en" : "es"][id];
+      return zone(section, renderModule(id, shown, index), `zone-${index}`, { path: String(key), name, disabled });
+    }
+    // Publicada: igual pasa por la zona para pintar sus elementos sueltos.
+    if (section && invitation?.[MODULE_KEY[id]] && (invitation[MODULE_KEY[id]] as { active?: boolean }).active) {
+      return zone(section, renderModule(id, invitation, index), `zone-${index}`);
+    }
+    return renderModule(id, invitation, index);
+  };
+
+  const renderModule = (id: number, invitation: NewInvitation, index: number) => {
     switch (id) {
       case 1:
-        return <Greeting key={index} ref={greetingRef} dev={false} invitation={invitation} />;
+        return <Greeting key={index} ref={greetingRef} dev={false} invitation={invitation} editMode={editMode} onFieldChange={onFieldChange} onFieldTool={onFieldTool} />;
       case 2:
-        return <People invitationID={invitationID} key={index} ref={peopleRef} dev={false} invitation={invitation} />;
+        return <People invitationID={invitationID} key={index} ref={peopleRef} dev={false} invitation={invitation} editMode={editMode} onFieldChange={onFieldChange} onFieldTool={onFieldTool} />;
       case 3:
-        return <Quote key={index} ref={quoteRef} dev={dev} invitation={invitation} />;
+        return <Quote key={index} ref={quoteRef} dev={dev} invitation={invitation} editMode={editMode} onFieldChange={onFieldChange} onFieldTool={onFieldTool} onClearField={onClearField} />;
       case 4:
-        return <Itinerary invitationID={invitationID} ui={ui} key={index} ref={itineraryRef} dev={false} invitation={invitation} />;
+        return <Itinerary invitationID={invitationID} ui={ui} key={index} ref={itineraryRef} dev={false} invitation={invitation} editMode={editMode} onFieldChange={onFieldChange} onFieldTool={onFieldTool} />;
       case 5:
-        return <DressCode ui={ui} key={index} ref={dresscodeRef} dev={dev} invitation={invitation} />;
+        return <DressCode ui={ui} key={index} ref={dresscodeRef} dev={dev} invitation={invitation} editMode={editMode} onFieldChange={onFieldChange} onFieldTool={onFieldTool} />;
       case 6:
-        return <Gifts ui={ui} key={index} ref={giftsRef} dev={false} invitation={invitation} brands={giftBrands} />;
+        return <Gifts ui={ui} key={index} ref={giftsRef} dev={false} invitation={invitation} brands={giftBrands} editMode={editMode} onFieldChange={onFieldChange} onFieldTool={onFieldTool} />;
       case 7:
-        return <Destinations invitationID={invitationID} ui={ui} key={index} ref={destinationRef} dev={false} invitation={invitation} />;
+        return <Destinations invitationID={invitationID} ui={ui} key={index} ref={destinationRef} dev={false} invitation={invitation} editMode={editMode} onFieldChange={onFieldChange} onFieldTool={onFieldTool} />;
       case 8:
-        return <Notices key={index} ref={noticesRef} dev={false} invitation={invitation} />;
+        return <Notices key={index} ref={noticesRef} dev={false} invitation={invitation} editMode={editMode} onFieldChange={onFieldChange} onFieldTool={onFieldTool} />;
       case 9:
-        return <Gallery key={index} ref={galleryRef} dev={dev} invitation={invitation} ui={ui} />;
+        return <Gallery key={index} ref={galleryRef} dev={dev} invitation={invitation} ui={ui} editMode={editMode} onFieldChange={onFieldChange} onFieldTool={onFieldTool} />;
 
       default:
         break;
@@ -576,8 +779,21 @@ export default function Invitation({ password, invitationID, ui, lang, available
           />
         </div>
       )}
-      <div ref={footerRef} style={{ width: '100%' }}>
-        <FooterLand invitation={invitation} />
+      {/* Mismo footer que los Eventos Flash / side events (FooterCompact),
+          sin fondo propio (encima de la invitación y bajo su textura) y con el
+          color de texto del tema en vez de blanco. */}
+      <div
+        ref={footerRef}
+        style={{
+          width: "100%",
+          display: "flex",
+          justifyContent: "center",
+          // 22px arriba = la otra mitad del espacio entre bloques.
+          padding: "22px 24px 32px",
+          boxSizing: "border-box",
+        }}
+      >
+        <FooterCompact color={invitation?.generals?.colors?.accent ?? "#1B1B1B"} />
       </div>
     </>
   );
@@ -694,6 +910,7 @@ export default function Invitation({ password, invitationID, ui, lang, available
   );
 
   return (
+    <ModuleTexturesContext.Provider value={textures}>
     <InvitationLayoutProvider value={isSplit ? "split" : "mobile"}>
       {contextHolder}
 
@@ -734,18 +951,25 @@ export default function Invitation({ password, invitationID, ui, lang, available
               backgroundColor: invitation.generals.colors.primary ?? "#FFF",
               paddingBottom: "0px",
               maxHeight: "100dvh",
+              // El 110vmax del CSS es para que Safari esconda sus barras al
+              // hacer scroll en el teléfono. En el editor (iframe, dev) la
+              // caja quedaba más alta que la pantalla y el final (footer) no
+              // se alcanzaba.
+              ...(dev ? { minHeight: "100dvh" } : {}),
               position: "relative",
             }}
           >
-            <Cover ui={ui} lang={lang} ref={coverRef} dev={dev} invitation={invitation} height={"100vh"} validated={validated} />
+            {zone("cover", (
+              <Cover ui={ui} lang={lang} ref={coverRef} dev={dev} invitation={invitation} height={"100vh"} validated={validated} bleed={!dev} editMode={editMode} onFieldChange={onFieldChange} onSelectField={(field) => (field ? onSelectSection?.("cover", field) : onClearField?.())} onFieldTool={onFieldTool} />
+            ))}
             {songPlayer}
             {modules}
             {lockedOverlay}
             {textureOverlay}
           </div>
 
-          {dock}
-          {controlBar}
+          {/* Editando, el dock y la barra solo se miran: sus botones son del invitado. */}
+          {editMode ? <div style={{ pointerEvents: "none" }}>{dock}{controlBar}</div> : <>{dock}{controlBar}</>}
         </>
       )}
 
@@ -804,5 +1028,6 @@ export default function Invitation({ password, invitationID, ui, lang, available
         </div>
       </SlideOverlay>
     </InvitationLayoutProvider>
+    </ModuleTexturesContext.Provider>
   );
 }

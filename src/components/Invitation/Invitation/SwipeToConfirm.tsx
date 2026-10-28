@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import styles from "./swipe.module.css";
-import { FaUnlock } from "react-icons/fa";
+import { LockOpen as FaUnlock } from 'lucide-react';
 
 type Props = {
   label?: string;

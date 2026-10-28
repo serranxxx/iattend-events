@@ -4,7 +4,7 @@ import { useCallback, useEffect } from "react";
 import confetti from "canvas-confetti";
 import { CoverSection, Generals } from "@/types/new_invitation";
 import { Button } from "antd";
-import { PiConfetti } from "react-icons/pi";
+import { PartyPopper as PiConfetti } from 'lucide-react';
 import styles from './confetti.module.css'
 import { darker } from "@/helpers/functions";
 

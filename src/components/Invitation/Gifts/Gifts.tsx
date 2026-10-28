@@ -1,28 +1,36 @@
 import { InvitationUIBundle, NewInvitation } from "@/types/new_invitation";
+import { ModuleBackdrop, hasModuleBg, moduleBoxExtras } from "../ModuleBackdrop";
 import React, { forwardRef } from "react";
-import { Separador } from "../Separator/Separator";
 import styles from "./gifts.module.css";
 import Wallet from "./Wallet/Wallet";
 import type { GiftBrand } from "@/lib/giftBrands/cache";
 import FadeLeft from "@/components/Motion/FadeLeft";
-import Image from "next/image";
 import { useIsSplitLayout } from "../layout/InvitationLayout";
 import { WebSection } from "../layout/WebSection";
 import web from "../layout/web-section.module.css";
+import { EditableText } from "../EditableText";
 
 type DresscodeProps = {
   dev: boolean;
   invitation: NewInvitation;
   ui: InvitationUIBundle;
   brands?: GiftBrand[];
+  // Modo edición (ver Invitation.tsx): título y descripción encima, fondo,
+  // ocultar y separador.
+  editMode?: boolean;
+  onFieldChange?: (_path: string, _value: unknown) => void;
+  onFieldTool?: (_field: string, _rect: { x: number; y: number; w: number; h: number }, _section?: string) => void;
 };
 
-export const Gifts = forwardRef<HTMLDivElement, DresscodeProps>(function Greeting({ ui, dev, invitation, brands = [] }, ref) {
+export const Gifts = forwardRef<HTMLDivElement, DresscodeProps>(function Greeting({ ui, dev, invitation, brands = [], editMode = false, onFieldChange, onFieldTool: _onFieldTool }, ref) {
   const content = invitation.gifts;
   const generals = invitation.generals;
 
   const primary = generals?.colors.primary ?? "#FFFFFF";
   const secondary = generals?.colors.secondary ?? "#FFFFFF";
+  // Fondo del módulo: su color propio si lo tiene, si no el secundario del
+  // tema. Solo para el fondo; botones y bordes siguen con el del tema.
+  const moduleBg = content?.dynamic_background?.custom_color || secondary;
   const accent = generals?.colors.accent ?? "#FFFFFF";
 
   const title = {
@@ -105,22 +113,35 @@ export const Gifts = forwardRef<HTMLDivElement, DresscodeProps>(function Greetin
 
   return (
     <>
-      {content.active && generals && (hasContent || hasSeparator) ? (
+      {content.active && generals && (hasContent || hasSeparator || editMode) ? (
+        <>
         <div ref={ref} className="main_container"
           style={{
             position: "relative",
-            backgroundColor: content?.dynamic_background?.active ? secondary : "transparent",
+            backgroundColor: content?.dynamic_background?.active ? moduleBg : "transparent",
+            // Imagen y textura propias del bloque van detrás (ModuleBackdrop).
+            isolation: "isolate",
+            // Relleno arriba / abajo propio del bloque (dynamic_background.padding_y).
+            ...moduleBoxExtras(content?.dynamic_background),
             borderRadius: content?.dynamic_background?.border_radius,
-            width: content?.dynamic_background?.active ? `${content.dynamic_background.width}%` : '100%',
-            boxShadow: content?.dynamic_background?.active ? content.dynamic_background.shadow ? '0px 0px 12px rgba(0,0,0,0.4)' : '0px 0px 0px rgba(0,0,0,0)' : '0px 0px 0px rgba(0,0,0,0)',
+            width: hasModuleBg(content?.dynamic_background) ? `${content.dynamic_background.width}%` : '100%',
+            boxShadow: hasModuleBg(content?.dynamic_background) ? content.dynamic_background.shadow ? '0px 0px 12px rgba(0,0,0,0.4)' : '0px 0px 0px rgba(0,0,0,0)' : '0px 0px 0px rgba(0,0,0,0)',
             minWidth: hasContent ? '85%' : undefined,
             padding: hasContent ? undefined : 0,
           }}>
+          <ModuleBackdrop bg={content?.dynamic_background} />
 
-          {hasContent && (
+          {(hasContent || editMode) && (
           <div className="g_module_info_container">
             <FadeLeft>
-              <span
+              <EditableText
+                path="gifts.title"
+                value={content.title ?? ""}
+                editMode={editMode}
+                onFieldChange={onFieldChange}
+                multiline
+                render={renderTextWithStrong}
+                placeholder="Título"
                 className="g_module_title"
                 style={{
                   display: "inline-block", whiteSpace: "pre-line",
@@ -128,12 +149,17 @@ export const Gifts = forwardRef<HTMLDivElement, DresscodeProps>(function Greetin
                   fontFamily: title.font ?? "Poppins",
                   fontSize: title.size, fontWeight: title.weight, opacity: title.opacity
                 }}
-              >
-                {renderTextWithStrong(content.title ?? "")}
-              </span>
+              />
             </FadeLeft>
             <FadeLeft>
-              <span
+              <EditableText
+                path="gifts.description"
+                value={content.description ?? ""}
+                editMode={editMode}
+                onFieldChange={onFieldChange}
+                multiline
+                render={renderTextWithStrong}
+                placeholder="Descripción"
                 className="g_mdoule_regular_text"
                 style={{
                   display: "inline-block", whiteSpace: "pre-line",
@@ -141,42 +167,21 @@ export const Gifts = forwardRef<HTMLDivElement, DresscodeProps>(function Greetin
                   fontFamily: body.font ?? "Poppins",
                   fontWeight: body.weight, opacity: body.opacity
                 }}
-              >
-                {renderTextWithStrong(content.description ?? "")}
-              </span>
+              />
             </FadeLeft>
             <div
               className={styles.cards_container}
             >
               {
-                invitation.gifts.cards.length > 0 &&
-                <Wallet ui={ui} invitation={invitation} dev={dev} brands={brands} />
+                (invitation.gifts.cards.length > 0 || editMode) &&
+                <Wallet ui={ui} invitation={invitation} dev={dev} brands={brands} editMode={editMode} onFieldChange={onFieldChange} />
               }
 
             </div>
           </div>
           )}
-          {hasSeparator && (
-            content?.dynamic_separator?.type === 'single' ?
-              <Separador inverted={content.inverted} generals={generals} value={content?.dynamic_separator.single.value ?? 1} />
-              :
-              <div className="dyn_separator_cont"
-                style={{
-                  width: `${content?.dynamic_separator.image.width}%`,
-                  minHeight: `${content?.dynamic_separator.image.height}px`,
-                  zIndex: 99
-                }}
-              >
-                {
-                  content?.dynamic_separator?.image?.value &&
-                  <Image fill src={content?.dynamic_separator?.image?.value ?? ""} alt="" style={{ objectFit: 'cover' }} />
-                }
-
-              </div>
-          )
-
-          }
         </div>
+        </>
       ) : null}
 
     </>

@@ -17,13 +17,16 @@ export default function FanStack({ images, radius: _radius = 24, invitation: _in
   const [handleImages, setHandleImages] = useState<string[]>([]);
   const [_visible, _setVisible] = useState(false);
 
+  // También cuando cambian las imágenes (orden, altas y bajas desde el
+  // editor): antes solo se recalculaba al abrir/cerrar el abanico.
+  const imagesKey = images.join("|");
   useEffect(() => {
     if (onScroll) {
       setHandleImages(images);
     } else {
       setHandleImages(images.slice(0, 3));
     }
-  }, [onScroll]);
+  }, [onScroll, imagesKey]);
 
   return (
     <div

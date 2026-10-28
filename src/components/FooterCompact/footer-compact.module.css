@@ -8,7 +8,7 @@
   margin-top: 20px;
   padding-top: 16px;
   padding-bottom: env(safe-area-inset-bottom);
-  border-top: 1px solid #FFFFFF25;
+  border-top: 1px solid var(--fc-line, #FFFFFF25);
   box-sizing: border-box;
 }
 
@@ -24,14 +24,14 @@
   font-weight: 400;
   font-size: 10px;
   letter-spacing: 1.5px;
-  color: #FFFFFF;
+  color: var(--fc-color, #FFFFFF);
   opacity: 0.7;
 }
 
 .logo {
   height: 30px;
   width: 100px;
-  background-color: #FFFFFF;
+  background-color: var(--fc-color, #FFFFFF);
   -webkit-mask: url('/logo.svg') no-repeat left center / contain;
   mask: url('/logo.svg') no-repeat left center / contain;
 }
@@ -45,9 +45,9 @@
   width: 44px;
   height: 44px;
   border-radius: 99px;
-  background: var(--blur-color--dark, #1a1a1a80);
-  border: 1px solid #FFFFFF40;
-  color: #FFFFFF;
+  background: var(--fc-btn, var(--blur-color--dark, #1a1a1a80));
+  border: 1px solid var(--fc-border, #FFFFFF40);
+  color: var(--fc-color, #FFFFFF);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -56,8 +56,8 @@
 }
 
 .action_button:hover {
-  background: #FFFFFF20;
-  color: #FFFFFF;
+  background: var(--fc-btn-hover, #FFFFFF20);
+  color: var(--fc-color, #FFFFFF);
 }
 
 .signature:focus-visible,

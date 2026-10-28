@@ -1,12 +1,11 @@
 import { InvitationUIBundle, NewInvitation } from "@/types/new_invitation";
+import { ModuleBackdrop, hasModuleBg, moduleBoxExtras } from "../ModuleBackdrop";
 import React, { forwardRef } from "react";
-import { Separador } from "../Separator/Separator";
 import styles from "./itinerary.module.css";
 import Card from "./Card/Card";
 import OpenCard from "./OpenCard/OpenCard";
 import { Button } from "antd";
-import { FaDiamondTurnRight } from "react-icons/fa6";
-import Image from "next/image";
+import { Navigation as FaDiamondTurnRight } from 'lucide-react';
 import ItineraryWeb from "./ItineraryWeb/ItineraryWeb";
 import { useIsSplitLayout } from "../layout/InvitationLayout";
 import { WebSection } from "../layout/WebSection";
@@ -17,15 +16,32 @@ type quoteProps = {
   invitation: NewInvitation;
   ui: InvitationUIBundle;
   invitationID: string | undefined;
+  // Modo edición (ver Invitation.tsx): fondo, separador y "+ Momento".
+  editMode?: boolean;
+  onFieldChange?: (_path: string, _value: unknown) => void;
+  onFieldTool?: (_field: string, _rect: { x: number; y: number; w: number; h: number }, _section?: string) => void;
 };
 
-export const Itinerary = forwardRef<HTMLDivElement, quoteProps>(function Greeting({ ui, dev, invitation, invitationID }, ref) {
+export const Itinerary = forwardRef<HTMLDivElement, quoteProps>(function Greeting({ ui, dev, invitation, invitationID, editMode = false, onFieldChange, onFieldTool }, ref) {
   const content = invitation.itinerary;
   const generals = invitation.generals;
 
   const primary = generals?.colors.primary ?? "#FFFFFF";
   const secondary = generals?.colors.secondary ?? "#FFFFFF";
+  // Fondo del módulo: su color propio si lo tiene, si no el secundario del
+  // tema. Solo para el fondo; botones y bordes siguen con el del tema.
+  const moduleBg = content?.dynamic_background?.custom_color || secondary;
   const accent = generals?.colors.accent ?? "#FFFFFF";
+
+  // "+ Momento" en el modo edición: agrega uno al final (mismos valores que
+  // "Nuevo momento" del panel de Itinerario en el editor).
+  const addMoment = () => onFieldChange?.("itinerary.object", [
+    ...(content.object ?? []),
+    {
+      name: "Nuevo momento", time: "00:00 am", subtext: " ", address: null, moments: null, music: null,
+      active: false, image: null, icon: null, id: Math.random().toString(36).slice(2, 11),
+    },
+  ]);
 
   const title = {
     font: invitation?.generals.fonts.titles?.typeFace ?? invitation?.generals.fonts.body?.typeFace,
@@ -54,7 +70,7 @@ export const Itinerary = forwardRef<HTMLDivElement, quoteProps>(function Greetin
       <WebSection
         ref={ref}
         background={content.dynamic_background}
-        secondary={secondary}
+        secondary={moduleBg}
         maxWidth={960}
         separator={content.dynamic_separator}
         inverted={content.inverted}
@@ -87,19 +103,25 @@ export const Itinerary = forwardRef<HTMLDivElement, quoteProps>(function Greetin
 
   return (
     <>
-      {content.active && generals && (hasContent || hasSeparator) ? (
+      {content.active && generals && (hasContent || hasSeparator || editMode) ? (
+        <>
         <div ref={ref} className="main_container"
           style={{
             position: "relative",
-            backgroundColor: content?.dynamic_background?.active ? secondary : "transparent",
+            backgroundColor: content?.dynamic_background?.active ? moduleBg : "transparent",
+            // Imagen y textura propias del bloque van detrás (ModuleBackdrop).
+            isolation: "isolate",
+            // Relleno arriba / abajo propio del bloque (dynamic_background.padding_y).
+            ...moduleBoxExtras(content?.dynamic_background),
             borderRadius: content?.dynamic_background?.border_radius,
-            width: content?.dynamic_background?.active ? `${content.dynamic_background.width}%` : '100%',
-            boxShadow: content?.dynamic_background?.active ? content.dynamic_background.shadow ? '0px 0px 12px rgba(0,0,0,0.4)' : '0px 0px 0px rgba(0,0,0,0)' : '0px 0px 0px rgba(0,0,0,0)',
+            width: hasModuleBg(content?.dynamic_background) ? `${content.dynamic_background.width}%` : '100%',
+            boxShadow: hasModuleBg(content?.dynamic_background) ? content.dynamic_background.shadow ? '0px 0px 12px rgba(0,0,0,0.4)' : '0px 0px 0px rgba(0,0,0,0)' : '0px 0px 0px rgba(0,0,0,0)',
             minWidth: hasContent ? '85%' : undefined,
             padding: hasContent ? undefined : 0,
           }}>
+          <ModuleBackdrop bg={content?.dynamic_background} />
 
-          {hasContent && (
+          {(hasContent || editMode) && (
           <div className="g_module_info_container">
             <span
               // data-aos={!dev && generals.texture == null ? "fade-right" : undefined}
@@ -136,33 +158,14 @@ export const Itinerary = forwardRef<HTMLDivElement, quoteProps>(function Greetin
                       {ui?.buttons.directions}
                     </Button>
                   </div>
-                  : <Card ui={ui} invitation={invitation} dev={dev} />
+                  : <Card ui={ui} invitation={invitation} dev={dev} editMode={editMode} onAddMoment={addMoment} onFieldChange={onFieldChange} onFieldTool={onFieldTool} />
               }
 
             </div>
           </div>
           )}
-          {hasSeparator && (
-            content?.dynamic_separator?.type === 'single' ?
-              <Separador inverted={content.inverted} generals={generals} value={content?.dynamic_separator.single.value ?? 1} />
-              :
-              <div className="dyn_separator_cont"
-                style={{
-                  width: `${content?.dynamic_separator.image.width}%`,
-                  minHeight: `${content?.dynamic_separator.image.height}px`,
-                  zIndex: 99
-                }}
-              >
-                {
-                  content?.dynamic_separator?.image?.value &&
-                  <Image fill src={content?.dynamic_separator?.image?.value ?? ""} alt="" style={{ objectFit: 'cover' }} />
-                }
-
-              </div>
-          )
-
-          }
         </div>
+        </>
       ) : (
         <></>
       )}

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import styles from "./swipe-lock.module.css";
-import { FaLock, FaUnlock } from "react-icons/fa";
+import { Lock as FaLock, LockOpen as FaUnlock } from 'lucide-react';
 
 type Props = {
   label?: string;

@@ -1,13 +1,16 @@
 import React, { useState } from "react";
 import { Button, Drawer } from "antd";
 import Image from "next/image";
-import { LuBadgeHelp } from "react-icons/lu";
+import { BadgeHelp as LuBadgeHelp } from 'lucide-react';
 import { InvitationUIBundle, ItineraryItem, NewInvitation } from "@/types/new_invitation";
+import { EditableText } from "../../EditableText";
+import { ArrowLeft } from "lucide-react";
+import { useEditableList } from "../../useEditableList";
 import { getItineraryIcon, isImageIcon } from "@/helpers/icons";
 import { buttonsColorText, lighter } from "@/helpers/functions";
 import OpenCard from "../OpenCard/OpenCard";
-import { MdArrowOutward } from "react-icons/md";
-import { FaDiamondTurnRight } from "react-icons/fa6";
+import { ArrowUpRight as MdArrowOutward } from 'lucide-react';
+import { Navigation as FaDiamondTurnRight } from 'lucide-react';
 import FadeSides from "@/components/Motion/FadeSides";
 import { useScreenWidth } from "@/hooks/useScreenWidth";
 
@@ -15,13 +18,22 @@ type CardProps = {
   invitation: NewInvitation;
   dev: boolean;
   ui: InvitationUIBundle;
+  // Modo edición: al final de la línea, del lado contrario al último
+  // momento, un "+ Momento" que agrega uno nuevo.
+  editMode?: boolean;
+  onAddMoment?: () => void;
+  // Con el modo edición, tocar un momento abre su drawer con todo editable.
+  onFieldChange?: (_path: string, _value: unknown) => void;
+  onFieldTool?: (_field: string, _rect: { x: number; y: number; w: number; h: number }, _section?: string) => void;
 };
 
 
-export default function Card({ ui, invitation, dev }: CardProps) {
+export default function Card({ ui, invitation, dev, editMode = false, onAddMoment, onFieldChange, onFieldTool }: CardProps) {
   const content = invitation.itinerary;
   const generals = invitation.generals;
-  const [open, setOpen] = useState<ItineraryItem | null>(null);
+  // Momento abierto en el drawer, por su lugar en la lista (así el drawer
+  // muestra siempre los datos al día mientras se edita).
+  const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   const primary = generals?.colors.primary ?? "#FFFFFF";
   const secondary = generals?.colors.secondary ?? "#FFFFFF";
@@ -32,6 +44,24 @@ export default function Card({ ui, invitation, dev }: CardProps) {
   const isLargeScreen = width >= 768;
 
   const steps = invitation.itinerary.object;
+  const open: ItineraryItem | null = openIndex !== null ? steps[openIndex] ?? null : null;
+  // Momentos en la línea, en modo edición: se eligen (borde) y se arrastran
+  // para cambiar el orden.
+  const list = useEditableList<ItineraryItem>({
+    items: steps,
+    path: "itinerary.object",
+    editMode,
+    onFieldChange,
+    makeNew: () => steps[0],
+    // El drawer solo se abre con "Detalles": tocar la tarjeta la elige y
+    // arrastrarla la reordena.
+  });
+
+  const removeOpen = () => {
+    if (openIndex === null) return;
+    setOpenIndex(null);
+    onFieldChange?.("itinerary.object", steps.filter((_, i) => i !== openIndex));
+  };
 
   const [activeSteps, setActiveSteps] = useState<ItineraryItem[]>([]);
 
@@ -59,6 +89,7 @@ export default function Card({ ui, invitation, dev }: CardProps) {
   return (
     <>
       <div
+        ref={list.listRef}
         style={{
           position: "relative",
           width: "100%",
@@ -85,7 +116,7 @@ export default function Card({ ui, invitation, dev }: CardProps) {
           return (
             <div
               key={index}
-              style={{
+              {...list.rowProps(index, {
                 position: "relative",
                 display: "flex",
                 justifyContent: leftSide ? "flex-start" : "flex-end",
@@ -93,11 +124,12 @@ export default function Card({ ui, invitation, dev }: CardProps) {
                 minHeight: ROW_HEIGHT, // altura fija por fila
                 marginBottom: index === steps.length - 1 ? 0 : GAP,
                 width: "100%",
-              }}
+              }, { outlineChild: true })}
             >
               {/* Tarjeta del evento */}
               <FadeSides side={leftSide}>
                 <div
+                  data-edit-card={editMode || undefined}
                   style={{
                     width: isImageIcon(item.icon) ? "74%" : "44%",
                     margin: "0 2%",
@@ -125,7 +157,9 @@ export default function Card({ ui, invitation, dev }: CardProps) {
                     <span style={{ opacity: body.opacity, fontWeight: body.weight }}>{item.time}</span>
                     <div style={{ marginTop: 6 }}>
                       <Button
-                        onClick={() => setOpen(item)}
+                        // Igual que "Eliminar": tocarlo no elige ni arrastra, abre el drawer.
+                        data-edit-row-delete
+                        onClick={(e) => { e.stopPropagation(); setOpenIndex(index); }}
                         style={{
                           backgroundColor: content?.dynamic_background?.active ? (content.inverted ? primary : secondary) : secondary,
                           color: content?.dynamic_background?.active ? (content.inverted ? accent : accent) : content.inverted ? primary : accent,
@@ -137,6 +171,16 @@ export default function Card({ ui, invitation, dev }: CardProps) {
                         {ui?.buttons.details}
                       </Button>
                     </div>
+                    {list.showDelete(index) && (
+                      <button
+                        type="button"
+                        className="edit_row_delete"
+                        data-edit-row-delete
+                        onClick={(e) => { e.stopPropagation(); list.remove(index); }}
+                      >
+                        Eliminar
+                      </button>
+                    )}
                   </div>
                 </div>
               </FadeSides>
@@ -157,67 +201,124 @@ export default function Card({ ui, invitation, dev }: CardProps) {
               />
 
 
-              <Drawer
-                placement={isLargeScreen ? 'left' : 'bottom'}
-                onClose={() => setOpen(null)}
-                open={open ? true : false}
-                classNames={{
-                  body: "scroll-invitation"
-                }}
-                title={
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "flex-start",
-                      gap: "6px",
-                      fontFamily: invitation.generals.fonts.body?.typeFace,
-                      fontSize: "20px",
-                      color: content.inverted ? primary : accent,
-                    }}
-                  >
-                    {open?.name}
-                  </div>
-                }
-                height={"auto"}
-                closeIcon={false}
-                style={{
-                  maxHeight: isLargeScreen ? "100vh" : "75vh",
-                  borderRadius: isLargeScreen ? '0px 32px 32px 0px' : "32px 32px 0px 0px",
-                  
-                }}
-                styles={{
-                  header: {
-                    backgroundColor: content.inverted ? secondary : primary,
-                  },
-                  body: {
-                    backgroundColor: content.inverted ? secondary : primary,
-                    paddingTop: "12px",
-                  },
-                }}
-                extra={
-                  open?.address?.url && (
-                    <Button
-                      href={open?.address.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      icon={<FaDiamondTurnRight size={14} />}
-                      style={{
-                        background: content.inverted ? primary : actions ?? "#FFF",
-                        color: content.inverted ? accent : buttonsColorText(actions!),
-                      }}
-                    >
-                      {ui?.buttons.directions}
-                    </Button>
-                  )
-                }
-              >
-                <OpenCard dev={dev} invitation={invitation} item={open ?? item} setActiveSteps={setActiveSteps} activeSteps={activeSteps} />
-              </Drawer>
             </div>
           );
         })}
+
+        {editMode && (
+          <div
+            style={{
+              position: "relative",
+              display: "flex",
+              justifyContent: steps.length % 2 === 0 ? "flex-start" : "flex-end",
+              alignItems: "center",
+              minHeight: 96,
+              width: "100%",
+            }}
+          >
+            <div style={{ width: "44%", margin: "0 2%", display: "flex", justifyContent: "center" }}>
+              <button
+                type="button"
+                className="edit_glass_btn"
+                data-edit-hit
+                onClick={(e) => { e.stopPropagation(); onAddMoment?.(); }}
+              >
+                + Momento
+              </button>
+            </div>
+          </div>
+        )}
       </div>
+      <Drawer
+        placement={isLargeScreen ? 'left' : 'bottom'}
+        onClose={() => setOpenIndex(null)}
+        open={open ? true : false}
+        classNames={{
+          body: "scroll-invitation",
+          header: editMode ? "edit_drawer" : undefined,
+        }}
+        title={
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "flex-start",
+              gap: "6px",
+              fontFamily: invitation.generals.fonts.body?.typeFace,
+              fontSize: "20px",
+              color: content.inverted ? primary : accent,
+            }}
+          >
+            {editMode && openIndex !== null ? (
+              <EditableText
+                key={openIndex}
+                path={`itinerary.object.${openIndex}.name`}
+                value={open?.name ?? ""}
+                editMode
+                onFieldChange={onFieldChange}
+                placeholder="Nombre del momento"
+                className="edit_drawer_title"
+              />
+            ) : open?.name}
+          </div>
+        }
+        // En el modo edición ocupa toda la pantalla de la pieza (sin scroll de
+        // la página detrás).
+        height={editMode ? "100%" : "auto"}
+        // A pantalla completa (modo edición) no hay fondo que tocar para
+        // cerrarlo: lleva una flecha para regresar.
+        closeIcon={editMode ? <span className="edit_drawer_close" aria-label="Regresar"><ArrowLeft size={16} /></span> : false}
+        style={{
+          maxHeight: editMode || isLargeScreen ? "100vh" : "75vh",
+          borderRadius: editMode ? 0 : isLargeScreen ? '0px 32px 32px 0px' : "32px 32px 0px 0px",
+          
+        }}
+        styles={{
+          header: {
+            backgroundColor: content.inverted ? secondary : primary,
+          },
+          body: {
+            backgroundColor: content.inverted ? secondary : primary,
+            paddingTop: "12px",
+          },
+        }}
+        extra={
+          open?.address?.url && (
+            <Button
+              href={open?.address.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              icon={<FaDiamondTurnRight size={14} />}
+              style={{
+                background: content.inverted ? primary : actions ?? "#FFF",
+                color: content.inverted ? accent : buttonsColorText(actions!),
+              }}
+            >
+              {ui?.buttons.directions}
+            </Button>
+          )
+        }
+      >
+        {open && (
+          <OpenCard
+            key={openIndex}
+            dev={dev}
+            invitation={invitation}
+            item={open}
+            setActiveSteps={setActiveSteps}
+            activeSteps={activeSteps}
+            editMode={editMode}
+            index={openIndex ?? 0}
+            onFieldChange={onFieldChange}
+            onFieldTool={onFieldTool}
+          />
+        )}
+        {editMode && open && (
+          <div style={{ display: "flex", justifyContent: "center", marginTop: 32 }}>
+            <button type="button" className="edit_drawer_delete" onClick={removeOpen}>Eliminar momento</button>
+          </div>
+        )}
+      </Drawer>
       {/* {steps.map((item, index) => (
         <div
           key={index}

@@ -3,9 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { FaHotel } from "react-icons/fa";
-import { ImSpoonKnife } from "react-icons/im";
-import { MdArrowOutward, MdSportsGymnastics } from "react-icons/md";
+import { Hotel as FaHotel } from 'lucide-react';
+import { Utensils as ImSpoonKnife } from 'lucide-react';
+import { ArrowUpRight as MdArrowOutward, Compass as MdSportsGymnastics } from 'lucide-react';
 import { DestinationCard, InvitationUIBundle, NewInvitation } from "@/types/new_invitation";
 import { getWebCopy } from "../../layout/copy";
 import web from "../../layout/web-section.module.css";

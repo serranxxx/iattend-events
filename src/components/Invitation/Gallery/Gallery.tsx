@@ -1,7 +1,6 @@
 import { InvitationUIBundle, NewInvitation } from "@/types/new_invitation";
-import Image from "next/image";
+import { ModuleBackdrop, hasModuleBg, moduleBoxExtras } from "../ModuleBackdrop";
 import React, { forwardRef } from "react";
-import { Separador } from "../Separator/Separator";
 import FanStack from "./FanStack";
 import FadeLeft from "@/components/Motion/FadeLeft";
 import FadeIn from "@/components/Motion/FadeIn";
@@ -9,14 +8,22 @@ import GalleryWeb from "./GalleryWeb/GalleryWeb";
 import { useIsSplitLayout } from "../layout/InvitationLayout";
 import { WebSection } from "../layout/WebSection";
 import web from "../layout/web-section.module.css";
+import { Button } from "antd";
+import { Plus } from "lucide-react";
+import { EditableText } from "../EditableText";
 
 type DresscodeProps = {
   dev: boolean;
   invitation: NewInvitation;
   ui?: InvitationUIBundle | null;
+  // Modo edición (ver Invitation.tsx): título encima, fondo, ocultar,
+  // separador e imágenes (mismo mini panel que el dresscode).
+  editMode?: boolean;
+  onFieldChange?: (_path: string, _value: unknown) => void;
+  onFieldTool?: (_field: string, _rect: { x: number; y: number; w: number; h: number }, _section?: string) => void;
 };
 
-export const Gallery = forwardRef<HTMLDivElement, DresscodeProps>(function Gallery({ dev, invitation, ui }, ref) {
+export const Gallery = forwardRef<HTMLDivElement, DresscodeProps>(function Gallery({ dev, invitation, ui, editMode = false, onFieldChange, onFieldTool }, ref) {
   const content = invitation.gallery;
   const generals = invitation.generals;
 
@@ -24,6 +31,18 @@ export const Gallery = forwardRef<HTMLDivElement, DresscodeProps>(function Galle
 
   const primary = generals?.colors.primary ?? "#FFFFFF";
   const secondary = generals?.colors.secondary ?? "#FFFFFF";
+  // Fondo del módulo: su color propio si lo tiene, si no el secundario del
+  // tema. Solo para el fondo; botones y bordes siguen con el del tema.
+  const moduleBg = content?.dynamic_background?.custom_color || secondary;
+
+  // Imágenes en modo edición: tocarlas abre en el editor el mini panel que
+  // se pone encima de ellas (agregar, ordenar, borrar), como el dresscode.
+  const openImagesTool = (e: React.MouseEvent<HTMLElement>) => {
+    e.stopPropagation();
+    const box = (e.currentTarget.closest(".edit_drawer_empty_box") as HTMLElement | null) ?? e.currentTarget;
+    const r = box.getBoundingClientRect();
+    onFieldTool?.("gallery_images", { x: r.left, y: r.top, w: r.width, h: r.height }, "gallery");
+  };
   const accent = generals?.colors.accent ?? "#FFFFFF";
 
   const title = {
@@ -85,22 +104,35 @@ export const Gallery = forwardRef<HTMLDivElement, DresscodeProps>(function Galle
 
   return (
     <>
-      {content.active && generals && (hasContent || hasSeparator) && (
+      {content.active && generals && (hasContent || hasSeparator || editMode) && (
+        <>
         <div ref={ref} className="main_container"
           style={{
             position: "relative",
-            backgroundColor: content?.dynamic_background?.active ? secondary : "transparent",
+            backgroundColor: content?.dynamic_background?.active ? moduleBg : "transparent",
+            // Imagen y textura propias del bloque van detrás (ModuleBackdrop).
+            isolation: "isolate",
+            // Relleno arriba / abajo propio del bloque (dynamic_background.padding_y).
+            ...moduleBoxExtras(content?.dynamic_background),
             borderRadius: content?.dynamic_background?.border_radius,
-            width: content?.dynamic_background?.active ? `${content.dynamic_background.width}%` : '100%',
-            boxShadow: content?.dynamic_background?.active ? content?.dynamic_background?.shadow ? '0px 0px 12px rgba(0,0,0,0.4)' : '0px 0px 0px rgba(0,0,0,0)' : '0px 0px 0px rgba(0,0,0,0)',
+            width: hasModuleBg(content?.dynamic_background) ? `${content.dynamic_background.width}%` : '100%',
+            boxShadow: hasModuleBg(content?.dynamic_background) ? content?.dynamic_background?.shadow ? '0px 0px 12px rgba(0,0,0,0.4)' : '0px 0px 0px rgba(0,0,0,0)' : '0px 0px 0px rgba(0,0,0,0)',
             padding: hasContent ? undefined : 0,
           }}>
-          {hasContent && (
+          <ModuleBackdrop bg={content?.dynamic_background} />
+          {(hasContent || editMode) && (
           <div className="g_module_info_container" style={{
             // width:'auto'
           }}>
             <FadeLeft>
-              <span
+              <EditableText
+                path="gallery.title"
+                value={content.title ?? ""}
+                editMode={editMode}
+                onFieldChange={onFieldChange}
+                multiline
+                render={renderTextWithStrong}
+                placeholder="Título"
                 className="g_module_title"
                 style={{
                   display: "inline-block", whiteSpace: "pre-line",
@@ -108,43 +140,47 @@ export const Gallery = forwardRef<HTMLDivElement, DresscodeProps>(function Galle
                   fontFamily: title.font ?? "Poppins",
                   fontSize: title.size, fontWeight: title.weight, opacity: title.opacity
                 }}
-              >
-                {renderTextWithStrong(content.title ?? "")}
-              </span>
+              />
             </FadeLeft>
             {
               images?.length > 0 &&
               <FadeIn>
-                <FanStack
-                  images={images}
-                  radius={12}
-                  invitation={invitation}
-                />
+                <div
+                  className={editMode ? "edit_hover_card" : undefined}
+                  data-edit-hit={editMode || undefined}
+                  style={editMode ? { borderRadius: 16, cursor: "pointer" } : undefined}
+                  // En edición el toque es para el panel, no para el abanico.
+                  onClickCapture={editMode ? openImagesTool : undefined}
+                >
+                  <FanStack
+                    images={images}
+                    radius={12}
+                    invitation={invitation}
+                  />
+                </div>
               </FadeIn>
             }
+            {editMode && !(images?.length > 0) && (
+              <div className="edit_drawer_empty_box" style={{ minHeight: 200 }}>
+                <Button
+                  data-edit-hit
+                  icon={<Plus size={14} />}
+                  onClick={openImagesTool}
+                  style={{
+                    backgroundColor: content?.dynamic_background?.active ? (content?.inverted ? primary : secondary) : primary,
+                    color: accent,
+                    boxShadow: "0 0 6px 0 rgba(0, 0, 0, 0.25)",
+                    border: "none",
+                  }}
+                >
+                  Agregar imágenes
+                </Button>
+              </div>
+            )}
           </div>
           )}
-          {hasSeparator && (
-            content?.dynamic_separator?.type === 'single' ?
-              <Separador inverted={content.inverted} generals={generals} value={content?.dynamic_separator?.single?.value ?? 1} />
-              :
-              <div className="dyn_separator_cont"
-                style={{
-                  width: `${content?.dynamic_separator.image.width}%`,
-                  minHeight: `${content?.dynamic_separator.image.height}px`,
-                  zIndex: 99
-                }}
-              >
-                {
-                  content?.dynamic_separator?.image?.value &&
-                  <Image fill src={content?.dynamic_separator?.image?.value ?? ""} alt="" style={{ objectFit: 'cover' }} />
-                }
-
-              </div>
-          )
-
-          }
         </div>
+        </>
       )}
     </>
   );

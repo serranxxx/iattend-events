@@ -1,9 +1,11 @@
 import { NewInvitation } from "@/types/new_invitation";
+import { ModuleBackdrop, hasModuleBg, moduleBoxExtras } from "../ModuleBackdrop";
 import React, { forwardRef } from "react";
-import { Separador } from "../Separator/Separator";
+import { Plus } from "lucide-react";
 import FadeLeft from "@/components/Motion/FadeLeft";
 import { lighter } from "@/helpers/functions";
-import Image from "next/image";
+import { EditableText } from "../EditableText";
+import { useEditableList } from "../useEditableList";
 import styles from "./family.module.css";
 import { useIsSplitLayout } from "../layout/InvitationLayout";
 import { WebSection } from "../layout/WebSection";
@@ -13,14 +15,24 @@ type peopleProps = {
   dev: boolean;
   invitation: NewInvitation;
   invitationID?: string;
+  // Modo edición (ver Invitation.tsx): textos encima, personas que se borran,
+  // agregan y reordenan arrastrando, y separador tocable.
+  editMode?: boolean;
+  onFieldChange?: (_path: string, _value: unknown) => void;
+  onFieldTool?: (_field: string, _rect: { x: number; y: number; w: number; h: number }, _section?: string) => void;
 };
 
-export const People = forwardRef<HTMLDivElement, peopleProps>(function Greeting({ dev: _dev, invitation, invitationID }, ref) {
+type Persona = NewInvitation["people"]["personas"][number];
+
+export const People = forwardRef<HTMLDivElement, peopleProps>(function Greeting({ dev: _dev, invitation, invitationID, editMode = false, onFieldChange, onFieldTool: _onFieldTool }, ref) {
   const content = invitation?.people;
   const generals = invitation?.generals;
 
   const primary = generals?.colors.primary ?? "#FFFFFF";
   const secondary = generals?.colors.secondary ?? "#FFFFFF";
+  // Fondo del módulo: su color propio si lo tiene, si no el secundario del
+  // tema. Solo para el fondo; botones y bordes siguen con el del tema.
+  const moduleBg = content?.dynamic_background?.custom_color || secondary;
   const accent = generals?.colors.accent ?? "#FFFFFF";
 
   const title = {
@@ -39,6 +51,17 @@ export const People = forwardRef<HTMLDivElement, peopleProps>(function Greeting(
     color: invitation?.generals.fonts.body?.color ?? accent
   }
 
+
+  // Personas en modo edición: elegir, arrastrar, borrar y agregar (ver
+  // useEditableList).
+  const personas: Persona[] = content?.personas ?? [];
+  const list = useEditableList<Persona>({
+    items: personas,
+    path: "people.personas",
+    editMode,
+    onFieldChange,
+    makeNew: () => ({ title: "Rol", description: "Nombre" }),
+  });
 
   const hasContent = Boolean(content?.title?.trim()) || Boolean(content?.personas?.length);
   const hasSeparator = Boolean(content?.dynamic_separator?.active);
@@ -71,7 +94,7 @@ export const People = forwardRef<HTMLDivElement, peopleProps>(function Greeting(
       <WebSection
         ref={ref}
         background={content.dynamic_background}
-        secondary={secondary}
+        secondary={moduleBg}
         maxWidth={860}
         separator={content.dynamic_separator}
         inverted={content.inverted}
@@ -106,22 +129,32 @@ export const People = forwardRef<HTMLDivElement, peopleProps>(function Greeting(
 
   return (
     <>
-      {content?.active && generals?.colors && (hasContent || hasSeparator) ? (
+      {content?.active && generals?.colors && (hasContent || hasSeparator || editMode) ? (
+        <>
         <div ref={ref} className="main_container"
           style={{
             position: "relative",
-            backgroundColor: content?.dynamic_background?.active ? secondary : "transparent",
+            backgroundColor: content?.dynamic_background?.active ? moduleBg : "transparent",
+            // Imagen y textura propias del bloque van detrás (ModuleBackdrop).
+            isolation: "isolate",
+            // Relleno arriba / abajo propio del bloque (dynamic_background.padding_y).
+            ...moduleBoxExtras(content?.dynamic_background),
             borderRadius: content?.dynamic_background?.border_radius,
-            width: content?.dynamic_background?.active ? `${content?.dynamic_background?.width}%` : '100%',
-            boxShadow: content?.dynamic_background?.active ? content?.dynamic_background?.shadow ? '0px 0px 12px rgba(0,0,0,0.4)' : '0px 0px 0px rgba(0,0,0,0)' : '0px 0px 0px rgba(0,0,0,0)',
+            width: hasModuleBg(content?.dynamic_background) ? `${content?.dynamic_background?.width}%` : '100%',
+            boxShadow: hasModuleBg(content?.dynamic_background) ? content?.dynamic_background?.shadow ? '0px 0px 12px rgba(0,0,0,0.4)' : '0px 0px 0px rgba(0,0,0,0)' : '0px 0px 0px rgba(0,0,0,0)',
             padding: hasContent ? undefined : 0,
             // gap:'44px'
           }}>
+          <ModuleBackdrop bg={content?.dynamic_background} />
 
-          {hasContent && (
+          {(hasContent || editMode) && (
           <div className="g_module_info_container">
-            <span
-              // data-aos={!dev && generals.texture == null ? "fade-right" : undefined}
+            <EditableText
+              path="people.title"
+              value={content.title ?? ""}
+              editMode={editMode}
+              onFieldChange={onFieldChange}
+              multiline
               className="g_module_title"
               style={{
                 display: "inline-block", whiteSpace: "pre-line",
@@ -129,30 +162,32 @@ export const People = forwardRef<HTMLDivElement, peopleProps>(function Greeting(
                 fontFamily: title.font ?? "Poppins",
                 fontSize: title.size, fontWeight: title.weight, opacity: title.opacity
               }}
-            >
-              {content.title}
-            </span>
+            />
 
-            {content?.personas
-              ? content?.personas?.map((persona, index) => (
+            <div ref={list.listRef} style={{ display: "flex", flexDirection: "column", alignSelf: "stretch", gap: "inherit" }}>
+            {personas.map((persona, index) => {
+              return (
                 <div
                   key={index}
-                  style={{
+                  {...list.rowProps(index, {
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "flex-start",
                     flexDirection: "column",
                     gap: "0px",
                     alignSelf: "stretch",
-                  }}
+                  })}
                 >
                   <FadeLeft>
                     <div
-                      key={index}
                       className="g_module_items_single_col"
                       style={{ flexDirection: invitationID === "80d0c716-86e4-4c90-9e6d-9133d970d769" ? "column-reverse" : undefined, }}
                     >
-                      <span
+                      <EditableText
+                        path={`people.personas.${index}.title`}
+                        value={persona.title ?? ""}
+                        editMode={editMode}
+                        onFieldChange={onFieldChange}
                         className="g_mdoule_light_text"
                         style={{
                           display: "inline-block", whiteSpace: "pre-line",
@@ -160,11 +195,13 @@ export const People = forwardRef<HTMLDivElement, peopleProps>(function Greeting(
                           fontFamily: body.font ?? "Poppins",
                           fontWeight: body.weight, opacity: body.opacity
                         }}
-                      >
-                        {persona.title}
-                      </span>
+                      />
 
-                      <span
+                      <EditableText
+                        path={`people.personas.${index}.description`}
+                        value={persona.description ?? ""}
+                        editMode={editMode}
+                        onFieldChange={onFieldChange}
                         className="g_mdoule_regular_text"
                         style={{
                           display: "inline-block", whiteSpace: "pre-line",
@@ -172,37 +209,36 @@ export const People = forwardRef<HTMLDivElement, peopleProps>(function Greeting(
                           fontFamily: body.font ?? "Poppins",
                           fontWeight: body.weight, opacity: body.opacity
                         }}
-                      >
-                        {persona.description}
-                      </span>
+                      />
                     </div>
                   </FadeLeft>
+                  {list.showDelete(index) && (
+                    <button
+                      type="button"
+                      className="edit_row_delete"
+                      data-edit-row-delete
+                      onClick={(e) => { e.stopPropagation(); list.remove(index); }}
+                    >
+                      Eliminar
+                    </button>
+                  )}
                 </div>
-              ))
-              : null}
+              );
+            })}
+            {list.dropAtEnd && <div className="edit_row_drop_end" />}
+            </div>
+
+            {editMode && (
+              <button type="button" className="edit_glass_btn" data-edit-hit onClick={(e) => { e.stopPropagation(); list.add(); }}>
+                <Plus size={15} />
+                Agregar persona
+              </button>
+            )}
           </div>
           )}
-          {hasSeparator && (
-            content?.dynamic_separator?.type === 'single' ?
-              <Separador inverted={content.inverted} generals={generals} value={content?.dynamic_separator.single.value ?? 1} />
-              :
-              <div className="dyn_separator_cont"
-                style={{
-                  width: `${content?.dynamic_separator?.image?.width}%`,
-                  minHeight: `${content?.dynamic_separator?.image?.height}px`,
-                  zIndex: 99
-                }}
-              >
-                {
-                  content?.dynamic_separator?.image?.value &&
-                  <Image fill src={content?.dynamic_separator?.image?.value ?? ""} alt="" style={{ objectFit: 'cover' }} />
-                }
 
-              </div>
-          )
-
-          }
         </div>
+        </>
       ) : null}
 
     </>

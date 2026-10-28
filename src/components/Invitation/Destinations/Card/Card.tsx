@@ -1,26 +1,47 @@
-import { useRef, useState } from "react";
-import { InvitationUIBundle, NewInvitation } from "@/types/new_invitation";
+import { useEffect, useRef, useState } from "react";
+import { DestinationCard, InvitationUIBundle, NewInvitation } from "@/types/new_invitation";
+import { Drawer } from "antd";
+import { ArrowLeft, ImagePlus, Plus } from "lucide-react";
+import { EditableText } from "../../EditableText";
 import styles from "./card.module.css";
 import { Button } from "antd";
 import Image from "next/image";
 import { lighter } from "@/helpers/functions";
-import { ImSpoonKnife } from "react-icons/im";
-import { FaHotel } from "react-icons/fa";
-import { MdArrowOutward, MdOpenInFull, MdSportsGymnastics } from "react-icons/md";
+import { Utensils as ImSpoonKnife } from 'lucide-react';
+import { Hotel as FaHotel } from 'lucide-react';
+import { ArrowUpRight as MdArrowOutward, Maximize2 as MdOpenInFull, Compass as MdSportsGymnastics } from 'lucide-react';
 import FadeLeft from "@/components/Motion/FadeLeft";
 
 type CardProps = {
   invitation: NewInvitation;
   ui?: InvitationUIBundle | null;
   invitationID: string | undefined;
+  // Modo edición: tocar la tarjeta de enfrente abre un drawer con todo
+  // editable, y al frente va "Agregar actividad" mientras haya lugar.
+  editMode?: boolean;
+  onFieldChange?: (_path: string, _value: unknown) => void;
+  onFieldTool?: (_field: string, _rect: { x: number; y: number; w: number; h: number }, _section?: string) => void;
 };
 
-export default function Card({ ui, invitation, invitationID }: CardProps) {
-  const content = invitation.destinations;
-  const slice = 6;
+// Solo se ven las primeras 6 (el panel avisa lo mismo).
+const MAX_CARDS = 6;
+const TYPES: { value: DestinationCard["type"]; label: string }[] = [
+  { value: "hotel", label: "Hospedaje" },
+  { value: "activitie", label: "Actividad" },
+  { value: "food", label: "Comida" },
+];
 
-  const visibleCards = content.cards.slice(0, slice);
+export default function Card({ ui, invitation, invitationID, editMode = false, onFieldChange, onFieldTool }: CardProps) {
+  const content = invitation.destinations;
+  const slice = MAX_CARDS;
+
+  // En modo edición, la primera del montón es "Agregar actividad" (null).
+  const realCards = content.cards.slice(0, slice);
+  const showAdd = editMode && content.cards.length < MAX_CARDS;
+  const visibleCards: (DestinationCard | null)[] = showAdd ? [null, ...realCards] : realCards;
   const total = visibleCards.length;
+  // Índice en destinations.cards de la tarjeta en la posición `i` del montón.
+  const realIndex = (i: number) => (showAdd ? i - 1 : i);
 
   const primary = invitation.generals.colors.primary ?? "#FFF";
   const accent = invitation.generals.colors.accent ?? "#FFF";
@@ -31,6 +52,35 @@ export default function Card({ ui, invitation, invitationID }: CardProps) {
   const [autoHeight, setAutoHeight] = useState<boolean>(false);
 
   const [order, setOrder] = useState<number[]>(() => visibleCards.map((_, i) => i));
+  // Si cambia cuántas hay (agregar / borrar en modo edición), el montón se
+  // reacomoda en orden.
+  useEffect(() => {
+    setOrder(visibleCards.map((_, i) => i));
+    setFrontCard(0);
+  }, [total]);
+
+  // Drawer de edición: índice en destinations.cards.
+  const [editing, setEditing] = useState<number | null>(null);
+  const editCard = editing !== null ? content.cards[editing] ?? null : null;
+  const base = `destinations.cards.${editing}`;
+  const addCard = () => {
+    onFieldChange?.("destinations.cards", [
+      { image: null, name: "Nueva actividad", description: "", url: "", type: "activitie" },
+      ...content.cards,
+    ]);
+    setEditing(0);
+  };
+  const removeEditing = () => {
+    if (editing === null) return;
+    const index = editing;
+    setEditing(null);
+    onFieldChange?.("destinations.cards", content.cards.filter((_, i) => i !== index));
+  };
+  const openImageTool = (e: React.MouseEvent<HTMLElement>) => {
+    e.stopPropagation();
+    const r = e.currentTarget.getBoundingClientRect();
+    onFieldTool?.(`dest_image:${editing}`, { x: r.left, y: r.top, w: r.width, h: r.height }, "destinations");
+  };
 
   const touchStartX = useRef<number | null>(null);
   const touchDeltaX = useRef<number>(0);
@@ -186,6 +236,7 @@ export default function Card({ ui, invitation, invitationID }: CardProps) {
       )}
       <div
         className="fan_container scroll-invitation"
+        data-edit-hit={editMode || undefined}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
@@ -205,7 +256,7 @@ export default function Card({ ui, invitation, invitationID }: CardProps) {
         }}
       >
         {visibleCards.map((card, i) => {
-          const rank = order.indexOf(i);
+          const rank = order.indexOf(i) < 0 ? i : order.indexOf(i);
           const { dx, dy, rot, scale, z } = getPos(rank, total);
           const isExpandedCard = i === frontCard && expanded;
           const isAutoCard = isExpandedCard && autoHeight;
@@ -218,14 +269,39 @@ export default function Card({ ui, invitation, invitationID }: CardProps) {
               start={-10 - i * 2}
               end={180 + -28 * i}
             >
+              {card === null ? (
+                // "Agregar actividad" (modo edición): blanca, al frente.
+                <div
+                  className={`${styles.activitie} edit_dest_add`}
+                  data-edit-hit
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (isAnimating.current) return;
+                    if (i !== frontCard) { bringToFront(i); return; }
+                    addCard();
+                  }}
+                  style={{
+                    position: "absolute",
+                    left: "50%",
+                    bottom: "53%",
+                    transform: `translate(-50%, 50%) translate(${dx}px, ${dy}px) rotate(${rot}deg) scale(${scale})`,
+                    zIndex: z,
+                    transition: "transform .4s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+                  }}
+                >
+                  <span className="edit_add_card_label"><Plus size={16} strokeWidth={2.4} /> Agregar actividad</span>
+                </div>
+              ) : (
               <div
-                className={styles[card.type]}
+                className={`${styles[card.type]}${editMode ? " edit_hover_card" : ""}`}
+                data-edit-hit={editMode || undefined}
                 onClick={(e) => {
                   e.stopPropagation();
                   if (expanded) return;
                   if (movedTouch.current || isAnimating.current) return;
-                  // if (i === frontCard) setFlipped((prev) => !prev);
-                  else bringToFront(i);
+                  // Modo edición: la de enfrente se abre para editarla.
+                  if (editMode && i === frontCard) { setEditing(realIndex(i)); return; }
+                  bringToFront(i);
                 }}
                 style={{
                   position: "absolute",
@@ -275,7 +351,7 @@ export default function Card({ ui, invitation, invitationID }: CardProps) {
                             </span>
                           </div>
 
-                          {invitationID !== "80d0c716-86e4-4c90-9e6d-9133d970d769" && frontCard === i && (
+                          {!editMode && invitationID !== "80d0c716-86e4-4c90-9e6d-9133d970d769" && frontCard === i && (
                             <Button
                               icon={<MdOpenInFull />}
                               onClick={(e) => {
@@ -408,10 +484,88 @@ export default function Card({ ui, invitation, invitationID }: CardProps) {
                   </div>
                 </div>
               </div>
+              )}
             </FadeLeft>
           );
         })}
       </div>
+
+      {/* Drawer de edición de una actividad (modo edición), a pantalla
+          completa como el de los momentos. */}
+      {editMode && (
+        <Drawer
+          placement="bottom"
+          open={editCard !== null}
+          onClose={() => setEditing(null)}
+          height="100%"
+          closeIcon={<span className="edit_drawer_close" aria-label="Regresar"><ArrowLeft size={16} /></span>}
+          classNames={{ body: "scroll-invitation", header: "edit_drawer" }}
+          styles={{
+            header: { backgroundColor: primary },
+            body: { backgroundColor: primary, paddingTop: 12 },
+          }}
+          title={editCard && (
+            <EditableText
+              key={editing}
+              path={`${base}.name`}
+              value={editCard.name ?? ""}
+              editMode
+              onFieldChange={onFieldChange}
+              placeholder="Nombre"
+              className="edit_drawer_title"
+              style={{ fontFamily: invitation.generals.fonts.body?.typeFace, fontSize: 20, color: accent }}
+            />
+          )}
+        >
+          {editCard && (
+            <div key={editing} className="edit_drawer" style={{ display: "flex", flexDirection: "column", gap: 20, color: accent, fontFamily: invitation.generals.fonts.body?.typeFace }}>
+              {editCard.image ? (
+                <div style={{ position: "relative", width: "100%", height: 220, borderRadius: 16, overflow: "hidden" }}>
+                  <img src={editCard.image} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  <button type="button" className="edit_center_btn edit_center_btn--always" onClick={openImageTool}>
+                    <ImagePlus size={14} /> Cambiar imagen
+                  </button>
+                </div>
+              ) : (
+                <button type="button" className="edit_drawer_image_empty" onClick={openImageTool} style={{ color: accent }}>
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Plus size={15} /> Imagen</span>
+                </button>
+              )}
+
+              <div className="edit_drawer_section">
+                <span className="edit_drawer_label">Tipo</span>
+                <div className="edit_type_pills">
+                  {TYPES.map((t) => (
+                    <button
+                      key={t.value}
+                      type="button"
+                      className="edit_type_pill"
+                      data-on={editCard.type === t.value || undefined}
+                      onClick={() => onFieldChange?.(`${base}.type`, t.value)}
+                    >
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="edit_drawer_section">
+                <span className="edit_drawer_label">Información</span>
+                <EditableText path={`${base}.description`} value={editCard.description ?? ""} editMode onFieldChange={onFieldChange} multiline placeholder="Descripción" />
+              </div>
+
+              <div className="edit_drawer_section">
+                <span className="edit_drawer_label">Link</span>
+                <EditableText path={`${base}.url`} value={editCard.url ?? ""} editMode onFieldChange={onFieldChange} placeholder="Google Maps, sitio web…" style={{ wordBreak: "break-all" }} />
+              </div>
+
+              <div style={{ display: "flex", justifyContent: "center", marginTop: 32 }}>
+                <button type="button" className="edit_drawer_delete" onClick={removeEditing}>Eliminar actividad</button>
+              </div>
+            </div>
+          )}
+        </Drawer>
+      )}
     </>
   );
 }

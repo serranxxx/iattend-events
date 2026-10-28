@@ -8,6 +8,12 @@
     padding: 24px;
 }
 
+/* Relleno arriba / abajo elegido en el editor (moduleBoxExtras). */
+.main_container[style*="--module-py"] {
+    padding-top: var(--module-py);
+    padding-bottom: var(--module-py);
+}
+
 .gm_container {
     display: flex;
     align-items: center;
@@ -171,4 +177,869 @@
 
 
 
+}
+/* ── Modo edición (editor de iattend-vite): separador que se toca ───────── */
+.edit_separator {
+  position: relative;
+  /* Dentro del marco de la zona (que va 6px adentro): sin esto el recuadro
+     punteado se salía por los lados y por abajo. */
+  width: calc(100% - 40px);
+  margin: 4px auto 16px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  outline: 2px dashed rgba(205, 190, 247, 0.75);
+  outline-offset: 0;
+  cursor: pointer;
+  transition: outline-color 0.15s ease, background 0.15s ease;
+}
+
+.edit_separator:hover {
+  outline-color: #CDBEF7;
+  background: rgba(205, 190, 247, 0.12);
+}
+
+/* Sin separador: recuadro con la invitación a agregar uno. */
+.edit_separator--empty {
+  min-height: 56px;
+  margin-top: 12px;
+}
+
+.edit_separator--empty span {
+  font-family: "Poppins", sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: #5A2EE0;
+  opacity: 0.85;
+}
+
+/* ── Listas editables en modo edición (useEditableList: personas, avisos) ──
+   Limpio: borde punteado al pasar el mouse, fijo al elegirla, y "Eliminar"
+   en rojo debajo de la elegida. Arrastrar no tiene indicador propio. */
+/* Misma selección que los bloques de la portada (cover.module.css). */
+.edit_row {
+  border-radius: 12px;
+  outline: 2px dashed transparent;
+  outline-offset: 8px;
+  cursor: pointer;
+  touch-action: none;
+  transition: outline-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.edit_row:hover {
+  outline-color: rgba(205, 190, 247, 0.75);
+}
+
+.edit_row[data-selected] {
+  outline-style: solid;
+  outline-color: #CDBEF7;
+  box-shadow: 0 0 0 12px rgba(205, 190, 247, 0.22);
+}
+
+/* Los textos de adentro no llevan contorno, halo ni cursor propio: basta el
+   del bloque. Con cursores distintos en el bloque (pointer) y en cada texto
+   (text), al mover el mouse por la persona el cursor parpadeaba. */
+.edit_row [data-edit-field] {
+  outline: none !important;
+  box-shadow: none !important;
+  cursor: inherit !important;
+}
+
+/* Elegido: se arrastra desde cualquier parte; escribiendo, cursor de texto. */
+.edit_row[data-selected] {
+  cursor: grab;
+}
+
+.edit_row:has([data-edit-field]:focus) {
+  cursor: text;
+}
+
+.edit_row[data-dragging] {
+  z-index: 30;
+  cursor: grabbing;
+  background: rgba(255, 255, 255, 0.55);
+  box-shadow: 0 8px 22px rgba(12, 23, 27, 0.16);
+  transition: none;
+}
+
+/* Dónde caerá la persona arrastrada. */
+.edit_row[data-drop-before]::before,
+.edit_row_drop_end {
+  content: "";
+  display: block;
+  height: 2px;
+  border-radius: 2px;
+  background: rgba(90, 46, 224, 0.6);
+}
+
+.edit_row[data-drop-before]::before {
+  position: absolute;
+  top: -14px;
+  left: 20%;
+  right: 20%;
+}
+
+.edit_row_drop_end {
+  margin: 0 20%;
+}
+
+.edit_row_delete {
+  margin-top: 6px;
+  padding: 2px 8px;
+  border: none;
+  background: none;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: #E5484D;
+  cursor: pointer;
+}
+
+.edit_row_delete:hover {
+  text-decoration: underline;
+}
+
+/* Botón de vidrio dentro de un módulo (p. ej. "Agregar persona"). */
+.edit_glass_btn {
+  align-self: center;
+  height: 34px;
+  padding: 0 16px 0 12px;
+  border-radius: 99px;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: #29262D;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(12, 23, 27, 0.12);
+  transition: background 0.15s ease;
+}
+
+.edit_glass_btn:hover {
+  background: rgba(255, 255, 255, 0.92);
+}
+
+/* ── Bloque de texto que se acomoda en cuadrantes (cita) ──
+   Mismo aspecto que el título de la portada (cover.module.css: editBlock,
+   editGrid, editCell, fieldTool). */
+.edit_block {
+  position: relative;
+  outline: 2px dashed rgba(205, 190, 247, 0.75);
+  outline-offset: 8px;
+  border-radius: 12px;
+  cursor: grab;
+  touch-action: none;
+  z-index: 2;
+  transition: outline-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.edit_block[data-selected] {
+  outline-style: solid;
+  outline-color: #CDBEF7;
+  box-shadow: 0 0 0 12px rgba(205, 190, 247, 0.22);
+}
+
+.edit_block[data-dragging] {
+  cursor: grabbing;
+  opacity: 0.85;
+}
+
+.edit_block [data-edit-field] {
+  outline: none !important;
+  box-shadow: none !important;
+  position: relative;
+  z-index: 3;
+}
+
+.edit_block:has([data-edit-field]:focus) {
+  cursor: text;
+}
+
+.edit_grid {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: 4px;
+  padding: 4px;
+  box-sizing: border-box;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.edit_cell {
+  border: 1px dashed rgba(255, 255, 255, 0.45);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.edit_cell[data-hover] {
+  background: rgba(205, 190, 247, 0.3);
+  border-color: #CDBEF7;
+}
+
+.edit_cell[data-current] {
+  border-style: solid;
+  border-color: rgba(205, 190, 247, 0.9);
+}
+
+.edit_field_tool {
+  position: absolute;
+  top: -24px;
+  left: -24px;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: 99px;
+  border: 2px solid #FFFFFF;
+  background: #AAC187; /* light-green-500 del design system */
+  color: #FFFFFF;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  z-index: 4;
+  box-shadow: 0 4px 12px rgba(12, 23, 27, 0.3);
+}
+
+.edit_field_tool:hover {
+  background: #8FA271;
+}
+
+/* "Cambiar fondo" sobre una imagen de módulo (cita): mismo chip de vidrio
+   oscuro que el de la portada en el editor. Solo con el módulo elegido. */
+.edit_center_btn {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 4;
+  display: none;
+  align-items: center;
+  gap: 7px;
+  height: 36px;
+  padding: 0 16px 0 12px;
+  border-radius: 99px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  background: rgba(12, 23, 27, 0.42);
+  backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  color: #FFFFFF;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.edit_center_btn:hover {
+  background: rgba(12, 23, 27, 0.6);
+}
+
+[data-edit-zone][data-selected] .edit_center_btn {
+  display: inline-flex;
+}
+
+/* En la portada el botón se ve siempre en modo edición (no depende de que
+   la zona esté elegida). */
+.edit_center_btn--always {
+  display: inline-flex;
+  z-index: 6;
+}
+
+/* Campo editable vacío: muestra su placeholder (EditableText). */
+[data-edit-field][data-placeholder]:empty::before {
+  content: attr(data-placeholder);
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+/* ── Drawer de un momento en modo edición (OpenCard) ──
+   El drawer vive fuera de la zona del módulo (portal), así que los textos
+   editables llevan aquí su propio contorno. */
+/* !important: EditableText trae `outline: none` inline (ganaba y los campos
+   no se veían editables). Mismo aspecto que los bloques de la portada:
+   punteado siempre, sólido con halo al escribir. */
+.edit_drawer [data-edit-field] {
+  display: inline-block;
+  outline: 2px dashed rgba(205, 190, 247, 0.85) !important;
+  outline-offset: 5px;
+  border-radius: 8px;
+  cursor: text;
+  min-width: 2ch;
+  transition: outline-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.edit_drawer [data-edit-field]:hover {
+  outline-color: #CDBEF7 !important;
+}
+
+.edit_drawer [data-edit-field]:focus {
+  outline-style: solid !important;
+  outline-color: #CDBEF7 !important;
+  box-shadow: 0 0 0 8px rgba(205, 190, 247, 0.22);
+}
+
+/* Con contorno, los campos necesitan aire entre ellos. */
+.edit_drawer .edit_drawer_address {
+  gap: 18px 20px;
+}
+
+.edit_drawer_section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.edit_drawer_label {
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0.55;
+}
+
+.edit_drawer_address {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 14px;
+  font-size: 14px;
+}
+
+.edit_drawer_address > :last-child {
+  grid-column: 1 / -1;
+}
+
+.edit_drawer_image_empty {
+  width: 100%;
+  min-height: 120px;
+  border-radius: 16px;
+  outline: 2px dashed rgba(205, 190, 247, 0.75);
+  display: grid;
+  place-items: center;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: #5A2EE0;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.edit_drawer_image_btn {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  z-index: 2;
+}
+
+.edit_drawer_delete {
+  align-self: center;
+  margin-top: 8px;
+  padding: 6px 12px;
+  border: none;
+  background: none;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: #E5484D;
+  cursor: pointer;
+}
+
+.edit_drawer_title {
+  display: inline-block;
+  min-width: 4ch;
+}
+
+/* Renglón cuyo borde va en un hijo (`data-edit-card`): momentos del
+   itinerario, que ocupan medio ancho de la línea. */
+.edit_row--child,
+.edit_row--child:hover,
+.edit_row--child[data-selected],
+.edit_row--child[data-dragging] {
+  outline: none !important;
+  box-shadow: none !important;
+  background: none !important;
+}
+
+.edit_row--child [data-edit-card] {
+  border-radius: 14px;
+  outline: 2px dashed transparent;
+  outline-offset: 6px;
+  transition: outline-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.edit_row--child:hover [data-edit-card] {
+  outline-color: rgba(205, 190, 247, 0.75);
+}
+
+.edit_row--child[data-selected] [data-edit-card] {
+  outline-style: solid;
+  outline-color: #CDBEF7;
+  box-shadow: 0 0 0 10px rgba(205, 190, 247, 0.22);
+}
+
+.edit_row--child[data-dragging] [data-edit-card] {
+  opacity: 0.85;
+}
+
+/* Hora del momento en el drawer: selector con el mismo contorno que los
+   textos editables. */
+.edit_drawer_time {
+  width: auto !important;
+  min-width: 90px;
+  border-radius: 8px !important;
+  outline: 2px dashed rgba(205, 190, 247, 0.85);
+  outline-offset: 5px;
+  cursor: pointer;
+}
+
+.edit_drawer_time input {
+  color: inherit !important;
+  font: inherit !important;
+  cursor: pointer;
+}
+
+.edit_drawer_time.ant-picker-focused {
+  outline-style: solid;
+  outline-color: #CDBEF7;
+  box-shadow: 0 0 0 8px rgba(205, 190, 247, 0.22) !important;
+}
+
+/* Dirección del momento en el drawer: con su "×" arriba a la derecha. */
+.edit_drawer_address_card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.edit_drawer_remove {
+  position: absolute;
+  top: -4px;
+  right: 0;
+  z-index: 2;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: 99px;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: #29262D;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(12, 23, 27, 0.12);
+}
+
+.edit_drawer_remove:hover {
+  background: rgba(255, 255, 255, 0.95);
+}
+
+/* El "+ Dirección" va centrado. */
+.edit_drawer > .edit_glass_btn {
+  align-self: center;
+}
+
+.edit_drawer_close {
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border-radius: 99px;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: #29262D;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 2px 8px rgba(12, 23, 27, 0.12);
+}
+
+/* El contenedor de antd del botón de cerrar no debe aplastar la "×". */
+.ant-drawer-close:has(.edit_drawer_close) {
+  width: auto !important;
+  min-width: 32px;
+  height: auto !important;
+  padding: 0 !important;
+  flex-shrink: 0;
+}
+
+/* "Eliminar…" (renglón elegido, momento, dirección): pill blanca con el texto
+   en rojo, no un botón de solo texto. Va al final para ganarle a las reglas
+   de arriba. */
+.edit_row_delete,
+.edit_drawer_delete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 30px;
+  padding: 0 14px;
+  border-radius: 99px;
+  border: 1px solid rgba(12, 23, 27, 0.06);
+  background: #FFFFFF;
+  box-shadow: 0 2px 8px rgba(12, 23, 27, 0.12);
+  color: #E5484D;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 12.5px;
+  font-weight: 500;
+  text-decoration: none !important;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.edit_row_delete:hover,
+.edit_drawer_delete:hover {
+  background: #FFF5F5;
+}
+
+.edit_row_delete {
+  margin-top: 8px;
+}
+
+/* "Eliminar dirección": más discreto, vidrio blanco al 30 % y texto blanco. */
+.edit_drawer_delete--soft {
+  background: rgba(255, 255, 255, 0.3) !important;
+  border-color: rgba(255, 255, 255, 0.45);
+  color: #FFFFFF;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: none;
+}
+
+.edit_drawer_delete--soft:hover {
+  background: rgba(255, 255, 255, 0.45) !important;
+}
+
+/* Actividades del drawer: "Eliminar" discreto montado en la esquina
+   superior derecha del contorno del renglón elegido (como la "T" del título),
+   así el texto sigue a todo lo ancho. */
+.edit_row_delete--corner {
+  position: absolute;
+  top: -22px;
+  right: -4px;
+  margin-top: 0 !important;
+  height: 24px;
+  padding: 0 10px;
+  font-size: 11.5px;
+  z-index: 4;
+}
+
+/* Recuadro vacío del drawer (sin dirección / sin actividades) con su botón
+   al centro. */
+.edit_drawer_empty_box {
+  width: 100%;
+  min-height: 120px;
+  border-radius: 16px; /* el mismo de la imagen del momento */
+  background: rgba(0, 0, 0, 0.06);
+  outline: 2px dashed rgba(205, 190, 247, 0.6);
+  outline-offset: -2px;
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+}
+
+.edit_drawer_empty_box > .edit_drawer_delete {
+  margin-top: 0;
+}
+
+.edit_separator_label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* "+" para agregar un color a la paleta del dresscode (a la derecha). */
+.edit_color_add {
+  width: 40px;
+  height: 40px;
+  margin-left: 8px;
+  padding: 0;
+  border-radius: 99px;
+  border: 2px dashed rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: #FFFFFF;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.edit_color_add:hover {
+  background: rgba(255, 255, 255, 0.45);
+}
+
+/* Colores de la paleta (dresscode) en modo edición: círculos que se eligen,
+   se arrastran a los lados y se borran con su "×". */
+[data-swatch] [data-edit-card] {
+  border-radius: 99px !important;
+  outline-offset: 3px !important;
+}
+
+[data-swatch][data-selected] [data-edit-card] {
+  box-shadow: 0 0 0 6px rgba(205, 190, 247, 0.22) !important;
+}
+
+[data-swatch][data-drop-before]::before {
+  content: "";
+  position: absolute;
+  top: 10%;
+  bottom: 10%;
+  left: -7px;
+  right: auto;
+  width: 2px;
+  height: auto;
+  border-radius: 2px;
+  background: rgba(90, 46, 224, 0.6);
+}
+
+.edit_swatch_remove {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  z-index: 3;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border-radius: 99px;
+  border: none;
+  background: #FFFFFF;
+  color: #E5484D;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(12, 23, 27, 0.25);
+}
+
+/* Imagen tocable en modo edición (dresscode): borde al pasar el mouse para
+   que se note que abre su panel. */
+.edit_hover_card {
+  outline: 2px dashed transparent;
+  outline-offset: -2px;
+  transition: outline-color 0.15s ease;
+}
+
+.edit_hover_card:hover {
+  outline-color: #CDBEF7;
+}
+
+/* Botón que se elige en modo edición (p. ej. el de inspiración): borde al
+   pasar el mouse y, abierto, el mismo borde con halo que el título. */
+.edit_pick {
+  display: inline-flex;
+  border-radius: 99px;
+  outline: 2px dashed transparent;
+  outline-offset: 6px;
+  transition: outline-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.edit_pick:hover {
+  outline-color: rgba(205, 190, 247, 0.75);
+}
+
+.edit_pick[data-selected] {
+  outline-style: solid;
+  outline-color: #CDBEF7;
+  box-shadow: 0 0 0 10px rgba(205, 190, 247, 0.22);
+}
+
+/* Tarjeta de regalo abierta en modo edición: borde de selección como el
+   título, y su "×" en la esquina superior derecha. */
+[data-edit-card-open] {
+  outline: 2px solid #CDBEF7;
+  outline-offset: 6px;
+  box-shadow: 0 0 0 12px rgba(205, 190, 247, 0.22);
+}
+
+.edit_card_remove {
+  position: absolute;
+  top: -14px;
+  right: -14px;
+  z-index: 5;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: 99px;
+  border: none;
+  background: #FFFFFF;
+  color: #E5484D;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(12, 23, 27, 0.25);
+}
+
+/* Selector de empresa de la tarjeta de regalo abierta (BrandPicker en
+   Wallet.tsx): botón con el logo y, al abrir, una lista de vidrio dentro de
+   la tarjeta (se mueve con ella al hacer scroll). */
+.edit_brand_picker {
+  position: relative;
+  display: inline-flex;
+}
+
+.edit_card_brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 8px;
+  border-radius: 10px;
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  outline: 2px dashed rgba(205, 190, 247, 0.85);
+  outline-offset: 3px;
+  font: inherit;
+}
+
+.edit_brand_list {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 30;
+  width: 250px;
+  max-height: 280px;
+  overflow-y: auto;
+  padding: 6px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  box-shadow: 0 12px 32px rgba(12, 23, 27, 0.18);
+  text-align: left;
+}
+
+.edit_brand_group {
+  display: block;
+  padding: 8px 8px 4px;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #8A857E;
+}
+
+.edit_brand_item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: #1B1B1B;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.edit_brand_item:hover {
+  background: rgba(90, 46, 224, 0.06);
+}
+
+.edit_brand_item[data-on] {
+  background: rgba(90, 46, 224, 0.1);
+  font-weight: 600;
+}
+
+.edit_brand_chip {
+  width: 68px;
+  height: 34px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.edit_brand_chip img {
+  max-width: 54px;
+  max-height: 22px;
+  object-fit: contain;
+}
+
+/* Tarjeta "Agregar tarjeta" de la cartera (modo edición). */
+.edit_add_card {
+  background: #FFFFFF !important;
+  border: 2px dashed rgba(90, 46, 224, 0.45) !important;
+}
+
+.edit_add_card:hover {
+  border-color: #5A2EE0 !important;
+}
+
+.edit_add_card_label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #5A2EE0;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* "Agregar actividad" al frente del montón de Actividades (modo edición). */
+.edit_dest_add {
+  border-radius: 12px;
+  background: #FFFFFF;
+  border: 2px dashed rgba(90, 46, 224, 0.45);
+  box-shadow: 0 6px 18px rgba(12, 23, 27, 0.18);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.edit_dest_add:hover {
+  border-color: #5A2EE0;
+}
+
+/* Tipo de actividad en su drawer: pills. */
+.edit_type_pills {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.edit_type_pill {
+  height: 32px;
+  padding: 0 14px;
+  border-radius: 99px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: rgba(0, 0, 0, 0.05);
+  color: inherit;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.edit_type_pill[data-on] {
+  background: #5A2EE0;
+  border-color: #5A2EE0;
+  color: #FFFFFF;
+  font-weight: 600;
 }
