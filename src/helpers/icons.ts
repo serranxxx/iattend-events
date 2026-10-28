@@ -94,4 +94,10 @@ export const getItineraryIcon = (id: ItineraryIconId): IconType | undefined =>
 
 // Un icono guardado puede ser el índice de un icono del catálogo o la ruta de una imagen subida (/assets/itinerary/*)
 export const isImageIcon = (icon: number | string | null | undefined): icon is string =>
-  typeof icon === "string";
+  typeof icon === "string" && !isGlyphIcon(icon);
+
+// Ícono elegido desde Elementos del editor: "lucide:Heart", "shape:circle" o
+// "svg:<url>" (SVG del catálogo, pintado del color del momento). Lo dibuja
+// MomentGlyph.
+export const isGlyphIcon = (icon: number | string | null | undefined): icon is string =>
+  typeof icon === "string" && (icon.startsWith("lucide:") || icon.startsWith("shape:") || icon.startsWith("svg:"));

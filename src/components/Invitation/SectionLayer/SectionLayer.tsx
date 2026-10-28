@@ -2,12 +2,12 @@
 
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
-  ArrowDown, ArrowUp, Bird, Blend, BringToFront, Cake, Layers, Camera, Church, Copy, Flower, Flower2, Gem, Heart,
-  Infinity as InfinityIcon, Leaf, Moon, Music, PenLine, Pipette, SendToBack, Sparkles, SquareRoundCorner, Star, Sun, Trash2, Type, Wine,
+  ArrowDown, ArrowUp, Bird, BringToFront, Cake, Camera, Church, CopyPlus, Ellipsis, Flower, Flower2, Gem, Heart,
+  Infinity as InfinityIcon, Leaf, Lock, LockOpen, Moon, Music, SendToBack, Sparkles, Star, Sun, Trash2, Wine,
 } from "lucide-react";
 import type { Generals, LayerItem } from "@/types/new_invitation";
 import { Separador } from "../Separator/Separator";
-import { loadedFontFamilies } from "@/components/GoogleFontsLoader";
+import { iconsItinerary } from "@/helpers/icons";
 import styles from "./section-layer.module.css";
 
 // Capa de elementos sueltos de una sección (stickers, íconos, textos y
@@ -37,7 +37,6 @@ const LINE_BORDER: Record<string, string> = {
   double: "4px double",
 };
 
-const OPACITY_STEPS = [1, 0.75, 0.5, 0.25];
 
 // Formas básicas (kind "shape"), en una caja de ancho w y alto w × ar (así
 // se deforman). Cuadrado y rectángulo son una caja con borde en px y esquinas
@@ -51,10 +50,9 @@ const SHAPE_PATHS: Record<string, React.ReactNode> = {
   triangle: <polygon points="50,0 100,100 0,100" {...NS} />,
   star: <polygon points="50,2 61,37 98,37 68,59 79,96 50,73 21,96 32,59 2,37 39,37" {...NS} />,
 };
-const STROKE_WIDTHS = [0, 1, 2, 3, 4];
-// Esquinas de cuadrado / rectángulo, en px a 390 de ancho (se guardan así y
-// se pintan en cqw para que escalen con la pantalla). 999 = píldora.
-const RADII = [0, 8, 16, 24, 40, 999];
+// Trazo punteado / con guiones según el grosor.
+const dashFor = (style: string | null | undefined, sw: number) =>
+  style === "dashed" ? `${sw * 3} ${sw * 2}` : style === "dotted" ? `0 ${sw * 2}` : undefined;
 
 const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v));
 const newId = () => `l${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
@@ -74,7 +72,7 @@ type Props = {
 // Distancia (px) a la que un elemento se pega a una guía al moverlo.
 const SNAP_PX = 6;
 
-export function SectionLayer({ section, items, editMode = false, accent, titleFont, bodyFont, palette = [], onChange }: Props) {
+export function SectionLayer({ section, items, editMode = false, accent, titleFont, bodyFont, onChange }: Props) {
   const layerRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const [selected, setSelected] = useState<string | null>(null);
@@ -93,7 +91,7 @@ export function SectionLayer({ section, items, editMode = false, accent, titleFo
   const [barShift, setBarShift] = useState(0);
   const [menuShift, setMenuShift] = useState(0);
   // Menú abierto de la barra (tipografía o color).
-  const [menu, setMenu] = useState<"font" | "color" | "stroke" | "radius" | "layers" | null>(null);
+  const [menu, setMenu] = useState<"layers" | null>(null);
   useEffect(() => { setMenu(null); }, [selected]);
   // Guías que se ven mientras se mueve (en % de la sección).
   const [guides, setGuides] = useState<{ x: number[]; y: number[] }>({ x: [], y: [] });
@@ -117,6 +115,13 @@ export function SectionLayer({ section, items, editMode = false, accent, titleFo
     const text = el.innerText.replace(/\n+$/, "");
     if (text !== it.text) replace({ ...it, text });
   };
+
+  // Avisa al editor qué elemento está elegido (HostClient → REMOTE_LAYER_SELECT)
+  // para su barra de propiedades.
+  useEffect(() => {
+    if (!editMode) return;
+    window.dispatchEvent(new CustomEvent("iattend-layer-selection", { detail: { section, id: selected } }));
+  }, [editMode, section, selected]);
 
   const select = (id: string | null) => {
     setSelected(id);
@@ -248,6 +253,8 @@ export function SectionLayer({ section, items, editMode = false, accent, titleFo
   const startMove = (e: React.PointerEvent, it: LayerItem) => {
     if (!editMode || editingText === it.id || e.button !== 0) return;
     select(it.id);
+    // Bloqueado: se elige pero no se mueve.
+    if (it.locked) { e.stopPropagation(); return; }
     const sx = e.clientX;
     const sy = e.clientY;
     // Guías: el centro de la sección y el centro de los demás elementos.
@@ -365,15 +372,28 @@ export function SectionLayer({ section, items, editMode = false, accent, titleFo
     commit(next);
   };
   const remove = (it: LayerItem) => { commit(items.filter((x) => x.id !== it.id)); setSelected(null); };
-  const nextOpacity = (it: LayerItem) => {
-    const i = OPACITY_STEPS.findIndex((o) => Math.abs(o - (it.opacity ?? 1)) < 0.01);
-    replace({ ...it, opacity: OPACITY_STEPS[(i + 1) % OPACITY_STEPS.length] });
-  };
 
   const renderContent = (it: LayerItem) => {
     const color = it.color || accent;
     if (it.kind === "sticker") return <img src={it.url} alt="" draggable={false} className={styles.img} />;
     if (it.kind === "icon") {
+      // SVG del catálogo del editor: pintado del color del elemento (mask) o
+      // tal cual si no es de un solo color.
+      if (it.src) {
+        return it.tint === false
+          ? <img src={it.src} alt="" draggable={false} className={styles.icon} />
+          : (
+            <span
+              className={`${styles.icon} ${styles.maskIcon}`}
+              style={{ backgroundColor: color, WebkitMaskImage: `url("${it.src}")`, maskImage: `url("${it.src}")` }}
+            />
+          );
+      }
+      // "it:<n>": ícono del itinerario (react-icons) arrastrado desde Elementos.
+      if (it.icon?.startsWith("it:")) {
+        const ItIcon = iconsItinerary.find((x) => x.index === Number(it.icon?.slice(3)))?.value;
+        if (ItIcon) return <ItIcon className={styles.icon} color={color} />;
+      }
       const Icon = LAYER_ICONS[it.icon ?? ""] ?? Heart;
       return <Icon className={styles.icon} color={color} strokeWidth={1.6} />;
     }
@@ -389,7 +409,7 @@ export function SectionLayer({ section, items, editMode = false, accent, titleFo
             style={{
               aspectRatio: `1 / ${it.ar ?? 1}`,
               background: fill,
-              border: sw > 0 ? `${sw}px solid ${stroke}` : "none",
+              border: sw > 0 ? `${sw}px ${it.strokeStyle || "solid"} ${stroke}` : "none",
               borderRadius: r >= 999 ? 9999 : `${(r / 390) * 100}cqw`,
             }}
           />
@@ -398,7 +418,7 @@ export function SectionLayer({ section, items, editMode = false, accent, titleFo
       return (
         <span className={styles.shape} style={{ aspectRatio: `1 / ${it.ar ?? 1}` }}>
           <svg viewBox="0 0 100 100" preserveAspectRatio="none" width="100%" height="100%">
-            <g fill={fill === "transparent" ? "none" : fill} stroke={sw > 0 ? stroke : "none"} strokeWidth={sw} strokeLinejoin="round">
+            <g fill={fill === "transparent" ? "none" : fill} stroke={sw > 0 ? stroke : "none"} strokeWidth={sw} strokeLinejoin="round" strokeLinecap="round" strokeDasharray={dashFor(it.strokeStyle, sw)}>
               {SHAPE_PATHS[it.variant ?? "circle"] ?? SHAPE_PATHS.circle}
             </g>
           </svg>
@@ -468,7 +488,7 @@ export function SectionLayer({ section, items, editMode = false, accent, titleFo
             className={styles.item}
             data-kind={it.kind}
             data-layer-keep
-            style={{ ...box(it), opacity: it.opacity ?? 1 }}
+            style={{ ...box(it), opacity: it.opacity ?? 1, ...(it.flipX || it.flipY ? { transform: `translate(-50%, -50%) rotate(${it.rot ?? 0}deg) scale(${it.flipX ? -1 : 1}, ${it.flipY ? -1 : 1})` } : {}) }}
             onPointerDown={(e) => startMove(e, it)}
             onDoubleClick={() => { if (editMode && it.kind === "text") { select(it.id); setEditingText(it.id); } }}
           >
@@ -488,11 +508,11 @@ export function SectionLayer({ section, items, editMode = false, accent, titleFo
       {editMode && current && (
         <div className={styles.chrome}>
           <div ref={frameRef} className={styles.frame} data-layer-keep style={{ ...box(current), height: frameH }}>
-            {(["nw", "ne", "sw", "se"] as const).map((c) => (
+            {!current.locked && (["nw", "ne", "sw", "se"] as const).map((c) => (
               <span key={c} className={styles.handle} data-corner={c} onPointerDown={(e) => startResize(e, current)} />
             ))}
             {/* Formas: manijas en los lados para estirar sin mantener la proporción. */}
-            {current.kind === "shape" && (["e", "w", "n", "s"] as const).map((side) => (
+            {!current.locked && current.kind === "shape" && (["e", "w", "n", "s"] as const).map((side) => (
               <span
                 key={side}
                 className={styles.sideHandle}
@@ -500,7 +520,7 @@ export function SectionLayer({ section, items, editMode = false, accent, titleFo
                 onPointerDown={(e) => startStretch(e, current, side)}
               />
             ))}
-            <span className={styles.rotate} onPointerDown={(e) => startRotate(e, current)} />
+            {!current.locked && <span className={styles.rotate} onPointerDown={(e) => startRotate(e, current)} />}
           </div>
 
           <div
@@ -513,104 +533,22 @@ export function SectionLayer({ section, items, editMode = false, accent, titleFo
             onPointerDown={(e) => e.stopPropagation()}
             onClick={(e) => e.stopPropagation()}
           >
-            {current.kind !== "sticker" && (
-              <button type="button" className={styles.barBtn} title={current.kind === "shape" ? "Relleno" : "Color"} data-on={menu === "color" || undefined} onClick={() => setMenu(menu === "color" ? null : "color")}>
-                <span className={styles.swatch} data-empty={current.color === "transparent" || undefined} style={{ background: current.color === "transparent" ? undefined : current.color || accent }} />
-              </button>
-            )}
-            {current.kind === "shape" && BOX_SHAPES.has(current.variant ?? "square") && (
-              <button type="button" className={styles.barBtn} title="Esquinas" data-on={menu === "radius" || undefined} onClick={() => setMenu(menu === "radius" ? null : "radius")}>
-                <SquareRoundCorner size={15} />
-              </button>
-            )}
-            {current.kind === "shape" && (
-              <button type="button" className={styles.barBtn} title="Borde" data-on={menu === "stroke" || undefined} onClick={() => setMenu(menu === "stroke" ? null : "stroke")}>
-                <span className={styles.swatchRing} style={{ borderColor: (current.strokeWidth ?? 0) > 0 ? current.stroke || accent : "rgba(255,255,255,0.35)" }} />
-              </button>
-            )}
-            {current.kind === "text" && (
-              <button type="button" className={styles.barBtn} title="Tipografía" data-on={menu === "font" || undefined} onClick={() => setMenu(menu === "font" ? null : "font")}>
-                <Type size={15} />
-              </button>
-            )}
-            {current.kind === "text" && (
-              <button type="button" className={styles.barBtn} title="Editar texto" onClick={() => setEditingText(current.id)}>
-                <PenLine size={15} />
-              </button>
-            )}
-            <button type="button" className={styles.barBtn} title="Opacidad" onClick={() => nextOpacity(current)}>
-              <Blend size={15} />
-              <span className={styles.barValue}>{Math.round((current.opacity ?? 1) * 100)}</span>
-            </button>
-            <button type="button" className={styles.barBtn} title="Capas" data-on={menu === "layers" || undefined} onClick={() => setMenu(menu === "layers" ? null : "layers")}>
-              <Layers size={15} />
+            {/* Bloquear, duplicar, eliminar y capas. Color, borde, esquinas,
+                voltear y transparencia van en la barra del editor, arriba de
+                la pieza (iattend-vite, ElementBar), que recibe el elegido por
+                REMOTE_LAYER_SELECT. */}
+            <button type="button" className={styles.barBtn} title={current.locked ? "Desbloquear" : "Bloquear"} data-on={current.locked || undefined} onClick={() => replace({ ...current, locked: !current.locked })}>
+              {current.locked ? <Lock size={18} /> : <LockOpen size={18} />}
             </button>
             <button type="button" className={styles.barBtn} title="Duplicar" onClick={() => duplicate(current)}>
-              <Copy size={15} />
+              <CopyPlus size={18} />
             </button>
-            <span className={styles.barDivider} />
-            <button type="button" className={`${styles.barBtn} ${styles.barDanger}`} title="Eliminar" onClick={() => remove(current)}>
-              <Trash2 size={15} />
+            <button type="button" className={styles.barBtn} title="Eliminar" onClick={() => remove(current)}>
+              <Trash2 size={18} />
             </button>
-
-            {(menu === "color" || menu === "stroke") && (() => {
-              // Mismo menú para el color / relleno y para el borde de las formas.
-              const key = menu === "stroke" ? "stroke" : "color";
-              const value = (current[key] as string | null | undefined) || accent;
-              const set = (c: string) => replace(menu === "stroke"
-                ? { ...current, stroke: c, strokeWidth: (current.strokeWidth ?? 0) > 0 ? current.strokeWidth : 2 }
-                : { ...current, color: c });
-              return (
-                <div ref={menuRef} className={styles.menu} data-below={barBelow || undefined} style={{ marginLeft: menuShift }}>
-                  <span className={styles.menuLabel}>Tu paleta</span>
-                  <div className={styles.menuSwatches}>
-                    {current.kind === "shape" && menu === "color" && (
-                      <button
-                        type="button"
-                        className={styles.menuSwatch}
-                        data-empty
-                        data-on={current.color === "transparent" || undefined}
-                        title="Sin relleno"
-                        onClick={() => replace({ ...current, color: "transparent" })}
-                      />
-                    )}
-                    {[...new Set(palette.filter(Boolean))].map((c) => (
-                      <button
-                        key={c}
-                        type="button"
-                        className={styles.menuSwatch}
-                        data-on={value.toLowerCase() === c.toLowerCase() || undefined}
-                        style={{ background: c }}
-                        title={c}
-                        onClick={() => set(c)}
-                      />
-                    ))}
-                    <label className={styles.menuSwatch} data-custom title="Otro color">
-                      <Pipette size={13} />
-                      <input type="color" className={styles.colorInput} value={value === "transparent" ? accent : value} onChange={(e) => set(e.target.value)} />
-                    </label>
-                  </div>
-                  {menu === "stroke" && (
-                    <>
-                      <span className={styles.menuLabel}>Grosor</span>
-                      <div className={styles.menuChips}>
-                        {STROKE_WIDTHS.map((w) => (
-                          <button
-                            key={w}
-                            type="button"
-                            className={styles.menuChip}
-                            data-on={(current.strokeWidth ?? 0) === w || undefined}
-                            onClick={() => replace({ ...current, strokeWidth: w })}
-                          >
-                            {w === 0 ? "Sin" : `${w}px`}
-                          </button>
-                        ))}
-                      </div>
-                    </>
-                  )}
-                </div>
-              );
-            })()}
+            <button type="button" className={styles.barBtn} title="Capas" data-on={menu === "layers" || undefined} onClick={() => setMenu(menu === "layers" ? null : "layers")}>
+              <Ellipsis size={18} />
+            </button>
 
             {menu === "layers" && (
               <div ref={menuRef} className={`${styles.menu} ${styles.layerMenu}`} data-below={barBelow || undefined} style={{ marginLeft: menuShift }}>
@@ -626,42 +564,6 @@ export function SectionLayer({ section, items, editMode = false, accent, titleFo
                 <button type="button" className={styles.layerOption} data-on={current.z === "back" || undefined} onClick={() => layerMove(current, "back")}>
                   <SendToBack size={15} /> Detrás del contenido
                 </button>
-              </div>
-            )}
-
-            {menu === "radius" && (
-              <div ref={menuRef} className={styles.menu} data-below={barBelow || undefined} style={{ marginLeft: menuShift }}>
-                <span className={styles.menuLabel}>Esquinas</span>
-                <div className={styles.menuChips}>
-                  {RADII.map((r) => (
-                    <button
-                      key={r}
-                      type="button"
-                      className={styles.menuChip}
-                      data-on={(current.radius ?? 0) === r || undefined}
-                      onClick={() => replace({ ...current, radius: r })}
-                    >
-                      {r === 0 ? "Rectas" : r >= 999 ? "Píldora" : r}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {menu === "font" && (
-              <div ref={menuRef} className={`${styles.menu} ${styles.fontMenu}`} data-below={barBelow || undefined} style={{ marginLeft: menuShift }}>
-                {[{ label: "Del tema", value: null as string | null }, ...loadedFontFamilies().map((f) => ({ label: f, value: f as string | null }))].map((f) => (
-                  <button
-                    key={f.label}
-                    type="button"
-                    className={styles.fontOption}
-                    data-on={(current.font ?? null) === f.value || undefined}
-                    style={{ fontFamily: f.value ? `"${f.value}"` : (current.variant === "title" ? titleFont : bodyFont) }}
-                    onClick={() => { replace({ ...current, font: f.value }); setMenu(null); }}
-                  >
-                    {f.label}
-                  </button>
-                ))}
               </div>
             )}
           </div>

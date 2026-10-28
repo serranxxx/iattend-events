@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useContext, useEffect, useRef } from "react";
+import { fontExtras, overrideStyle, textKind, TextStylesContext } from "./fontExtras";
 
 // Texto de la invitación que, en modo edición (/host desde el editor de
 // iattend-vite), se escribe directo sobre la pieza. Ver docs/entorno-edicion.md
@@ -58,6 +59,15 @@ export function EditableText({ path, value, editMode = false, onFieldChange, mul
   const initialHtml = useRef<{ __html: string } | null>(null);
   if (initialHtml.current === null) initialHtml.current = { __html: markupToHtml(value ?? "") };
 
+  // Estilo de la barra de texto del editor: los extras globales de títulos /
+  // cuerpo y, encima, el estilo propio de este texto (candado abierto).
+  const ts = useContext(TextStylesContext);
+  const kind = textKind(path);
+  const extra: React.CSSProperties = kind
+    ? { ...fontExtras(kind === "title" ? ts.titles : ts.body), ...overrideStyle(ts.styles?.[path]) }
+    : {};
+  style = { ...style, ...extra };
+
   useEffect(() => {
     const el = ref.current;
     if (!editMode || !el || document.activeElement === el) return;
@@ -77,6 +87,8 @@ export function EditableText({ path, value, editMode = false, onFieldChange, mul
       className={className}
       style={{ outline: "none", cursor: "text", minWidth: "1ch", ...style }}
       data-edit-field={path}
+      // Elegir el texto le avisa al editor (abre la barra de texto).
+      onFocus={() => kind && window.dispatchEvent(new CustomEvent("iattend-text-field", { detail: { path, kind } }))}
       data-placeholder={placeholder}
       contentEditable
       suppressContentEditableWarning

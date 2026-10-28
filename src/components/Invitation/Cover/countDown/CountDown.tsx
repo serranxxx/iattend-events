@@ -7,6 +7,7 @@ import { lighter } from "@/helpers/functions";
 import { CoverSection, Generals, InvitationUIBundle } from "@/types/new_invitation";
 import styles from "./count.module.css";
 import ConfettiButton from "../Confetti/Confetti";
+import { COUNTDOWN_STYLE_IDS, CountdownStyleId, StyledCountdown } from "./CountdownStyles";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
@@ -111,7 +112,8 @@ export default function Countdown({ ui, cover, generals, dev, validated = true, 
   }, [targetDate]);
 
   const color = cover.date.color ?? lighter(generals?.colors.accent ?? "#FFFFFF", 0.6);
-  const font = generals?.fonts.body?.typeFace ?? "Poppins";
+  // Tipografía propia de la fecha y el contador (editor); si no, la del cuerpo.
+  const font = (cover?.date as { font?: string | null } | undefined)?.font || generals?.fonts.body?.typeFace || "Poppins";
   const containerClass = `${styles.date_container} ${variant === "aside" ? styles.aside : ""}`;
 
   if (!targetDate) {
@@ -121,6 +123,32 @@ export default function Countdown({ ui, cover, generals, dev, validated = true, 
           {cover?.date?.value ? formatDate(cover.date.value, locale) : "Fecha por definir"}
         </span>
       </div>
+    );
+  }
+
+  // Estilo del catálogo (cover.date.style). "1a" o vacío = el de siempre
+  // (abajo, sin cambios); el día del evento todos muestran el confeti.
+  const styleId = (COUNTDOWN_STYLE_IDS as readonly string[]).includes(cover?.date?.style ?? "") ? (cover.date.style as CountdownStyleId) : "1a";
+  if (styleId !== "1a" && !isToday) {
+    const label = (u: Units) => ui?.cover?.countdown?.[u] ?? (timeLeft[u] === 1 ? labels[u].singular : labels[u].plural);
+    return (
+      <StyledCountdown
+        styleId={styleId}
+        t={timeLeft}
+        target={new Date(`${cover.date.value.slice(0, 10)}T12:00:00Z`)}
+        locale={locale}
+        labels={{ days: label("days"), hours: label("hours"), minutes: label("minutes"), seconds: label("seconds") }}
+        colors={{
+          primary: generals?.colors.primary ?? "#FFFFFF",
+          secondary: generals?.colors.secondary ?? "#B9AEDD",
+          accent: generals?.colors.accent ?? "#29262D",
+          actions: generals?.colors.actions ?? "#8A7552",
+        }}
+        text={color}
+        sans={font}
+        serif={generals?.fonts.titles?.typeFace || "Cormorant Garamond"}
+        names={cover?.title?.text?.value}
+      />
     );
   }
 

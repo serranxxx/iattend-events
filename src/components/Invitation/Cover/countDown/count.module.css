@@ -53,7 +53,44 @@
     line-height: 1;
 }
 
-@media (min-width: 768px) {
+/* Celular: tamaños relativos al ancho (medidos a 390px de ancho, que es
+   la pieza del editor), así la fecha y el contador se ven igual en el
+   editor, en "Ver en vivo" y en cualquier teléfono, sin que una unidad
+   brinque de renglón. Con tope en el tamaño de 390px: en pantallas más
+   anchas en vertical (iPad) no crece y guarda la proporción con el título. */
+/* (y en vertical, como el iPad: se ve como celular; misma regla que el layout) */
+@media (max-width: 767px), (orientation: portrait) {
+    .date_date {
+        font-size: min(4.1vw, 16px);
+        letter-spacing: min(0.51vw, 2px);
+    }
+
+    .date_divider,
+    .date_divider_dev {
+        margin: min(3.08vw, 12px) 0;
+    }
+
+    .date_row,
+    .date_row_dev {
+        gap: min(4.6vw, 18px);
+        flex-wrap: nowrap;
+    }
+
+    .date_col {
+        gap: min(2.05vw, 8px);
+    }
+
+    .date_time {
+        font-size: min(6.15vw, 24px);
+    }
+
+    .date_unit {
+        font-size: min(3.08vw, 12px);
+        letter-spacing: min(0.51vw, 2px);
+    }
+}
+
+@media (min-width: 768px) and (orientation: landscape) {
     .date_date {
         font-size: 24px;
     }

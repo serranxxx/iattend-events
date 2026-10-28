@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useIsLargeScreen, useIsTabletPortrait } from "../../layout/InvitationLayout";
 import { Button, Drawer } from "antd";
 import Image from "next/image";
 import { BadgeHelp as LuBadgeHelp } from 'lucide-react';
@@ -6,13 +7,14 @@ import { InvitationUIBundle, ItineraryItem, NewInvitation } from "@/types/new_in
 import { EditableText } from "../../EditableText";
 import { ArrowLeft } from "lucide-react";
 import { useEditableList } from "../../useEditableList";
-import { getItineraryIcon, isImageIcon } from "@/helpers/icons";
+import { getItineraryIcon, isGlyphIcon, isImageIcon } from "@/helpers/icons";
+import { MomentGlyph } from "../MomentGlyph";
 import { buttonsColorText, lighter } from "@/helpers/functions";
 import OpenCard from "../OpenCard/OpenCard";
 import { ArrowUpRight as MdArrowOutward } from 'lucide-react';
 import { Navigation as FaDiamondTurnRight } from 'lucide-react';
 import FadeSides from "@/components/Motion/FadeSides";
-import { useScreenWidth } from "@/hooks/useScreenWidth";
+import { ITINERARY_STYLE_IDS, ItineraryStyleId, StyledItinerary } from "../ItineraryStyles";
 
 type CardProps = {
   invitation: NewInvitation;
@@ -40,19 +42,25 @@ export default function Card({ ui, invitation, dev, editMode = false, onAddMomen
   const accent = generals?.colors.accent ?? "#FFFFFF";
   const actions = generals.colors.actions;
 
-  const width = useScreenWidth();
-  const isLargeScreen = width >= 768;
+  // Misma regla que el layout: ancho ≥ 768px y horizontal (iPad vertical = celular).
+  const isLargeScreen = useIsLargeScreen();
+  // iPad vertical: el drawer sale de abajo como hoja centrada (máx. 560px).
+  const isTabletPortrait = useIsTabletPortrait();
 
   const steps = invitation.itinerary.object;
   const open: ItineraryItem | null = openIndex !== null ? steps[openIndex] ?? null : null;
   // Momentos en la línea, en modo edición: se eligen (borde) y se arrastran
   // para cambiar el orden.
+  // Estilo del catálogo (itinerary.style). "1a" o vacío = el zigzag de abajo.
+  const styleId = (ITINERARY_STYLE_IDS as readonly string[]).includes(content.style ?? "") ? (content.style as ItineraryStyleId) : "1a";
   const list = useEditableList<ItineraryItem>({
     items: steps,
     path: "itinerary.object",
     editMode,
     onFieldChange,
     makeNew: () => steps[0],
+    // El deslizable (1e) y los arcos (1j) se reordenan de lado.
+    axis: styleId === "1e" || styleId === "1j" ? "x" : "y",
     // El drawer solo se abre con "Detalles": tocar la tarjeta la elige y
     // arrastrarla la reordena.
   });
@@ -77,17 +85,79 @@ export default function Card({ ui, invitation, dev, editMode = false, onAddMomen
   const renderIcon = (icon: number | string | null, size: number) => {
     const color = content.background ? (content.inverted ? primary : accent) : content.inverted ? accent : accent;
     if (isImageIcon(icon)) {
-      return <Image src={icon} alt="" width={100} height={100} style={{ width: "100%", height: "auto", objectFit: "cover" }} />;
+      // Tope de tamaño: la ilustración no crece con la tarjeta (en pantallas
+      // anchas se veía enorme).
+      return <Image src={icon} alt="" width={100} height={100} style={{ width: "100%", maxWidth: 170, height: "auto", objectFit: "cover", margin: "0 auto" }} />;
     }
+    if (isGlyphIcon(icon)) return <MomentGlyph icon={icon} size={size} color={color} />;
     const Icon = icon ? getItineraryIcon(icon) : undefined;
     return Icon ? <Icon size={size} style={{ color }} /> : <LuBadgeHelp size={size} style={{ color }} />;
   };
+
+  const ink = content?.dynamic_background?.active ? (content.inverted ? primary : accent) : accent;
+  // Los mismos colores del botón "Detalles" de abajo (1a).
+  const surface = content?.dynamic_background?.active ? (content.inverted ? primary : secondary) : secondary;
+  // Sobre secondary el texto va en primary; sobre primary, en accent.
+  const onSurface = surface === primary ? accent : primary;
+  const renderIconColored = (icon: number | string | null, size: number, color: string) => {
+    if (isImageIcon(icon)) {
+      // eslint-disable-next-line @next/next/no-img-element
+      return <img src={icon} alt="" draggable={false} style={{ width: size * 1.6, height: size * 1.6, objectFit: "contain" }} />;
+    }
+    if (isGlyphIcon(icon)) return <MomentGlyph icon={icon} size={size} color={color} />;
+    const Icon = icon ? getItineraryIcon(icon) : undefined;
+    return Icon ? <Icon size={size} style={{ color }} /> : <LuBadgeHelp size={size} style={{ color }} />;
+  };
+  const iconSlot = (index: number, node: React.ReactNode) => editMode ? (
+    <button
+      type="button"
+      className="edit_icon_btn"
+      data-edit-hit
+      aria-label="Cambiar ícono"
+      style={{ padding: 0, border: "none", background: "none", display: "inline-flex", flex: "none", width: "fit-content", maxWidth: "100%" }}
+      onPointerDown={(e) => e.stopPropagation()}
+      onClick={(e) => {
+        e.stopPropagation();
+        const r = e.currentTarget.getBoundingClientRect();
+        onFieldTool?.(`moment_icon:${index}`, { x: r.left, y: r.top, w: r.width, h: r.height }, "itinerary");
+      }}
+    >
+      {node}
+    </button>
+  ) : node;
+  const addButton = (
+    <button type="button" className="edit_glass_btn" data-edit-hit onClick={(e) => { e.stopPropagation(); onAddMoment?.(); }}>
+      + Momento
+    </button>
+  );
 
   const ROW_HEIGHT = 180; // alto mínimo de cada fila (ajústalo a tu diseño)
   const GAP = 0;
 
   return (
     <>
+      {styleId !== "1a" ? (
+        <StyledItinerary
+          styleId={styleId}
+          items={steps}
+          ink={ink}
+          surface={surface}
+          onSurface={onSurface}
+          colors={{ primary, secondary, accent, actions: actions ?? accent }}
+          sans={body.font ?? "inherit"}
+          serif={generals.fonts.titles?.typeFace ?? body.font ?? "serif"}
+          cta={ui?.buttons.details ?? "Ver detalles"}
+          editMode={editMode}
+          listRef={list.listRef}
+          row={(i, style) => list.rowProps(i, style ?? {})}
+          showDelete={list.showDelete}
+          onDelete={list.remove}
+          onOpen={setOpenIndex}
+          iconSlot={iconSlot}
+          renderIcon={renderIconColored}
+          addButton={addButton}
+        />
+      ) : (
       <div
         ref={list.listRef}
         style={{
@@ -132,13 +202,33 @@ export default function Card({ ui, invitation, dev, editMode = false, onAddMomen
                   data-edit-card={editMode || undefined}
                   style={{
                     width: isImageIcon(item.icon) ? "74%" : "44%",
+                    // Tope: en celular no cambia nada; en pantallas más anchas
+                    // (iPad vertical) la ilustración no crece de más.
+                    maxWidth: isImageIcon(item.icon) ? 260 : 170,
                     margin: "0 2%",
                     display: "flex",
                     alignItems: "center",
                     flexDirection: "column",
                   }}
                 >
-                  {renderIcon(item.icon, 56)}
+                  {editMode ? (
+                    // Tocar el ícono / imagen abre su selector en el editor
+                    // (panel "Ícono del momento" de iattend-vite).
+                    <button
+                      type="button"
+                      className="edit_icon_btn"
+                      data-edit-hit
+                      aria-label="Cambiar ícono"
+                      onPointerDown={(e) => e.stopPropagation()}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const r = e.currentTarget.getBoundingClientRect();
+                        onFieldTool?.(`moment_icon:${index}`, { x: r.left, y: r.top, w: r.width, h: r.height }, "itinerary");
+                      }}
+                    >
+                      {renderIcon(item.icon, 56)}
+                    </button>
+                  ) : renderIcon(item.icon, 56)}
                   <div
                     style={{
                       display: "flex",
@@ -229,6 +319,7 @@ export default function Card({ ui, invitation, dev, editMode = false, onAddMomen
           </div>
         )}
       </div>
+      )}
       <Drawer
         placement={isLargeScreen ? 'left' : 'bottom'}
         onClose={() => setOpenIndex(null)}
@@ -274,6 +365,8 @@ export default function Card({ ui, invitation, dev, editMode = false, onAddMomen
           
         }}
         styles={{
+          // Hoja centrada en iPad vertical (sin transform: lo usa la animación).
+          ...(isTabletPortrait && !isLargeScreen && !editMode ? { wrapper: { left: "max(0px, calc(50% - 280px))", right: "max(0px, calc(50% - 280px))" } } : {}),
           header: {
             backgroundColor: content.inverted ? secondary : primary,
           },

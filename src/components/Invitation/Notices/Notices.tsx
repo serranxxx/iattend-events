@@ -8,6 +8,7 @@ import { WebSection } from "../layout/WebSection";
 import web from "../layout/web-section.module.css";
 import { EditableText } from "../EditableText";
 import { useEditableList } from "../useEditableList";
+import { NOTICE_STYLE_IDS, NoticeStyleId, StyledNotices } from "./NoticeStyles";
 
 type NoticesProps = {
   dev: boolean;
@@ -68,6 +69,26 @@ export const Notices = forwardRef<HTMLDivElement, NoticesProps>(function Notices
     makeNew: () => "Nuevo aviso",
   });
 
+  // Estilo del catálogo (notices.style); "R1" o vacío = el apilado de abajo.
+  const styleId = (NOTICE_STYLE_IDS as readonly string[]).includes(content?.style ?? "") ? (content.style as NoticeStyleId) : "R1";
+  const ink = content.inverted ? primary : accent;
+  const noticeText = (index: number, style: React.CSSProperties) => (
+    <EditableText
+      path={`notices.notices.${index}`}
+      value={notices[index] ?? ""}
+      editMode={editMode}
+      onFieldChange={onFieldChange}
+      multiline
+      render={renderTextWithStrong}
+      style={{ display: "block", whiteSpace: "pre-line", color: ink, opacity: body.opacity, ...style }}
+    />
+  );
+  const noticeDelete = (index: number) => list.showDelete(index) && (
+    <button type="button" className="edit_row_delete" data-edit-row-delete onClick={(e) => { e.stopPropagation(); list.remove(index); }}>
+      Eliminar
+    </button>
+  );
+
   const hasContent = Boolean(content?.title?.trim()) || Boolean(content?.notices?.length);
   const hasSeparator = Boolean(content?.dynamic_separator?.active);
   const isSplit = useIsSplitLayout();
@@ -125,6 +146,9 @@ export const Notices = forwardRef<HTMLDivElement, NoticesProps>(function Notices
             backgroundColor: content?.dynamic_background?.active ? moduleBg : "transparent",
             // Imagen y textura propias del bloque van detrás (ModuleBackdrop).
             isolation: "isolate",
+            // Estilos del catálogo: encima de la textura de la invitación
+            // (TextureOverlay, z 0): notas, burbujas y tarjetas van limpias.
+            ...(styleId === "R1" ? {} : { zIndex: 1 }),
             // Relleno arriba / abajo propio del bloque (dynamic_background.padding_y).
             ...moduleBoxExtras(content?.dynamic_background),
             borderRadius: content?.dynamic_background?.border_radius,
@@ -151,6 +175,25 @@ export const Notices = forwardRef<HTMLDivElement, NoticesProps>(function Notices
               />
             </FadeLeft>
 
+            {styleId !== "R1" ? (
+              <div style={{ alignSelf: "stretch" }}>
+                <StyledNotices
+                  styleId={styleId}
+                  items={notices}
+                  colors={{ primary, secondary, accent, actions: generals?.colors.actions ?? accent }}
+                  ink={ink}
+                  sans={body.font ?? "Poppins"}
+                  serif={title.font ?? body.font ?? "Poppins"}
+                  names={invitation.cover?.title?.text?.value ?? ""}
+                  editMode={editMode}
+                  listRef={list.listRef}
+                  row={(i, style) => list.rowProps(i, style ?? {})}
+                  text={noticeText}
+                  del={noticeDelete}
+                />
+                {list.dropAtEnd && <div className="edit_row_drop_end" />}
+              </div>
+            ) : (
             <div ref={list.listRef} style={{ display: "flex", flexDirection: "column", alignSelf: "stretch", alignItems: "center", gap: "inherit" }}>
             {notices.map((item, index) => (
                 <div key={index} {...list.rowProps(index, { display: "flex", flexDirection: "column", alignItems: "center", alignSelf: "stretch", gap: "12px" })}>
@@ -202,6 +245,7 @@ export const Notices = forwardRef<HTMLDivElement, NoticesProps>(function Notices
               ))}
             {list.dropAtEnd && <div className="edit_row_drop_end" />}
             </div>
+            )}
 
             {editMode && (
               <button type="button" className="edit_glass_btn" data-edit-hit onClick={(e) => { e.stopPropagation(); list.add(); }}>

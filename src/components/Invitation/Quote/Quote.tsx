@@ -1,4 +1,5 @@
 import { NewInvitation } from "@/types/new_invitation";
+import { fontExtras } from "../fontExtras";
 import { ModuleBackdrop, moduleBoxExtras } from "../ModuleBackdrop";
 import Image from "next/image";
 import React, { forwardRef, useEffect, useRef, useState } from "react";
@@ -20,6 +21,8 @@ type quoteProps = {
   onFieldTool?: (_field: string, _rect: { x: number; y: number; w: number; h: number }, _section?: string) => void;
   // Se soltó el texto elegido sin elegir otra cosa (el editor cierra su "T").
   onClearField?: () => void;
+  textBar?: boolean; // el editor muestra su barra de texto: sin la "T"
+  onSelectText?: () => void; // se eligió el texto de la Cita (el editor abre su barra de texto)
 };
 
 // Cuadrantes del texto sobre la imagen: los mismos 3×3 que el panel de Cita
@@ -33,7 +36,7 @@ const cellFromPointer = (x: number, y: number, box: DOMRect): Cell => ({
   row: Math.min(2, Math.max(0, Math.floor(((y - box.top) / box.height) * 3))),
 });
 
-export const Quote = forwardRef<HTMLDivElement, quoteProps>(function Quote({ dev, invitation, editMode = false, onFieldChange, onFieldTool, onClearField }, ref) {
+export const Quote = forwardRef<HTMLDivElement, quoteProps>(function Quote({ dev, invitation, editMode = false, textBar = false, onFieldChange, onFieldTool, onClearField, onSelectText }, ref) {
   const content = invitation.quote;
   const generals = invitation.generals;
 
@@ -76,6 +79,13 @@ export const Quote = forwardRef<HTMLDivElement, quoteProps>(function Quote({ dev
   selectedRef.current = textSelected;
   const onClearRef = useRef(onClearField);
   onClearRef.current = onClearField;
+  // Al elegir el texto se avisa al editor (abre su barra de texto); al
+  // soltarlo, `release` ya manda onClearField.
+  const onSelectTextRef = useRef(onSelectText);
+  onSelectTextRef.current = onSelectText;
+  useEffect(() => {
+    if (editMode && textSelected) onSelectTextRef.current?.();
+  }, [editMode, textSelected]);
   const currentCell: Cell = {
     col: Math.max(0, JUSTIFY.indexOf(content.text.justify ?? "center")),
     row: Math.max(0, ALIGN.indexOf(content.text.align ?? "center")),
@@ -163,61 +173,33 @@ export const Quote = forwardRef<HTMLDivElement, quoteProps>(function Quote({ dev
     });
   };
 
-  if (isSplit) {
+  // Con imagen, la cita se ve igual que en celular también en el layout
+  // dividido (tarjeta con su ancho, no a todo el ancho); sin imagen, la frase
+  // de la sección web.
+  if (isSplit && !content.image.active) {
     if (!content.active || !(hasQuoteContent || hasSeparator)) return null;
-    const withImage = content.image.active;
     return (
       <WebSection
         ref={ref}
-        background={withImage ? undefined : content.dynamic_background}
+        background={content.dynamic_background}
         secondary={moduleBg}
-        flush={withImage}
         separator={content.dynamic_separator}
         inverted={content.inverted}
         generals={generals}
       >
-        {hasQuoteContent && (withImage ? (
-          <FadeIn>
-            <div className={styles.web_image}>
-              {image_src && <Image fill sizes="60vw" style={{ objectFit: "cover" }} loading="lazy" alt="" src={image_src} />}
-              {content.text.shadow && (
-                <div
-                  className={styles.web_shadow}
-                  style={{ background: `linear-gradient(to top, ${darker(accent, 0.7)}80, rgba(0,0,0,0))` }}
-                />
-              )}
-              <div className={styles.web_text_layer} style={{ alignItems: content.text.align }}>
-                <span
-                  className={styles.web_text}
-                  style={{
-                    color: content.text.font.color,
-                    fontFamily: content.text.font.typeFace ?? "Poppins",
-                    // En web la frase se lee al doble del tamaño móvil (30 → 60px).
-                    fontSize: `${Math.max(36, (content.text.font.size || 30) * 2)}px`,
-                    opacity: content.text.font.opacity,
-                    fontWeight: content.text.font.weight,
-                    textAlign: content.text.justify,
-                    width: `${content.text.width ?? 70}%`,
-                  }}
-                >
-                  {renderTextWithStrong(content.text.font.value ?? "")}
-                </span>
-              </div>
-            </div>
-          </FadeIn>
-        ) : (
+        {hasQuoteContent && (
           <p
             className={styles.web_plain}
             style={{ color: content.inverted ? primary : accent, fontFamily: content.text.font.typeFace }}
           >
             {renderTextWithStrong(content.text.font.value ?? "")}
           </p>
-        ))}
+        )}
       </WebSection>
     );
   }
 
-  return (
+  const mobile = (
     <>
       {content.active && (hasQuoteContent || hasSeparator || editMode) ? (
         <>
@@ -307,7 +289,9 @@ export const Quote = forwardRef<HTMLDivElement, quoteProps>(function Quote({ dev
                   {/* "Cambiar fondo" sobre la imagen, como el de la portada: se ve
                       con la cita elegida y abre el fondo en el editor. Si el
                       texto está en la fila del centro, sube para no taparlo. */}
-                  {editMode && !textSelected && (
+                  {/* En el editor de escritorio (textBar) el fondo se cambia desde
+                      la barra que sale al elegir la Cita: sin este botón. */}
+                  {editMode && !textBar && !textSelected && (
                     <button
                       type="button"
                       className="edit_center_btn"
@@ -352,8 +336,11 @@ export const Quote = forwardRef<HTMLDivElement, quoteProps>(function Quote({ dev
                       onPointerUp={onBlockUp}
                       onPointerCancel={onBlockUp}
                       onDragStart={(e) => e.preventDefault()}
+                      // Como el título de la portada: el clic no sube a la zona,
+                      // que lo tomaría como "Cita sin campo" y soltaría el texto.
+                      onClick={(e) => e.stopPropagation()}
                     >
-                      {textSelected && (
+                      {textSelected && !textBar && (
                         <button
                           type="button"
                           className="edit_field_tool"
@@ -387,6 +374,7 @@ export const Quote = forwardRef<HTMLDivElement, quoteProps>(function Quote({ dev
                           fontWeight: content.text.font.weight,
                           textAlign: content.text.justify,
                           width: "100%",
+                          ...fontExtras(content.text.font),
                         }}
                       />
                     </div>
@@ -444,4 +432,10 @@ export const Quote = forwardRef<HTMLDivElement, quoteProps>(function Quote({ dev
       )}
     </>
   );
+
+  // En el layout dividido el contenido se recorre lo que tapa la portada
+  // (--aside-overlap, ver invitation.module.css) para quedar centrado.
+  return isSplit ? (
+    <div style={{ width: "100%", paddingLeft: "var(--aside-overlap, 0px)", boxSizing: "border-box", display: "flex", justifyContent: "center" }}>{mobile}</div>
+  ) : mobile;
 });

@@ -9,6 +9,7 @@ import { useIsSplitLayout } from "../layout/InvitationLayout";
 import { WebSection } from "../layout/WebSection";
 import web from "../layout/web-section.module.css";
 import { EditableText } from "../EditableText";
+import { GREETING_STYLE_IDS, GreetingStyleId, StyledGreeting } from "./GreetingStyles";
 
 type GreetingProps = {
   dev: boolean;
@@ -58,6 +59,43 @@ export const Greeting = forwardRef<HTMLDivElement, GreetingProps>(function Greet
   };
 
   const hasContent = Boolean(content?.title?.trim()) || Boolean(content?.description?.trim());
+  // Estilo del catálogo (greeting.style); "W1" o vacío = la clásica de abajo.
+  const styleId = (GREETING_STYLE_IDS as readonly string[]).includes(content?.style ?? "") ? (content?.style as GreetingStyleId) : "W1";
+  const titleColor = content?.inverted ? primary : title?.color;
+  const greetingTitle = (style: React.CSSProperties) => (
+    <EditableText
+      path="greeting.title"
+      value={content?.title ?? ""}
+      editMode={editMode}
+      onFieldChange={onFieldChange}
+      multiline
+      render={renderTextWithStrong}
+      className="g_module_title"
+      style={{
+        display: "block", whiteSpace: "pre-line", textAlign: "center",
+        color: titleColor, fontFamily: title?.font ?? "Poppins",
+        fontSize: title?.size, fontWeight: title?.weight, opacity: title?.opacity,
+        ...style,
+      }}
+    />
+  );
+  const greetingText = (style: React.CSSProperties) => (
+    <EditableText
+      path="greeting.description"
+      value={content?.description ?? ""}
+      editMode={editMode}
+      onFieldChange={onFieldChange}
+      multiline
+      render={renderTextWithStrong}
+      className="g_module_regular_text"
+      style={{
+        display: "block", whiteSpace: "pre-line", textAlign: "center",
+        color: content?.inverted ? primary : accent, fontFamily: body.font ?? "Poppins",
+        fontWeight: body.weight, opacity: body.opacity,
+        ...style,
+      }}
+    />
+  );
   const hasSeparator = Boolean(content?.dynamic_separator?.active);
   const isSplit = useIsSplitLayout();
 
@@ -115,6 +153,9 @@ export const Greeting = forwardRef<HTMLDivElement, GreetingProps>(function Greet
             backgroundColor: content?.dynamic_background?.active ? moduleBg : "transparent",
             // Imagen y textura propias del bloque van detrás (ModuleBackdrop).
             isolation: "isolate",
+            // Estilos del catálogo: encima de la textura de la invitación
+            // (TextureOverlay, z 0), como los demás catálogos.
+            ...(styleId === "W1" ? {} : { zIndex: 1 }),
             // Relleno arriba / abajo propio del bloque (dynamic_background.padding_y).
             ...moduleBoxExtras(content?.dynamic_background),
             borderRadius: content?.dynamic_background?.border_radius,
@@ -133,6 +174,24 @@ export const Greeting = forwardRef<HTMLDivElement, GreetingProps>(function Greet
                 boxSizing: "border-box",
               }}
             >
+              {styleId !== "W1" ? (
+                <StyledGreeting
+                  styleId={styleId}
+                  titleText={content.title ?? ""}
+                  bodyText={content.description ?? ""}
+                  title={greetingTitle}
+                  text={greetingText}
+                  ink={content?.inverted ? primary : accent}
+                  secondary={secondary}
+                  bg={content?.dynamic_background?.active ? moduleBg : primary}
+                  serif={title?.font ?? "Poppins"}
+                  sans={body.font ?? "Poppins"}
+                  titleSize={title?.size ?? 22}
+                  titleColor={titleColor}
+                  titleWeight={title?.weight ?? 600}
+                  editMode={editMode}
+                />
+              ) : (<>
               <FadeLeft>
                 <EditableText
                   path="greeting.title"
@@ -168,6 +227,7 @@ export const Greeting = forwardRef<HTMLDivElement, GreetingProps>(function Greet
                   }}
                 />
               </FadeLeft>
+              </>)}
 
             </div>
           )}

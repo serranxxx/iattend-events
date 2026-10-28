@@ -1,5 +1,5 @@
 // TextureOverlay.tsx
-import { useEffect, useId, useRef } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import type { StaticImageData } from "next/image";
 
 type Texture = {
@@ -33,6 +33,10 @@ export function TextureOverlay({
   extraMarginPx = 0, // 👈 default: 50px de margen
 }: Props) {
   const svgRef = useRef<SVGSVGElement>(null);
+  // Escala del mosaico: 0.6 de siempre, o más si la columna es más ancha que
+  // un mosaico (iPad vertical, columna web): así un solo mosaico cubre el
+  // ancho y no se ve la costura a lo ancho. Hacia abajo sigue en espejo.
+  const [scale, setScale] = useState(0.6);
   const patternId = useId();
   const texSrc = getSrc(texture.image);
 
@@ -50,6 +54,7 @@ export function TextureOverlay({
       const overlayH = Math.max(0, total - coverHeightPx + extraMarginPx);
       svg.style.top = `${coverHeightPx}px`;
       svg.setAttribute("width", String(cont.clientWidth));
+      setScale(Math.max(0.6, cont.clientWidth / tileW));
       svg.setAttribute("height", String(overlayH));
       svg.setAttribute("viewBox", `0 0 ${cont.clientWidth} ${overlayH}`);
     };
@@ -90,7 +95,6 @@ export function TextureOverlay({
     };
   }, [coverHeightPx, containerRef, extraMarginPx]);
 
-  const scale = 0.6;
 
   return (
     <svg

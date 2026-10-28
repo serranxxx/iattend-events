@@ -300,6 +300,33 @@ export default function Confirm({ invitationID, ui, invitation, guestInfo, refre
 
     const hasCompanions = validCompanions.length > 0;
 
+    // Invitación pública (candado abierto en el editor): se da de alta por el
+    // backend, que valida que de verdad sea pública (como los Flash:
+    // POST /api/invitations/:id/confirmacion-publica). Si la ruta todavía no
+    // existe (backend sin publicar) o no responde, sigue el guardado directo
+    // de antes, para que las invitaciones abiertas no dejen de confirmar.
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_IATTEND_API_URL}/invitations/${invitationID}/confirmacion-publica`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nombre: mainGuest.name.trim(), acompanantes: validCompanions.map((c) => (c.name ?? "").trim()) }),
+      });
+      if (res.status !== 404) {
+        const data = await res.json().catch(() => null);
+        if (!res.ok || !data?.ok) {
+          messageApi.error(data?.msg ?? "No se pudo guardar tu respuesta");
+          return;
+        }
+        if (data.invitado?.invitation_id && data.invitado?.password) {
+          localStorage.setItem(data.invitado.invitation_id, data.invitado.password);
+        }
+        setLocalStatus("confirmado");
+        return;
+      }
+    } catch {
+      // Sin respuesta del backend: guardado directo (abajo).
+    }
+
     // 1. Preparar mainGuest
     const formattedMainGuest = {
       ...mainGuest,

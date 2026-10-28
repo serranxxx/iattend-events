@@ -6,6 +6,7 @@ import FadeLeft from "@/components/Motion/FadeLeft";
 import { lighter } from "@/helpers/functions";
 import { EditableText } from "../EditableText";
 import { useEditableList } from "../useEditableList";
+import { PEOPLE_STYLE_IDS, PeopleStyleId, StyledPeople } from "./PeopleStyles";
 import styles from "./family.module.css";
 import { useIsSplitLayout } from "../layout/InvitationLayout";
 import { WebSection } from "../layout/WebSection";
@@ -62,6 +63,24 @@ export const People = forwardRef<HTMLDivElement, peopleProps>(function Greeting(
     onFieldChange,
     makeNew: () => ({ title: "Rol", description: "Nombre" }),
   });
+
+  // Estilo del catálogo (people.style); "P1" o vacío = el apilado de abajo.
+  const styleId = (PEOPLE_STYLE_IDS as readonly string[]).includes(content?.style ?? "") ? (content.style as PeopleStyleId) : "P1";
+  const ink = content?.inverted ? primary : accent;
+  const personText = (field: "title" | "description", index: number, style: React.CSSProperties) => (
+    <EditableText
+      path={`people.personas.${index}.${field}`}
+      value={personas[index]?.[field] ?? ""}
+      editMode={editMode}
+      onFieldChange={onFieldChange}
+      style={{ display: "block", whiteSpace: "pre-line", color: ink, opacity: body.opacity, ...style }}
+    />
+  );
+  const personDelete = (index: number) => list.showDelete(index) && (
+    <button type="button" className="edit_row_delete" data-edit-row-delete onClick={(e) => { e.stopPropagation(); list.remove(index); }}>
+      Eliminar
+    </button>
+  );
 
   const hasContent = Boolean(content?.title?.trim()) || Boolean(content?.personas?.length);
   const hasSeparator = Boolean(content?.dynamic_separator?.active);
@@ -137,6 +156,9 @@ export const People = forwardRef<HTMLDivElement, peopleProps>(function Greeting(
             backgroundColor: content?.dynamic_background?.active ? moduleBg : "transparent",
             // Imagen y textura propias del bloque van detrás (ModuleBackdrop).
             isolation: "isolate",
+            // Estilos del catálogo: encima de la textura de la invitación
+            // (TextureOverlay, z 0), como los demás catálogos.
+            ...(styleId === "P1" ? {} : { zIndex: 1 }),
             // Relleno arriba / abajo propio del bloque (dynamic_background.padding_y).
             ...moduleBoxExtras(content?.dynamic_background),
             borderRadius: content?.dynamic_background?.border_radius,
@@ -164,6 +186,27 @@ export const People = forwardRef<HTMLDivElement, peopleProps>(function Greeting(
               }}
             />
 
+            {styleId !== "P1" ? (
+              <div style={{ alignSelf: "stretch" }}>
+                <StyledPeople
+                  styleId={styleId}
+                  items={personas}
+                  colors={{ primary, secondary, accent }}
+                  bg={content?.dynamic_background?.active ? moduleBg : primary}
+                  surface={content?.dynamic_background?.active && content?.inverted ? primary : secondary}
+                  onSurface={content?.dynamic_background?.active && content?.inverted ? accent : primary}
+                  ink={ink}
+                  sans={body.font ?? "Poppins"}
+                  serif={title.font ?? body.font ?? "Poppins"}
+                  listRef={list.listRef}
+                  row={(i, style) => list.rowProps(i, style ?? {})}
+                  role={(i, style) => personText("title", i, style)}
+                  name={(i, style) => personText("description", i, style)}
+                  del={personDelete}
+                />
+                {list.dropAtEnd && <div className="edit_row_drop_end" />}
+              </div>
+            ) : (
             <div ref={list.listRef} style={{ display: "flex", flexDirection: "column", alignSelf: "stretch", gap: "inherit" }}>
             {personas.map((persona, index) => {
               return (
@@ -227,6 +270,7 @@ export const People = forwardRef<HTMLDivElement, peopleProps>(function Greeting(
             })}
             {list.dropAtEnd && <div className="edit_row_drop_end" />}
             </div>
+            )}
 
             {editMode && (
               <button type="button" className="edit_glass_btn" data-edit-hit onClick={(e) => { e.stopPropagation(); list.add(); }}>

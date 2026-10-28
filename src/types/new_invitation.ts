@@ -45,6 +45,13 @@ export interface Font {
   opacity: number;
   typeFace: string;
   color: string;
+  // Barra de texto del editor (fontExtras.ts):
+  italic?: boolean | null;
+  underline?: boolean | null;
+  strike?: boolean | null;
+  transform?: "none" | "uppercase" | "lowercase" | null;
+  letterSpacing?: number | null; // centésimas de em
+  lineHeight?: number | null;
 }
 
 export interface Address {
@@ -115,6 +122,9 @@ export interface CoverSection {
     active: boolean;
     color: string; // hex (#fff/#ffffff)
     type: number | null; // define enum si tienes catálogo
+    font?: string | null; // tipografía de la fecha y el contador; vacío = la del cuerpo
+    // Estilo del catálogo de cuenta regresiva ("1a" … "1l"); vacío = "1a", el de siempre.
+    style?: string | null;
   };
   song?: {
     id: string;
@@ -190,6 +200,9 @@ export interface GreetingSection {
   separator: boolean;
   title: string;
   description: string;
+  // Estilo del catálogo (Greeting/GreetingStyles.tsx): "W1" … "W8"; vacío =
+  // W1, la clásica de siempre.
+  style?: string | null;
   dynamic_separator: DynamicSeparator;
   dynamic_background: DynamicBackground;
 }
@@ -200,6 +213,9 @@ export interface PeopleSection {
   inverted: boolean;
   separator: boolean;
   title: string;
+  // Estilo del catálogo (Family/PeopleStyles.tsx): "P1" … "P6"; vacío = P1,
+  // el apilado de siempre.
+  style?: string | null;
   personas: Person[];
   dynamic_separator: DynamicSeparator;
   dynamic_background: DynamicBackground;
@@ -233,6 +249,8 @@ export interface ItinerarySection {
   separator: boolean;
   title: string | null;
   type: 'cards' | 'time-line'
+  // Estilo del catálogo ("1a" … "1l"); vacío = "1a", el zigzag de siempre.
+  style?: string | null;
   object: ItineraryItem[];
   dynamic_separator: DynamicSeparator;
   dynamic_background: DynamicBackground;
@@ -243,6 +261,11 @@ export interface ItinerarySection {
 //   url: string;
 // }
 
+// Link de inspiración del dresscode: texto, o en invitaciones viejas un objeto.
+export type DressLink = string | { URL?: string; url?: string; name?: string };
+export const dressLinkUrl = (link: DressLink | null | undefined): string =>
+  typeof link === "string" ? link : link?.URL || link?.url || "";
+
 export interface DresscodeSection {
   active: boolean;
   background: boolean;
@@ -251,11 +274,22 @@ export interface DresscodeSection {
   title: string | null;
   description: string | null;
   colors: string[];
-  links: string[];
+  // Texto, o en invitaciones viejas { URL, url, name } (ver dressLinkUrl).
+  links: DressLink[];
   prod: string[];
   dev: string[];
   images_active: boolean;
   links_active: boolean;
+  // Catálogo (Dresscode/DresscodeStyles.tsx): estilo de cada elemento; vacío
+  // = P1 / I1 / B1, los de siempre.
+  palette_style?: string | null;
+  images_style?: string | null;
+  button_style?: string | null;
+  // Nombre de cada color (mismo orden que `colors`), pies de las polaroids y
+  // texto del botón (vacío = el de siempre).
+  color_names?: (string | null)[] | null;
+  image_captions?: Record<number, string | null> | (string | null)[] | null;
+  button_label?: string | null;
   dynamic_separator: DynamicSeparator;
   dynamic_background: DynamicBackground;
 }
@@ -267,6 +301,9 @@ export interface GiftsSection {
   separator: boolean;
   title: string | null;
   description: string | null;
+  // Estilo del catálogo ("1a" Cartera, "1c" Sobre, "1e" Baraja, "1f" Girar,
+  // "1h" Caja); vacío = "1a", la cartera de siempre.
+  style?: string | null;
   cards: GiftCard[];
   dynamic_separator: DynamicSeparator;
   dynamic_background: DynamicBackground;
@@ -279,6 +316,9 @@ export interface DestinationsSection {
   separator: boolean;
   title: string | null;
   description: string | null;
+  // Estilo del catálogo ("1a" Revistero, "1e" Llaveros, "1f" Postales);
+  // vacío = "1a", el revistero de siempre.
+  style?: string | null;
   cards: DestinationCard[];
   dynamic_separator: DynamicSeparator;
   dynamic_background: DynamicBackground;
@@ -290,6 +330,9 @@ export interface NoticesSection {
   inverted: boolean;
   separator: boolean;
   title: string | null;
+  // Estilo del catálogo (Notices/NoticeStyles.tsx): "R1" … "R8"; vacío = R1,
+  // el apilado de siempre.
+  style?: string | null;
   notices: string[];
   dynamic_separator: DynamicSeparator;
   dynamic_background: DynamicBackground;
@@ -303,6 +346,9 @@ export interface GallerySection {
   prod: string[];
   dev: string[];
   title: string | null;
+  // Estilo del catálogo (Gallery/GalleryStyles.tsx): "G1" … "G6"; vacío = G1,
+  // el abanico de siempre.
+  style?: string | null;
   dynamic_separator: DynamicSeparator;
   dynamic_background: DynamicBackground;
 }
@@ -350,7 +396,11 @@ export interface LayerItem {
   id: string;
   kind: LayerItemKind;
   url?: string; // sticker
-  icon?: string; // nombre del ícono de lucide
+  icon?: string; // nombre del ícono de lucide, o "it:<n>" (ícono del itinerario)
+  // ícono del catálogo del editor (editor_assets): URL del SVG; `tint` = se
+  // pinta del color del elemento (mask). Sin `src` se usa `icon`.
+  src?: string;
+  tint?: boolean | null;
   text?: string;
   // texto: "title" | "subtitle" | "body"; línea: "solid" | "dashed" | "dotted" | "double";
   // separador: su número ("1" … "14", los mismos de generals.separator)
@@ -363,6 +413,10 @@ export interface LayerItem {
   stroke?: string | null;
   strokeWidth?: number | null;
   z?: "front" | "back" | null; // plano: delante (default) o detrás del contenido del bloque
+  strokeStyle?: "solid" | "dashed" | "dotted" | null;
+  locked?: boolean | null; // bloqueado: no se mueve ni se escala
+  flipX?: boolean | null;
+  flipY?: boolean | null;
   radius?: number | null; // esquinas de cuadrado / rectángulo, px a 390 de ancho (999 = píldora)
   x: number;
   y: number;
@@ -389,6 +443,9 @@ export interface NewInvitation {
   gallery: GallerySection;
   generals: Generals;
   decorations?: Decorations | null;
+  // Estilo propio de textos sueltos (candado abierto en la barra de texto del
+  // editor), por ruta: { "greeting.title": { typeFace, size, color, italic… } }.
+  text_styles?: Record<string, Partial<Font> & { align?: "left" | "center" | "right" | null }> | null;
   // invitation: InvitationMeta;
 
   // createdAt?: string;      // si usas timestamps de Mongoose
@@ -413,6 +470,18 @@ export interface InvitationUIBundle {
     cards: string;
     DiscoverGifts:string;
     seeGifts:string;
+    // Catálogo de la mesa de regalos (GiftStyles.tsx); opcionales, con texto por defecto.
+    registry?: string;
+    transfer?: string;
+    copyAccount?: string;
+    copied?: string;
+    tapToSee?: string;
+    swipe?: string;
+    // Catálogo de Actividades (DestinationStyles.tsx).
+    navigate?: string;
+    reception?: string;
+    toGuests?: string;
+    information?: string;
   };
 
   locked: {

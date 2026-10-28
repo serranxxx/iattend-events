@@ -1,7 +1,7 @@
 import { InvitationUIBundle, NewInvitation } from "@/types/new_invitation";
 import { ModuleBackdrop, hasModuleBg, moduleBoxExtras } from "../ModuleBackdrop";
 import React, { forwardRef } from "react";
-import FanStack from "./FanStack";
+import { GALLERY_STYLE_IDS, GalleryStyleId, StyledGallery } from "./GalleryStyles";
 import FadeLeft from "@/components/Motion/FadeLeft";
 import FadeIn from "@/components/Motion/FadeIn";
 import GalleryWeb from "./GalleryWeb/GalleryWeb";
@@ -64,6 +64,9 @@ export const Gallery = forwardRef<HTMLDivElement, DresscodeProps>(function Galle
     });
   };
 
+  // Estilo del catálogo (gallery.style); "G1" o vacío = la base (pila → carrusel).
+  const styleId = (GALLERY_STYLE_IDS as readonly string[]).includes(content?.style ?? "") ? (content.style as GalleryStyleId) : "G1";
+
   const hasContent = Boolean(content?.title?.trim()) || Boolean(images?.length);
   const hasSeparator = Boolean(content?.dynamic_separator?.active);
   const isSplit = useIsSplitLayout();
@@ -112,6 +115,9 @@ export const Gallery = forwardRef<HTMLDivElement, DresscodeProps>(function Galle
             backgroundColor: content?.dynamic_background?.active ? moduleBg : "transparent",
             // Imagen y textura propias del bloque van detrás (ModuleBackdrop).
             isolation: "isolate",
+            // Encima de la textura de la invitación (TextureOverlay, z 0),
+            // como regalos y actividades.
+            zIndex: 1,
             // Relleno arriba / abajo propio del bloque (dynamic_background.padding_y).
             ...moduleBoxExtras(content?.dynamic_background),
             borderRadius: content?.dynamic_background?.border_radius,
@@ -148,15 +154,12 @@ export const Gallery = forwardRef<HTMLDivElement, DresscodeProps>(function Galle
                 <div
                   className={editMode ? "edit_hover_card" : undefined}
                   data-edit-hit={editMode || undefined}
-                  style={editMode ? { borderRadius: 16, cursor: "pointer" } : undefined}
+                  // Los estilos del catálogo ocupan el ancho del bloque.
+                  style={{ ...(editMode ? { borderRadius: 16, cursor: "pointer" } : {}), width: "100%" }}
                   // En edición el toque es para el panel, no para el abanico.
                   onClickCapture={editMode ? openImagesTool : undefined}
                 >
-                  <FanStack
-                    images={images}
-                    radius={12}
-                    invitation={invitation}
-                  />
+                  <StyledGallery styleId={styleId} images={images} invitation={invitation} editMode={editMode} />
                 </div>
               </FadeIn>
             }

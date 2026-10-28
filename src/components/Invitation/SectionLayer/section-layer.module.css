@@ -6,15 +6,25 @@
    con el contenido de la invitación. Va ANTES del módulo en el DOM:
    - .clipBack (z 0): debajo del contenido posicionado del bloque y de la
      textura general, que vienen después.
-   - .clip (z 10): encima de todo. El elegido sube sobre las secciones
-     vecinas (data-active). */
+   - .clip (z 50): encima del contenido de los bloques (la portada usa
+     z-index 10; con la capa antes del módulo, un empate lo tapaba) y bajo
+     los botones de la zona (80), el dock y el candado. El elegido sube a 60. */
 .layer {
   position: absolute;
   inset: 0;
 }
 
+/* Portada: la capa mide una pantalla (100dvh), igual que el área donde se
+   acomodan el título y la fecha. Publicada, la portada mide 110vmax (para
+   que Safari esconda sus barras) y medir contra toda la caja desfasaba los
+   elementos respecto al título entre el editor y la invitación real. */
+.layer[data-layer-section="cover"] {
+  bottom: auto;
+  height: 100dvh;
+}
+
 .layer[data-active] .clip {
-  z-index: 40;
+  z-index: 60;
 }
 
 .layer {
@@ -32,7 +42,7 @@
 }
 
 .clip {
-  z-index: 10;
+  z-index: 50;
 }
 
 .clipBack {
@@ -67,6 +77,16 @@
   width: 100%;
   height: auto;
   aspect-ratio: 1;
+}
+
+/* Ícono SVG del catálogo pintado del color del elemento. */
+.maskIcon {
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
 }
 
 /* Área de toque más alta que la línea. */
@@ -116,7 +136,7 @@
 .chrome {
   position: absolute;
   inset: 0;
-  z-index: 45;
+  z-index: 120;
   pointer-events: none;
 }
 
@@ -179,10 +199,10 @@
   display: flex;
   align-items: center;
   gap: 2px;
-  padding: 4px;
-  border-radius: 14px;
-  background: #0F1A1E;
-  box-shadow: 0 8px 24px rgba(12, 23, 27, 0.3);
+  padding: 5px;
+  border-radius: 99px;
+  background: #FFF;
+  box-shadow: 0 8px 28px rgba(12, 23, 27, 0.18), 0 0 0 1px rgba(41, 38, 45, 0.06);
   pointer-events: auto;
   white-space: nowrap;
 }
@@ -193,23 +213,23 @@
 
 .barBtn {
   position: relative;
-  height: 30px;
-  min-width: 30px;
-  padding: 0 6px;
+  height: 36px;
+  min-width: 36px;
+  padding: 0 8px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 4px;
   border: none;
-  border-radius: 10px;
+  border-radius: 99px;
   background: transparent;
-  color: #FFF;
+  color: #29262D;
   cursor: pointer;
   font: 500 11px/1 system-ui, sans-serif;
 }
 
 .barBtn:hover {
-  background: rgba(255, 255, 255, 0.12);
+  background: #F1EFEA;
 }
 
 .barDanger {
@@ -242,7 +262,8 @@
 }
 
 .barBtn[data-on] {
-  background: rgba(255, 255, 255, 0.16);
+  background: #EFEAFF;
+  color: #6D3CFA;
 }
 
 /* Menús de la barra (color y tipografía): cuelgan de la barra. */
@@ -256,8 +277,8 @@
   gap: 8px;
   padding: 10px;
   border-radius: 14px;
-  background: #0F1A1E;
-  box-shadow: 0 8px 24px rgba(12, 23, 27, 0.3);
+  background: #FFF;
+  box-shadow: 0 8px 28px rgba(12, 23, 27, 0.18), 0 0 0 1px rgba(41, 38, 45, 0.06);
   white-space: normal;
 }
 
@@ -338,7 +359,7 @@
 .guides {
   position: absolute;
   inset: 0;
-  z-index: 29;
+  z-index: 110;
   pointer-events: none;
 }
 
@@ -461,11 +482,11 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 7px 10px;
+  padding: 8px 10px;
   border: none;
   border-radius: 8px;
   background: transparent;
-  color: #FFF;
+  color: #29262D;
   font: 500 12.5px/1.2 system-ui, sans-serif;
   text-align: left;
   cursor: pointer;
@@ -473,9 +494,10 @@
 }
 
 .layerOption:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: #F5F3F2;
 }
 
 .layerOption[data-on] {
-  background: rgba(255, 255, 255, 0.18);
+  background: #EFEAFF;
+  color: #6D3CFA;
 }

@@ -1,9 +1,7 @@
 "use client";
 
 import { forwardRef } from "react";
-import Image from "next/image";
 import { DynamicBackground, DynamicSeparator, Generals } from "@/types/new_invitation";
-import { Separador } from "../Separator/Separator";
 import styles from "./web-section.module.css";
 
 type WebSectionProps = {
@@ -15,6 +13,7 @@ type WebSectionProps = {
   bleed?: boolean;
   // Sin padding alguno (la frase con imagen ocupa la sección completa).
   flush?: boolean;
+  // Se reciben por compatibilidad: el separador ya lo pinta Invitation.tsx.
   separator?: DynamicSeparator;
   inverted?: boolean;
   generals: Generals;
@@ -27,7 +26,7 @@ type WebSectionProps = {
  * al `width%` que se usa en móvil.
  */
 export const WebSection = forwardRef<HTMLDivElement, WebSectionProps>(function WebSection(
-  { background, secondary, maxWidth, bleed = false, flush = false, separator, inverted, generals, children },
+  { background, secondary, maxWidth, bleed = false, flush = false, children },
   ref,
 ) {
   const isBand = Boolean(background?.active);
@@ -47,20 +46,8 @@ export const WebSection = forwardRef<HTMLDivElement, WebSectionProps>(function W
         </div>
       )}
 
-      {separator?.active && (
-        separator.type === "single" ? (
-          <Separador inverted={inverted} generals={generals} value={separator.single?.value ?? 1} />
-        ) : (
-          <div
-            className={`dyn_separator_cont ${styles.separator_image}`}
-            style={{ width: `${separator.image?.width}%`, minHeight: `${separator.image?.height}px` }}
-          >
-            {separator.image?.value && (
-              <Image fill src={separator.image.value} alt="" style={{ objectFit: "cover" }} />
-            )}
-          </div>
-        )
-      )}
+      {/* El separador de cada bloque lo pinta Invitation.tsx entre bloques
+          (separatorAfter), en los dos layouts: aquí ya no, o salía doble. */}
     </section>
   );
 });

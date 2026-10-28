@@ -1,6 +1,8 @@
 "use client";
 
 import { lighter } from "@/helpers/functions";
+import { useIsLargeScreen } from "../layout/InvitationLayout";
+import { fontExtras } from "../fontExtras";
 import Image from "next/image";
 import React, { useEffect, useRef, useState } from "react";
 import { forwardRef } from "react";
@@ -9,8 +11,10 @@ import { InvitationUIBundle, NewInvitation } from "@/types/new_invitation";
 import Countdown from "./countDown/CountDown";
 import { blurStyle, shadowBackground } from "./coverEffects";
 import { EditableText } from "../EditableText";
-import { Type, ImagePlus } from "lucide-react";
-import { useScreenWidth } from "@/hooks/useScreenWidth";
+import { Type, ImagePlus, Plus } from "lucide-react";
+
+// Alto del "+ Cuenta regresiva" en el editor: botón (~44px) y 12px arriba y abajo.
+const DATE_ADD_SPACE = 68;
 
 type CoverProps = {
   dev: boolean;
@@ -35,6 +39,7 @@ type CoverProps = {
   editMode?: boolean;
   onFieldChange?: (_path: string, _value: unknown) => void;
   onSelectField?: (_field: "title" | "date" | null) => void; // null = se soltó
+  textBar?: boolean; // el editor muestra su barra de texto: sin la "T" del título
   // Botón de herramienta pegado al bloque (hoy: tipografía del título). Manda
   // su posición dentro de la pieza para que el editor abra el popover ahí.
   onFieldTool?: (_field: "title" | "date" | "cover_media", _rect: { x: number; y: number; w: number; h: number }) => void;
@@ -62,10 +67,12 @@ const toArray = (src: string | string[] | null | undefined): string[] => {
 };
 
 export const Cover = forwardRef<HTMLDivElement, CoverProps>(function Cover(
-  { ui, lang, dev, invitation, height: _height, validated = true, variant = "full", topSlot, reserveDock = false, bleed = false, editMode = false, onFieldChange, onSelectField, onFieldTool },
+  { ui, lang, dev, invitation, height: _height, validated = true, variant = "full", topSlot, reserveDock = false, bleed = false, editMode = false, textBar = false, onFieldChange, onSelectField, onFieldTool },
   ref
 ) {
   const cover = invitation?.cover;
+  // Cuenta regresiva con un estilo del catálogo (no "1a", el de siempre).
+  const tallDate = Boolean(cover?.date.active) && Boolean(cover?.date?.style) && cover?.date?.style !== "1a";
   const generals = invitation?.generals;
 
   // Modo edición: título y fecha son bloques que se tocan y se arrastran
@@ -229,8 +236,8 @@ export const Cover = forwardRef<HTMLDivElement, CoverProps>(function Cover(
     return () => clearInterval(id);
   }, [isCarousel, mediaItems.length]);
 
-  const width = useScreenWidth();
-  const isLargeScreen = width >= 768;
+  // Misma regla que el layout: ancho ≥ 768px y horizontal (iPad vertical = celular).
+  const isLargeScreen = useIsLargeScreen();
 
   const renderSlides = () =>
     mediaItems.map((src, i) => (
@@ -288,17 +295,23 @@ export const Cover = forwardRef<HTMLDivElement, CoverProps>(function Cover(
           </div>
         )}
 
-        <div className={styles.aside_content}>
-          <div className={styles.aside_top}>
+        {/* Como en celular: el título con su tamaño y su posición de la
+            portada (align_y arriba / centro / abajo, align_x y si la fecha va
+            arriba), no un tamaño fijo pegado arriba. */}
+        <div className={styles.aside_content} style={{ flexDirection: cover?.title.position.column_reverse ?? "column" }}>
+          <div className={styles.aside_top} style={{ flex: "1 1 auto", justifyContent: cover?.title.position.align_y ?? "center" }}>
             {topSlot}
             <span
               translate="no"
               className={`notranslate ${styles.aside_title}`}
               style={{
+                fontSize: cover?.title.text.size ?? 44,
+                textAlign: cover?.title.position.align_x ?? "center",
                 color: cover?.title.text.color ?? lighter(generals?.colors.accent ?? "#000000", 0.6) ?? "#FFFFFF",
                 opacity: cover?.title.text.opacity,
                 fontFamily: cover?.title.text.typeFace,
                 fontWeight: cover?.title.text.weight,
+                ...fontExtras(cover?.title.text),
               }}
             >
               {cover?.title.text.value}
@@ -379,7 +392,9 @@ export const Cover = forwardRef<HTMLDivElement, CoverProps>(function Cover(
             className="edit_center_btn edit_center_btn--always"
             data-edit-hit
             data-edit-sub="media"
-            style={currentCell.row === 1 ? { top: "18%" } : undefined}
+            // Arriba si el título está al centro o si la cuenta regresiva es
+            // alta (el título baja y quedaría debajo del botón).
+            style={currentCell.row === 1 || tallDate ? { top: "18%" } : undefined}
             onPointerDown={(e) => e.stopPropagation()}
             onClick={(e) => {
               e.stopPropagation();
@@ -414,7 +429,11 @@ export const Cover = forwardRef<HTMLDivElement, CoverProps>(function Cover(
             className={styles.cover_title_container}
             style={{
               alignItems: cover?.title.position.align_y,
-              height: cover?.date.active ? "75%" : "100%",
+              // La fecha (o el "+ Cuenta regresiva" del editor) toma el alto
+              // que necesita y el título todo lo demás. Sin encogerse por
+              // debajo de su contenido: así nunca se encima con la fecha.
+              flex: "1 1 auto",
+              minHeight: "auto",
               padding: cover?.date.active ? 0 : "10px",
               position: "relative",
             }}
@@ -453,7 +472,7 @@ export const Cover = forwardRef<HTMLDivElement, CoverProps>(function Cover(
               onClick={editMode ? (e) => e.stopPropagation() : undefined}
               onDragStart={editMode ? (e) => e.preventDefault() : undefined}
             >
-            {editMode && selectedField === "title" && (
+            {editMode && !textBar && selectedField === "title" && (
               <button
                 type="button"
                 className={styles.fieldTool}
@@ -488,18 +507,42 @@ export const Cover = forwardRef<HTMLDivElement, CoverProps>(function Cover(
                 lineHeight: "1",
                 textShadow: "0px 0px 8px rgba(0, 0, 0, 0.5)",
                 minWidth: "250px",
+                ...fontExtras(cover?.title.text),
               }}
             />
             </div>
           </div>
+
+          {/* Fecha oculta: en el editor queda un "+ Cuenta regresiva" (como
+              el de los separadores) que la vuelve a prender. */}
+          {editMode && !cover?.date.active && (
+            <div className={styles.dateAdd} style={{ height: DATE_ADD_SPACE, flex: "0 0 auto" }}>
+              <button
+                type="button"
+                className="edit_separator edit_separator--empty"
+                data-edit-hit
+                // Del color del título, sin fondo.
+                style={{ color: cover?.title.text.color ?? lighter(generals?.colors.accent ?? "#000000", 0.6) ?? "#FFFFFF" }}
+                onClick={(e) => { e.stopPropagation(); onFieldChange?.("cover.date.active", true); }}
+              >
+                <span className="edit_separator_label"><Plus size={14} strokeWidth={2.4} /> Cuenta regresiva</span>
+              </button>
+            </div>
+          )}
 
           {cover?.date.active && (
             <div
               style={{
                 width: "100%",
                 backgroundColor: "transparent",
-                height: "25%",
-                marginTop: "10px",
+                // "1a" (el de siempre) conserva al menos su 25%: se ve igual
+                // que antes. Los del catálogo crecen lo necesario, con aire
+                // entre el título y la fecha.
+                flex: "0 0 auto",
+                minHeight: tallDate ? 0 : "25%",
+                marginTop: tallDate ? "20px" : "10px",
+                // Poco aire extra: la portada ya trae su padding de 30px.
+                ...(tallDate ? { padding: dateOnTop ? "16px 0 0" : "0 0 16px", boxSizing: "border-box" as const } : {}),
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -511,6 +554,9 @@ export const Cover = forwardRef<HTMLDivElement, CoverProps>(function Cover(
                 className={editMode ? styles.editBlock : undefined}
                 data-edit-hit={editMode || undefined}
                 data-edit-sub="date"
+                // Los estilos del catálogo ocupan todo el ancho (hasta el
+                // margen de la portada), no solo el de su contenido.
+                style={tallDate ? { width: "100%" } : undefined}
                 data-selected={selectedField === "date" || undefined}
                 data-dragging={dragKind === "date" || undefined}
                 onPointerDown={editMode ? onBlockDown("date") : undefined}

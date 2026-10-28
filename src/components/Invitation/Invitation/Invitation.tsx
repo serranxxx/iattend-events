@@ -35,6 +35,7 @@ import { useBrowserBarsColor } from "@/hooks/useBrowserBarsColor";
 import { Eye, EyeOff, Paintbrush } from "lucide-react";
 import { SectionLayer } from "../SectionLayer/SectionLayer";
 import { ModuleTexturesContext } from "../ModuleBackdrop";
+import { TextStylesContext } from "../fontExtras";
 import { ModuleSeparator } from "../ModuleSeparator";
 
 type invProps = {
@@ -62,6 +63,7 @@ type invProps = {
   // una zona que se toca para elegirlo en el editor, y algunos textos se
   // escriben directo sobre la pieza. Ver docs/entorno-edicion.md en vite.
   editMode?: boolean;
+  textBar?: boolean; // editor con barra de texto: sin las "T" de los textos
   selectedSection?: string | null;
   onSelectSection?: (_section: string, _field?: string) => void;
   onFieldChange?: (_path: string, _value: unknown) => void;
@@ -96,7 +98,7 @@ const MODULE_NAME: Record<"es" | "en", Record<number, string>> = {
 
 
 
-export default function Invitation({ password, invitationID, ui, lang, availableLanguages, invitation, loader, type, mongoID, dev, plan, phone_number, scrollToSection, scrollKey, onSectionChange, textures = [], textureOverride = null, giftBrands = [], editMode = false, selectedSection = null, onSelectSection, onFieldChange, onFieldTool, onClearField }: invProps) {
+export default function Invitation({ password, invitationID, ui, lang, availableLanguages, invitation, loader, type, mongoID, dev, plan, phone_number, scrollToSection, scrollKey, onSectionChange, textures = [], textureOverride = null, giftBrands = [], editMode = false, textBar = false, selectedSection = null, onSelectSection, onFieldChange, onFieldTool, onClearField }: invProps) {
   const coverRef = useRef<HTMLDivElement>(null);
   const greetingRef = useRef<HTMLDivElement>(null);
   const peopleRef = useRef<HTMLDivElement>(null);
@@ -366,8 +368,10 @@ export default function Invitation({ password, invitationID, ui, lang, available
         {/* Capa de elementos sueltos antes del módulo (ver section-layer.module.css). */}
         {!module?.disabled && layerFor(section)}
         {/* Herramientas del módulo elegido: el fondo arriba a la izquierda (el
-            separador se toca directo en la pieza) y ocultar arriba a la derecha. */}
-        {selected && module && !module.disabled && TOOL_SECTIONS.has(section) && (
+            separador se toca directo en la pieza) y ocultar arriba a la derecha.
+            Con barra (escritorio) el fondo se edita en la barra de arriba al
+            elegir el bloque: sin brocha. */}
+        {selected && module && !module.disabled && !textBar && TOOL_SECTIONS.has(section) && (
           <div className={styles.zoneTools} data-edit-hit>
             <button type="button" className={styles.zoneTool} data-edit-hit aria-label="Fondo" title="Fondo" onClick={openTool("background")}>
               <Paintbrush size={15} strokeWidth={2.2} />
@@ -466,13 +470,13 @@ export default function Invitation({ password, invitationID, ui, lang, available
       case 2:
         return <People invitationID={invitationID} key={index} ref={peopleRef} dev={false} invitation={invitation} editMode={editMode} onFieldChange={onFieldChange} onFieldTool={onFieldTool} />;
       case 3:
-        return <Quote key={index} ref={quoteRef} dev={dev} invitation={invitation} editMode={editMode} onFieldChange={onFieldChange} onFieldTool={onFieldTool} onClearField={onClearField} />;
+        return <Quote key={index} ref={quoteRef} dev={dev} invitation={invitation} editMode={editMode} textBar={textBar} onFieldChange={onFieldChange} onFieldTool={onFieldTool} onClearField={onClearField} onSelectText={() => onSelectSection?.("quote", "quote_text")} />;
       case 4:
         return <Itinerary invitationID={invitationID} ui={ui} key={index} ref={itineraryRef} dev={false} invitation={invitation} editMode={editMode} onFieldChange={onFieldChange} onFieldTool={onFieldTool} />;
       case 5:
-        return <DressCode ui={ui} key={index} ref={dresscodeRef} dev={dev} invitation={invitation} editMode={editMode} onFieldChange={onFieldChange} onFieldTool={onFieldTool} />;
+        return <DressCode ui={ui} key={index} ref={dresscodeRef} dev={dev} invitation={invitation} editMode={editMode} textBar={textBar} onFieldChange={onFieldChange} onFieldTool={onFieldTool} />;
       case 6:
-        return <Gifts ui={ui} key={index} ref={giftsRef} dev={false} invitation={invitation} brands={giftBrands} editMode={editMode} onFieldChange={onFieldChange} onFieldTool={onFieldTool} />;
+        return <Gifts ui={ui} key={index} ref={giftsRef} dev={false} invitation={invitation} brands={giftBrands} editMode={editMode} textBar={textBar} onFieldChange={onFieldChange} onFieldTool={onFieldTool} />;
       case 7:
         return <Destinations invitationID={invitationID} ui={ui} key={index} ref={destinationRef} dev={false} invitation={invitation} editMode={editMode} onFieldChange={onFieldChange} onFieldTool={onFieldTool} />;
       case 8:
@@ -911,13 +915,22 @@ export default function Invitation({ password, invitationID, ui, lang, available
 
   return (
     <ModuleTexturesContext.Provider value={textures}>
+    <TextStylesContext.Provider value={{ styles: invitation?.text_styles ?? {}, titles: invitation?.generals?.fonts?.titles, body: invitation?.generals?.fonts?.body }}>
     <InvitationLayoutProvider value={isSplit ? "split" : "mobile"}>
       {contextHolder}
 
       {!dev && <LanguageToggle languages={availableLanguages} currentLang={lang} />}
 
       {isSplit ? (
-        <div className={styles.split_shell} style={{ backgroundColor: primary }}>
+        <div
+          className={styles.split_shell}
+          style={{
+            backgroundColor: primary,
+            // Tamaño de títulos de la invitación para las secciones web
+            // (web-section.module.css): igual que en celular, no un tamaño fijo.
+            ["--inv-title-size" as string]: `${invitation.generals?.fonts?.titles?.size || 22}px`,
+          } as React.CSSProperties}
+        >
           <aside ref={asideRef} className={styles.split_aside}>
             <Cover
               variant="aside"
@@ -960,7 +973,7 @@ export default function Invitation({ password, invitationID, ui, lang, available
             }}
           >
             {zone("cover", (
-              <Cover ui={ui} lang={lang} ref={coverRef} dev={dev} invitation={invitation} height={"100vh"} validated={validated} bleed={!dev} editMode={editMode} onFieldChange={onFieldChange} onSelectField={(field) => (field ? onSelectSection?.("cover", field) : onClearField?.())} onFieldTool={onFieldTool} />
+              <Cover ui={ui} lang={lang} ref={coverRef} dev={dev} invitation={invitation} height={"100vh"} validated={validated} bleed={!dev} editMode={editMode} textBar={textBar} onFieldChange={onFieldChange} onSelectField={(field) => (field ? onSelectSection?.("cover", field) : onClearField?.())} onFieldTool={onFieldTool} />
             ))}
             {songPlayer}
             {modules}
@@ -1028,6 +1041,7 @@ export default function Invitation({ password, invitationID, ui, lang, available
         </div>
       </SlideOverlay>
     </InvitationLayoutProvider>
+    </TextStylesContext.Provider>
     </ModuleTexturesContext.Provider>
   );
 }

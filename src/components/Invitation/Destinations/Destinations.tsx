@@ -68,6 +68,7 @@ export const Destinations = forwardRef<HTMLDivElement, DresscodeProps>(function 
   };
 
 
+
   const hasContent = Boolean(content?.title?.trim()) || Boolean(content?.description?.trim()) || Boolean(content?.cards?.length);
   const hasSeparator = Boolean(content?.dynamic_separator?.active);
   const isSplit = useIsSplitLayout();
@@ -124,6 +125,9 @@ export const Destinations = forwardRef<HTMLDivElement, DresscodeProps>(function 
             backgroundColor: content?.dynamic_background?.active ? moduleBg : "transparent",
             // Imagen y textura propias del bloque van detrás (ModuleBackdrop).
             isolation: "isolate",
+            // Encima de la textura de la invitación (TextureOverlay, z 0), como
+            // la mesa de regalos: revistas, llaves y postales van limpias.
+            zIndex: 1,
             // Relleno arriba / abajo propio del bloque (dynamic_background.padding_y).
             ...moduleBoxExtras(content?.dynamic_background),
             borderRadius: content?.dynamic_background?.border_radius,
@@ -172,9 +176,8 @@ export const Destinations = forwardRef<HTMLDivElement, DresscodeProps>(function 
               />
             </FadeLeft>
             <div
-              style={{
-                overflow: "hidden", maxWidth: '450px',
-              }}
+              // Todo el ancho y sin recorte (sombras de revistas y postales).
+              style={{ width: "100%", maxWidth: 450 }}
             >
               {
                 (invitation?.destinations?.cards?.length > 0 || editMode) &&

@@ -12,7 +12,6 @@ import { ArrowUpRight as MdArrowOutward } from 'lucide-react';
 import { Copy as FaCopy } from 'lucide-react';
 import FadeIn from "@/components/Motion/FadeIn";
 import FadeDown from "@/components/Motion/FadeDown";
-import { useScreenWidth } from "@/hooks/useScreenWidth";
 import { ChevronDown, Layers2, Plus, X } from "lucide-react";
 
 type CardProps = {
@@ -25,6 +24,11 @@ type CardProps = {
   // logo es un selector de marca y debajo de la cartera va "Eliminar tarjeta".
   editMode?: boolean;
   onFieldChange?: (_path: string, _value: unknown) => void;
+  // Editor de escritorio (iattend-vite): la tarjeta abierta se edita en una
+  // barra arriba de la pieza ("gift_card:N"; "gift_card_close" al cerrarla) y
+  // el logo deja de ser selector.
+  textBar?: boolean;
+  onFieldTool?: (_field: string, _rect: { x: number; y: number; w: number; h: number }, _section?: string) => void;
 };
 
 // Selector de empresa de una tarjeta (modo edición). Lista propia dentro de la
@@ -88,7 +92,7 @@ function BrandPicker({ brands, current, label, onPick }: {
   );
 }
 
-export default function Wallet({ ui, invitation, dev: _dev = false, brands = [], editMode = false, onFieldChange }: CardProps) {
+export default function Wallet({ ui, invitation, dev: _dev = false, brands = [], editMode = false, onFieldChange, textBar = false, onFieldTool }: CardProps) {
   const [base, setBase] = useState<number[]>([]);
   const baseRef = useRef<number[]>([]);
   const [bottoms, setBottoms] = useState<number[]>([]);
@@ -104,8 +108,6 @@ export default function Wallet({ ui, invitation, dev: _dev = false, brands = [],
   const fontFamily = invitation.generals.fonts.body?.typeFace;
   const title = invitation.cover.title.text.value;
 
-  const width = useScreenWidth();
-  const isLargeScreen = width >= 768;
 
   const ANIM_MS = 250; // duración de cada fase (match con CSS)
   const SCALE_UP = 1.2; // escala al abrir
@@ -335,6 +337,20 @@ export default function Wallet({ ui, invitation, dev: _dev = false, brands = [],
   }, [invitation]);
 
   // ── Modo edición ──
+  // Escritorio: avisa al editor qué tarjeta quedó abierta (su barra).
+  const barOpen = useRef(false);
+  useEffect(() => {
+    if (!editMode || !textBar) return;
+    const r = ref.current?.getBoundingClientRect();
+    const rect = { x: r?.left ?? 0, y: r?.top ?? 0, w: r?.width ?? 0, h: r?.height ?? 0 };
+    if (movedIndex !== null) {
+      barOpen.current = true;
+      onFieldTool?.(`gift_card:${movedIndex}`, rect, "gifts");
+    } else if (barOpen.current) {
+      barOpen.current = false;
+      onFieldTool?.("gift_card_close", rect, "gifts");
+    }
+  }, [movedIndex, editMode, textBar]);
   const stop = (e: React.SyntheticEvent) => e.stopPropagation();
   const setCard = (index: number, patch: Partial<GiftCard>) =>
     onFieldChange?.(`gifts.cards.${index}`, { ...invitation.gifts.cards[index], ...patch });
@@ -378,8 +394,12 @@ export default function Wallet({ ui, invitation, dev: _dev = false, brands = [],
             backgroundColor:
               darker(content?.dynamic_background?.active ? (content.inverted ? primary : secondary) : content.inverted ? secondary : primary, 0.95) ??
               "#FFF",
-            transform: `scale(${!isLargeScreen ? "0.7" : "0.9"})`,
-            marginTop: isLargeScreen ? "28px" : '-24px',
+            // Mismo tamaño que en celular también en pantallas grandes (la
+            // escala de 0.9 la hacía bastante más grande que en el teléfono).
+            transform: "scale(0.7)",
+            // Sin la imagen de papel de .wallet: la cartera va limpia, sin textura.
+            backgroundImage: "none",
+            marginTop: '-24px',
             marginBottom:'-44px'
           }}
         >
@@ -447,7 +467,7 @@ export default function Wallet({ ui, invitation, dev: _dev = false, brands = [],
                       height: movedIndex === index ? "24px" : undefined,
                     }}
                   >
-                    {editMode && movedIndex === index ? (
+                    {editMode && movedIndex === index && !textBar ? (
                       // El logo es el selector de la empresa (catálogo gift_brands).
                       <BrandPicker
                         brands={brands}
@@ -535,6 +555,7 @@ export default function Wallet({ ui, invitation, dev: _dev = false, brands = [],
                 darker(content?.dynamic_background?.active ? (content.inverted ? primary : secondary) : content.inverted ? secondary : primary, 0.95) ??
                 "#FFF",
               borderColor: content.inverted ? `${accent}60` : `${primary}60`,
+              backgroundImage: "none", // sin textura (ver arriba)
               justifyContent: "space-between",
               zIndex:10
             }}

@@ -156,7 +156,8 @@
   }
 
 
-@media (min-width: 768px) {
+/* Pantalla ancha y horizontal (misma regla que el layout: el iPad vertical se ve como celular). */
+@media (min-width: 768px) and (orientation: landscape) {
     .qt_image_cnt {
         max-width: 950px !important;
         height: 650px !important;
@@ -1042,4 +1043,23 @@
   border-color: #5A2EE0;
   color: #FFFFFF;
   font-weight: 600;
+}
+
+/* Ícono / imagen de un momento del itinerario en modo edición: se toca para
+   cambiarlo (Itinerary/Card). */
+.edit_icon_btn {
+  all: unset;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  border-radius: 12px;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: outline-color 0.15s ease;
+  outline: 1.5px dashed transparent;
+  outline-offset: 4px;
+}
+
+.edit_icon_btn:hover {
+  outline-color: rgba(201, 184, 240, 0.9);
 }

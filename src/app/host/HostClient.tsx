@@ -51,8 +51,11 @@ const clampPct = (v: number) => Math.min(100, Math.max(0, v));
 // centro de la sección (horizontal o vertical) se pinta la línea y al soltar
 // se pega ahí. Mismo color que las guías de SectionLayer.
 const SNAP_PX = 8;
+// Caja de la capa de la sección (en la portada, una pantalla).
+const layerBox = (zoneEl: HTMLElement) => (zoneEl.querySelector<HTMLElement>("[data-layer]") ?? zoneEl);
+
 const snapToCenter = (zoneEl: HTMLElement, x: number, y: number) => {
-  const r = zoneEl.getBoundingClientRect();
+  const r = layerBox(zoneEl).getBoundingClientRect();
   const cx = r.left + r.width / 2;
   const cy = r.top + r.height / 2;
   return { x: Math.abs(x - cx) <= SNAP_PX ? cx : x, y: Math.abs(y - cy) <= SNAP_PX ? cy : y, onX: Math.abs(x - cx) <= SNAP_PX, onY: Math.abs(y - cy) <= SNAP_PX };
@@ -63,7 +66,7 @@ const showDropGuides = (zoneEl: HTMLElement | null, onX = false, onY = false) =>
   if (!zoneEl || (!onX && !onY)) return;
   const box = document.createElement("div");
   box.id = GUIDE_ID;
-  box.style.cssText = "position:absolute;inset:0;pointer-events:none;z-index:45";
+  box.style.cssText = "position:absolute;inset:0;pointer-events:none;z-index:110";
   const line = (css: string) => {
     const el = document.createElement("span");
     el.style.cssText = `position:absolute;background:#F0509B;${css}`;
@@ -71,7 +74,7 @@ const showDropGuides = (zoneEl: HTMLElement | null, onX = false, onY = false) =>
   };
   if (onX) line("top:0;bottom:0;left:50%;width:1px;margin-left:-0.5px");
   if (onY) line("left:0;right:0;top:50%;height:1px;margin-top:-0.5px");
-  zoneEl.appendChild(box);
+  layerBox(zoneEl).appendChild(box);
 };
 
 export default function HostClient({ textures, giftBrands }: Props) {
@@ -88,6 +91,9 @@ export default function HostClient({ textures, giftBrands }: Props) {
   // Modo edición del editor de iattend-vite (ver Invitation.tsx).
   const [editMode, setEditMode] = useState(false);
   const [selectedSection, setSelectedSection] = useState<string | null>(null);
+  // El editor de escritorio muestra su barra de texto al elegir un texto: sin
+  // las "T" de la pieza (textBar).
+  const [textBar, setTextBar] = useState(false);
   const [ui, setUi] = useState<InvitationUIBundle>(uiES as InvitationUIBundle);
   const rootRef = useRef<HTMLDivElement>(null);
   // Para colocar elementos sin re-suscribir el listener de mensajes.
@@ -136,6 +142,7 @@ export default function HostClient({ textures, giftBrands }: Props) {
         setLang((payload.lang as string) ?? null);
         setEditMode(Boolean(payload.editMode));
         setSelectedSection((payload.selectedSection as string) ?? null);
+        setTextBar(Boolean(payload.textBar));
       }
       // El organizador tocó el tablero del editor, fuera de la pieza: los
       // bloques elegidos (título, fecha…) se sueltan.
@@ -164,7 +171,9 @@ export default function HostClient({ textures, giftBrands }: Props) {
         }
         const section = zoneEl?.dataset.editZone;
         if (!zoneEl || !section) return;
-        const r = zoneEl.getBoundingClientRect();
+        // Se mide contra la capa de la sección (en la portada es una pantalla,
+        // no toda la zona): es la misma caja que usa SectionLayer.
+        const r = layerBox(zoneEl).getBoundingClientRect();
         let x = 50;
         let y: number;
         if (type === "HOST_LAYER_DROP") {
@@ -248,6 +257,50 @@ export default function HostClient({ textures, giftBrands }: Props) {
     return () => document.removeEventListener("pointerdown", onDown, true);
   }, [editMode, hostOrigin]);
 
+  // Elemento suelto elegido (SectionLayer): el editor muestra su barra de
+  // propiedades (color, borde, esquinas, voltear, transparencia) y los cambia
+  // directo en invitation.decorations. Un "nada elegido" de otra sección no
+  // borra la elección vigente.
+  useEffect(() => {
+    if (!editMode || !hostOrigin) return;
+    let current: { section: string; id: string } | null = null;
+    const onSelection = (e: Event) => {
+      const d = (e as CustomEvent).detail as { section: string; id: string | null };
+      if (d.id) current = { section: d.section, id: d.id };
+      else if (current?.section === d.section) current = null;
+      else return;
+      window.parent?.postMessage({ type: "REMOTE_LAYER_SELECT", payload: current }, hostOrigin);
+    };
+    window.addEventListener("iattend-layer-selection", onSelection);
+    return () => window.removeEventListener("iattend-layer-selection", onSelection);
+  }, [editMode, hostOrigin]);
+
+  // Texto de un bloque elegido (EditableText): el editor abre su barra de
+  // texto. Se suelta al tocar fuera de un texto o con el tablero del editor.
+  useEffect(() => {
+    if (!editMode || !hostOrigin) return;
+    let current: string | null = null;
+    const post = (payload: { path: string; kind: string } | null) => {
+      current = payload?.path ?? null;
+      window.parent?.postMessage({ type: "REMOTE_TEXT_FIELD", payload }, hostOrigin);
+    };
+    const onField = (e: Event) => post((e as CustomEvent).detail);
+    const onDown = (e: PointerEvent) => {
+      if (!current) return;
+      if ((e.target as HTMLElement | null)?.closest?.("[data-edit-field]")) return;
+      post(null);
+    };
+    const onDeselect = () => { if (current) post(null); };
+    window.addEventListener("iattend-text-field", onField);
+    document.addEventListener("pointerdown", onDown, true);
+    window.addEventListener("iattend-edit-deselect", onDeselect);
+    return () => {
+      window.removeEventListener("iattend-text-field", onField);
+      document.removeEventListener("pointerdown", onDown, true);
+      window.removeEventListener("iattend-edit-deselect", onDeselect);
+    };
+  }, [editMode, hostOrigin]);
+
   // Pegar una imagen (⌘V) con el foco en la pieza: el archivo se le pasa al
   // editor, que lo sube y lo regresa como sticker (HOST_LAYER_ADD).
   useEffect(() => {
@@ -312,6 +365,7 @@ export default function HostClient({ textures, giftBrands }: Props) {
         giftBrands={giftBrands}
         textureOverride={textureOverride}
         editMode={editMode}
+        textBar={textBar}
         selectedSection={selectedSection}
         onSelectSection={handleSelectSection}
         onFieldChange={handleFieldChange}

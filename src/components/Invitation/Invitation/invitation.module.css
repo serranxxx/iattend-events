@@ -228,16 +228,31 @@
 .split_aside {
   position: relative;
   flex: 0 0 42%;
-  max-width: 540px;
+  /* Ancho de celular en iPad horizontal y en computadora. */
+  max-width: 430px;
   height: 100%;
   overflow: hidden;
+  /* Profundidad: la portada va encima del contenido, con esquinas a la
+     derecha y sombra hacia la derecha (el contenido se mete 36px debajo,
+     ver .split_main). */
+  z-index: 2;
+  border-radius: 0 36px 36px 0;
+  box-shadow: 18px 0 40px rgba(0, 0, 0, 0.3), 4px 0 10px rgba(0, 0, 0, 0.16);
 }
 
 /* Único contenedor de scroll de la página (misma regla de iOS que en móvil) */
 .split_main {
   position: relative;
+  z-index: 1;
   flex: 1;
   min-width: 0;
+  /* Se mete 36px debajo de la portada: los fondos de las secciones pasan por
+     debajo (así no queda hueco en la esquina redondeada) y cada sección
+     recorre su contenido con --aside-overlap para que siga centrado (ver
+     web-section.module.css). */
+  margin-left: -36px;
+  --aside-overlap: 36px;
+  box-sizing: border-box;
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -252,7 +267,7 @@
    no recibe clics (nada de abrir tarjetas o deslizar galerías mientras se
    edita), salvo los textos que se escriben directo sobre la pieza. */
 /* Espacio entre bloques (ver .invitation_main_cont). La portada va pegada
-   arriba. Solo en el layout de celular: el de pantalla grande no tenía gap. */
+   arriba. En el layout dividido va igual (ver .split_main más abajo). */
 .invitation_main_cont > [data-module-zone] {
   padding: 22px 0;
   box-sizing: border-box;
@@ -260,6 +275,25 @@
 
 .invitation_main_cont > [data-module-zone="cover"] {
   padding-top: 0;
+}
+
+/* Layout dividido: el mismo espacio entre bloques que en celular, y cada
+   bloque (y separador) recorrido lo que tapa la portada para quedar centrado
+   en la parte visible. */
+.split_main {
+  /* Margen extra a los lados de cada bloque para que el texto no quede tan
+     cerca de los bordes (lo que se sale hasta la orilla lo descuenta). */
+  --zone-pad: 24px;
+}
+
+.split_main > [data-module-zone] {
+  padding: 22px var(--zone-pad) 22px calc(var(--aside-overlap, 0px) + var(--zone-pad));
+  box-sizing: border-box;
+}
+
+.split_main > [data-separator-of] {
+  padding-left: var(--aside-overlap, 0px);
+  box-sizing: border-box;
 }
 
 /* Separador entre dos bloques (no es parte de ninguno). El margen le da
@@ -373,7 +407,7 @@
   position: absolute;
   top: 14px;
   left: 10px;
-  z-index: 25;
+  z-index: 80;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -442,7 +476,7 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  z-index: 25;
+  z-index: 80;
   padding: 0 14px 0 12px;
   font-family: system-ui, -apple-system, sans-serif;
   font-size: 13px;
@@ -452,4 +486,16 @@
 
 .zoneTool:hover {
   background: #8FA271;
+}
+
+/* iPad vertical (ancho de tablet en vertical: se ve como celular, ver
+   LARGE_SCREEN_QUERY): más margen a los lados para que los bloques no se
+   estiren tanto. La portada sigue a sangre. */
+@media (min-width: 768px) and (orientation: portrait) {
+  .invitation_main_cont > .layerHost:not([data-module-zone="cover"]),
+  .invitation_main_cont > .editZone:not([data-module-zone="cover"]) {
+    padding-left: 10%;
+    padding-right: 10%;
+    box-sizing: border-box;
+  }
 }

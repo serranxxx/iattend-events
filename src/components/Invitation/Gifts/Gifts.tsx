@@ -3,6 +3,7 @@ import { ModuleBackdrop, hasModuleBg, moduleBoxExtras } from "../ModuleBackdrop"
 import React, { forwardRef } from "react";
 import styles from "./gifts.module.css";
 import Wallet from "./Wallet/Wallet";
+import { GIFT_STYLE_IDS, GiftStyleId, StyledGifts } from "./GiftStyles";
 import type { GiftBrand } from "@/lib/giftBrands/cache";
 import FadeLeft from "@/components/Motion/FadeLeft";
 import { useIsSplitLayout } from "../layout/InvitationLayout";
@@ -20,9 +21,10 @@ type DresscodeProps = {
   editMode?: boolean;
   onFieldChange?: (_path: string, _value: unknown) => void;
   onFieldTool?: (_field: string, _rect: { x: number; y: number; w: number; h: number }, _section?: string) => void;
+  textBar?: boolean; // editor con barras: la tarjeta abierta se edita en su barra
 };
 
-export const Gifts = forwardRef<HTMLDivElement, DresscodeProps>(function Greeting({ ui, dev, invitation, brands = [], editMode = false, onFieldChange, onFieldTool: _onFieldTool }, ref) {
+export const Gifts = forwardRef<HTMLDivElement, DresscodeProps>(function Greeting({ ui, dev, invitation, brands = [], editMode = false, onFieldChange, onFieldTool, textBar = false }, ref) {
   const content = invitation.gifts;
   const generals = invitation.generals;
 
@@ -61,6 +63,9 @@ export const Gifts = forwardRef<HTMLDivElement, DresscodeProps>(function Greetin
       return <span key={index}>{part}</span>;
     });
   };
+
+  // Estilo del catálogo (gifts.style). "1a" o vacío = la cartera de siempre.
+  const styleId = (GIFT_STYLE_IDS as readonly string[]).includes(content?.style ?? "") ? (content.style as GiftStyleId) : "1a";
 
   const hasContent = Boolean(content?.title?.trim()) || Boolean(content?.description?.trim()) || Boolean(content?.cards?.length);
   const hasSeparator = Boolean(content?.dynamic_separator?.active);
@@ -102,7 +107,9 @@ export const Gifts = forwardRef<HTMLDivElement, DresscodeProps>(function Greetin
             {/* La cartera es la misma de móvil, sin cambios visuales */}
             {content.cards.length > 0 && (
               <div className={styles.cards_container} style={{ alignSelf: "center", marginTop: 0 }}>
-                <Wallet ui={ui} invitation={invitation} dev={dev} brands={brands} />
+                {styleId === "1a"
+                  ? <Wallet ui={ui} invitation={invitation} dev={dev} brands={brands} />
+                  : <div style={{ width: 375, maxWidth: "100%" }}><StyledGifts styleId={styleId} invitation={invitation} ui={ui} brands={brands} /></div>}
               </div>
             )}
           </div>
@@ -121,6 +128,10 @@ export const Gifts = forwardRef<HTMLDivElement, DresscodeProps>(function Greetin
             backgroundColor: content?.dynamic_background?.active ? moduleBg : "transparent",
             // Imagen y textura propias del bloque van detrás (ModuleBackdrop).
             isolation: "isolate",
+            // El bloque va encima de la textura de la invitación
+            // (TextureOverlay, z 0): cartera, sobre, caja y tarjetas no se
+            // manchan con ella.
+            zIndex: 1,
             // Relleno arriba / abajo propio del bloque (dynamic_background.padding_y).
             ...moduleBoxExtras(content?.dynamic_background),
             borderRadius: content?.dynamic_background?.border_radius,
@@ -171,10 +182,15 @@ export const Gifts = forwardRef<HTMLDivElement, DresscodeProps>(function Greetin
             </FadeLeft>
             <div
               className={styles.cards_container}
+              // Los estilos del catálogo ocupan el ancho del bloque (la cartera
+              // se acomoda sola con su escala).
+              style={styleId === "1a" ? undefined : { width: "100%", marginTop: 8 }}
             >
               {
                 (invitation.gifts.cards.length > 0 || editMode) &&
-                <Wallet ui={ui} invitation={invitation} dev={dev} brands={brands} editMode={editMode} onFieldChange={onFieldChange} />
+                (styleId === "1a"
+                  ? <Wallet ui={ui} invitation={invitation} dev={dev} brands={brands} editMode={editMode} onFieldChange={onFieldChange} textBar={textBar} onFieldTool={onFieldTool} />
+                  : <StyledGifts styleId={styleId} invitation={invitation} ui={ui} brands={brands} editMode={editMode} onFieldChange={onFieldChange} textBar={textBar} onFieldTool={onFieldTool} />)
               }
 
             </div>

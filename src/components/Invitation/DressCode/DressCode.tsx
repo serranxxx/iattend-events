@@ -1,6 +1,6 @@
 "use client";
 
-import { InvitationUIBundle, NewInvitation } from "@/types/new_invitation";
+import { InvitationUIBundle, NewInvitation, dressLinkUrl } from "@/types/new_invitation";
 import { ModuleBackdrop, hasModuleBg, moduleBoxExtras } from "../ModuleBackdrop";
 import Image from "next/image";
 import React, { forwardRef, useState } from "react";
@@ -11,16 +11,20 @@ import { useEditableList } from "../useEditableList";
 import { Pin as FaPinterest } from 'lucide-react';
 import FadeLeft from "@/components/Motion/FadeLeft";
 import FadeIn from "@/components/Motion/FadeIn";
-import { useIsSplitLayout } from "../layout/InvitationLayout";
+import { useIsSplitColumn, useIsSplitLayout } from "../layout/InvitationLayout";
 import { WebSection } from "../layout/WebSection";
 import web from "../layout/web-section.module.css";
 import { EditableText } from "../EditableText";
+import { BUTTON_STYLES, IMAGE_STYLES, PALETTE_STYLES, pickStyle, StyledImages, StyledPalette, StyledPinButton } from "./DresscodeStyles";
 
 // Agregar un color a la paleta (modo edición). El color se agrega al cerrar
 // el selector, no a cada arrastre dentro de él (si no, saldría uno por paso).
-function AddColor({ children, onAdd }: { children: React.ReactNode; onAdd: (_hex: string) => void }) {
+// `onBar`: editor de escritorio (textBar): en vez del selector de antd, el
+// toque abre la barra de la paleta arriba de la pieza (iattend-vite).
+function AddColor({ children, onAdd, onBar }: { children: React.ReactNode; onAdd: (_hex: string) => void; onBar?: (_e: React.MouseEvent<HTMLElement>) => void }) {
   const [open, setOpen] = useState(false);
   const [picked, setPicked] = useState<string | null>(null);
+  if (onBar) return <span style={{ display: "contents" }} onClickCapture={onBar}>{children}</span>;
   return (
     <ColorPicker
       open={open}
@@ -85,9 +89,10 @@ type DresscodeProps = {
   editMode?: boolean;
   onFieldChange?: (_path: string, _value: unknown) => void;
   onFieldTool?: (_field: string, _rect: { x: number; y: number; w: number; h: number }, _section?: string) => void;
+  textBar?: boolean; // editor con barras: la paleta se edita en su barra
 };
 
-export const DressCode = forwardRef<HTMLDivElement, DresscodeProps>(function Greeting({ ui, dev, invitation, editMode = false, onFieldChange, onFieldTool }, ref) {
+export const DressCode = forwardRef<HTMLDivElement, DresscodeProps>(function Greeting({ ui, dev, invitation, editMode = false, onFieldChange, onFieldTool, textBar = false }, ref) {
   const content = invitation.dresscode;
   const generals = invitation.generals;
 
@@ -138,6 +143,16 @@ export const DressCode = forwardRef<HTMLDivElement, DresscodeProps>(function Gre
   // Link de inspiración abierto para editar (modo edición).
   const [openLink, setOpenLink] = useState<number | null>(null);
 
+  const openColorsBar = textBar ? (e: React.MouseEvent<HTMLElement>) => {
+    e.stopPropagation();
+    const r = e.currentTarget.getBoundingClientRect();
+    onFieldTool?.("dress_colors", { x: r.left, y: r.top, w: r.width, h: r.height }, "dresscode");
+  } : undefined;
+  // Escritorio: el link se edita en su barra arriba de la pieza.
+  const openLinkBar = (index: number) => (e: React.MouseEvent<HTMLElement>) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    onFieldTool?.(`dress_link:${index}`, { x: r.left, y: r.top, w: r.width, h: r.height }, "dresscode");
+  };
   const openImagesTool = (e: React.MouseEvent<HTMLElement>) => {
     e.stopPropagation();
     // Desde el botón del recuadro vacío, el panel se centra en el recuadro.
@@ -158,6 +173,20 @@ export const DressCode = forwardRef<HTMLDivElement, DresscodeProps>(function Gre
     axis: "x",
   });
   const isSplit = useIsSplitLayout();
+
+  // Catálogo (DresscodeStyles.tsx): un estilo por elemento. P1 / I1 / B1 son
+  // los de siempre y se pintan abajo tal cual. En el editor de celular (sin
+  // textBar) se queda la edición de siempre.
+  const paletteStyle = pickStyle(PALETTE_STYLES, content?.palette_style);
+  const imagesStyle = pickStyle(IMAGE_STYLES, content?.images_style);
+  const buttonStyle = pickStyle(BUTTON_STYLES, content?.button_style);
+  const styled = !editMode || textBar;
+  const inColumn = useIsSplitColumn();
+  const fg = content?.inverted ? primary : accent;
+  const sansFont = body.font ?? "Poppins";
+  const serifFont = title.font ?? sansFont;
+  const buttonLabel = content?.button_label?.trim()
+    || (buttonStyle === "B6" ? "Inspiración" : ui?.buttons.inspiration ?? "¿Necesitas inspiración?");
 
   if (isSplit) {
     if (!content.active || !generals || !(hasContent || hasSeparator)) return null;
@@ -207,7 +236,7 @@ export const DressCode = forwardRef<HTMLDivElement, DresscodeProps>(function Gre
                     {links.map((link, index) => (
                       <a
                         key={index}
-                        href={link}
+                        href={dressLinkUrl(link)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className={`${web.pill_btn} ${styles.web_link}`}
@@ -217,7 +246,7 @@ export const DressCode = forwardRef<HTMLDivElement, DresscodeProps>(function Gre
                           fontWeight: 400,
                         }}
                       >
-                        <FaPinterest />
+                        <FaPinterest size={16} />
                         {ui?.buttons.inspiration}
                       </a>
                     ))}
@@ -300,7 +329,20 @@ export const DressCode = forwardRef<HTMLDivElement, DresscodeProps>(function Gre
             />
           </FadeLeft>
 
-          {content?.colors && content.colors.length > 0 && (
+          {content?.colors && content.colors.length > 0 && styled && paletteStyle !== "P1" && (
+            <FadeIn>
+              <StyledPalette
+                style={paletteStyle}
+                colors={content.colors}
+                names={content.color_names ?? []}
+                fg={fg}
+                sans={sansFont}
+                serif={serifFont}
+                onClick={editMode ? openColorsBar : undefined}
+              />
+            </FadeIn>
+          )}
+          {content?.colors && content.colors.length > 0 && !(styled && paletteStyle !== "P1") && (
             <FadeIn>
               <div className={styles.color_palette_cont}>
 
@@ -333,7 +375,7 @@ export const DressCode = forwardRef<HTMLDivElement, DresscodeProps>(function Gre
                   ))}
                   {/* Con colores: un "+" a la derecha para agregar otro. */}
                   {editMode && (
-                    <AddColor onAdd={(hex) => onFieldChange?.("dresscode.colors", [...(content.colors ?? []), hex])}>
+                    <AddColor onBar={openColorsBar} onAdd={(hex) => onFieldChange?.("dresscode.colors", [...(content.colors ?? []), hex])}>
                       <button type="button" className="edit_color_add" data-edit-hit aria-label="Agregar color" onClick={(e) => e.stopPropagation()}>
                         <Plus size={16} />
                       </button>
@@ -345,7 +387,7 @@ export const DressCode = forwardRef<HTMLDivElement, DresscodeProps>(function Gre
           )}
           {/* Sin paleta: el botón para empezarla con un primer color. */}
           {editMode && !(content?.colors && content.colors.length > 0) && (
-            <AddColor onAdd={(hex) => onFieldChange?.("dresscode.colors", [hex])}>
+            <AddColor onBar={openColorsBar} onAdd={(hex) => onFieldChange?.("dresscode.colors", [hex])}>
               {/* Botón secundario, igual que "¿Necesitas inspiración?". */}
               <Button
                 data-edit-hit
@@ -385,12 +427,30 @@ export const DressCode = forwardRef<HTMLDivElement, DresscodeProps>(function Gre
           )}
           {content.images_active && (images_src ?? []).length > 0 && (
             <div
-              className={styles.scroll_invitation}
-              style={{ zIndex: 2, cursor: editMode ? "pointer" : undefined }}
+              // Estilos del catálogo: todo el ancho, sin el scroll del carrusel.
+              className={styled && imagesStyle !== "I1" ? undefined : styles.scroll_invitation}
+              style={{
+                zIndex: 2, cursor: editMode ? "pointer" : undefined,
+                ...(styled && imagesStyle !== "I1"
+                  ? { width: "100%" }
+                  // Carrusel (I1): en celular llega a las orillas (100vw). En el
+                  // layout dividido el tope es la columna (sale 24px a cada lado
+                  // del bloque): con 3+ fotos se llena y se desliza desde la
+                  // izquierda; con 2 o menos mide lo de sus fotos y va centrado.
+                  : inColumn ? { maxWidth: "calc(100% + 48px + 2 * var(--zone-pad, 0px))" } : {}),
+              }}
               data-edit-hit={editMode || undefined}
               onClick={editMode ? openImagesTool : undefined}
             >
-              {(images_src ?? []).map((image, index) => (
+              {styled && imagesStyle !== "I1" ? (
+                <StyledImages
+                  style={imagesStyle}
+                  images={(images_src ?? []).filter(Boolean)}
+                  fg={fg}
+                  serif={serifFont}
+                  editMode={editMode}
+                />
+              ) : (images_src ?? []).map((image, index) => (
                 <FadeIn key={index}>
                   <div
                     style={{ position: "relative", padding: "6px 24px" }}
@@ -418,7 +478,8 @@ export const DressCode = forwardRef<HTMLDivElement, DresscodeProps>(function Gre
               onClick={(e) => {
                 e.stopPropagation();
                 onFieldChange?.("dresscode", { ...content, links_active: true, links: [""] });
-                setOpenLink(0);
+                if (textBar) openLinkBar(0)(e);
+                else setOpenLink(0);
               }}
               style={{
                 backgroundColor: content?.dynamic_background?.active ? (content?.inverted ? primary : secondary) : primary,
@@ -433,11 +494,24 @@ export const DressCode = forwardRef<HTMLDivElement, DresscodeProps>(function Gre
           {content?.links_active && (
             <div className={dev ? "dresscode-links-dev" : "dresscode-links"}>
               {content.links &&
-                content.links.map((link, index) => editMode ? (
+                content.links.map((link, index) => styled && buttonStyle !== "B1" ? (
+                  <FadeIn key={index}>
+                    <StyledPinButton
+                      style={buttonStyle}
+                      href={dressLinkUrl(link)}
+                      label={buttonLabel}
+                      fg={fg}
+                      sans={sansFont}
+                      serif={serifFont}
+                      editMode={editMode}
+                      onEdit={(e) => openLinkBar(index)(e)}
+                    />
+                  </FadeIn>
+                ) : editMode ? (
                   <LinkEditor
                     key={index}
-                    link={link ?? ""}
-                    open={openLink === index}
+                    link={dressLinkUrl(link)}
+                    open={!textBar && openLink === index}
                     onOpenChange={(o) => setOpenLink(o ? index : null)}
                     onChange={(value) => onFieldChange?.(`dresscode.links.${index}`, value)}
                     onRemove={() => {
@@ -448,17 +522,22 @@ export const DressCode = forwardRef<HTMLDivElement, DresscodeProps>(function Gre
                   >
                     {/* El clic lo toma el span (disparador del popover): si el
                         botón de adentro cortaba el evento, el popover no abría. */}
-                    <span className="edit_pick" data-edit-hit data-selected={openLink === index || undefined} onClick={(e) => e.stopPropagation()}>
+                    <span
+                      className="edit_pick"
+                      data-edit-hit
+                      data-selected={openLink === index || undefined}
+                      onClick={(e) => { e.stopPropagation(); if (textBar) openLinkBar(index)(e); }}
+                    >
                     <Button
                       data-edit-hit
-                      icon={<FaPinterest />}
+                      icon={<FaPinterest size={16} />}
                       style={{
                         backgroundColor: content?.dynamic_background?.active ? (content?.inverted ? primary : secondary) : primary,
                         color: accent,
                         boxShadow: "0 0 6px 0 rgba(0, 0, 0, 0.25)",
                       }}
                     >
-                      {ui?.buttons.inspiration ?? "¿Necesitas inspiración?"}
+                      {buttonLabel}
                     </Button>
                     </span>
                   </LinkEditor>
@@ -466,9 +545,9 @@ export const DressCode = forwardRef<HTMLDivElement, DresscodeProps>(function Gre
                   <FadeIn key={index}>
                     <Button
                       key={index}
-                      href={link}
+                      href={dressLinkUrl(link)}
                       target="_blank"
-                      icon={<FaPinterest />}
+                      icon={<FaPinterest size={16} />}
                       style={{
                         backgroundColor: content?.dynamic_background?.active ? (content?.inverted ? primary : secondary) : primary,
                         color: accent,
@@ -477,7 +556,7 @@ export const DressCode = forwardRef<HTMLDivElement, DresscodeProps>(function Gre
                         boxShadow: "0 0 6px 0 rgba(0, 0, 0, 0.25)",
                       }}
                     >
-                      {ui?.buttons.inspiration ?? "HOLA"}
+                      {buttonLabel}
                     </Button>
                   </FadeIn>
                 ))}

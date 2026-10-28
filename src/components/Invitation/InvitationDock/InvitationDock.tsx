@@ -313,6 +313,39 @@ export default function InvitationDock({
     const companionNames = names.slice(1).filter(Boolean);
 
     setSaving(true);
+    const done = async (password: string) => {
+      setSaving(false);
+      await onGuestCreated(password);
+      setSuccess({ firstName: names[0].split(" ")[0], goingCount: 1 + companionNames.length, fromEdit: false });
+      go("success");
+      setTimeout(fireConfetti, 250);
+    };
+
+    // Invitación pública (candado abierto en el editor): se da de alta por el
+    // backend, que valida que de verdad sea pública (como los Flash:
+    // POST /api/invitations/:id/confirmacion-publica). Si la ruta todavía no
+    // existe (backend sin publicar) o no responde, sigue el guardado directo
+    // de antes, para que las invitaciones abiertas no dejen de confirmar.
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_IATTEND_API_URL}/invitations/${invitationID}/confirmacion-publica`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nombre: names[0], acompanantes: companionNames }),
+      });
+      if (res.status !== 404) {
+        const data = await res.json().catch(() => null);
+        if (!res.ok || !data?.ok || !data.invitado?.password) {
+          setSaving(false);
+          flash(data?.msg ?? t.toastError);
+          return;
+        }
+        localStorage.setItem(data.invitado.invitation_id, data.invitado.password);
+        return done(data.invitado.password);
+      }
+    } catch {
+      // Sin respuesta del backend: guardado directo (abajo).
+    }
+
     const { data: inserted, error } = await supabase
       .from("guests")
       .insert([{ ...newGuest(invitationID), name: names[0], state: "confirmado", has_companion: companionNames.length > 0 }])
@@ -332,12 +365,7 @@ export default function InvitationDock({
       );
       if (companionsError) console.error("❌ Error insertando acompañantes:", companionsError);
     }
-    setSaving(false);
-
-    await onGuestCreated(main.password);
-    setSuccess({ firstName: names[0].split(" ")[0], goingCount: 1 + companionNames.length, fromEdit: false });
-    go("success");
-    setTimeout(fireConfetti, 250);
+    await done(main.password);
   };
 
   const onSubmit = () => {

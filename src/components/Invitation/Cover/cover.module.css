@@ -208,11 +208,10 @@
 
 .aside_title {
     width: 100%;
-    margin-top: 24px;
-    font-size: 76px;
     line-height: 1;
     text-align: center;
-    word-break: break-word;
+    /* Tamaño: el de la portada (inline). Sin partir palabras a la mitad. */
+    overflow-wrap: break-word;
     text-shadow: 0 0 8px rgba(0, 0, 0, 0.5);
 }
 
@@ -235,9 +234,6 @@
         padding: 32px 24px;
     }
 
-    .aside_title {
-        font-size: 56px;
-    }
 
     .aside_dots {
         top: 44px;
@@ -354,4 +350,33 @@
 .editCell[data-current] {
     border-style: solid;
     border-color: rgba(205, 190, 247, 0.9);
+}
+
+/* "+ Cuenta regresiva" con la fecha oculta (solo en el editor): ocupa el
+   lugar de la fecha, transparente y del color del título. */
+.dateAdd {
+  position: relative;
+  z-index: 6;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.dateAdd button {
+  pointer-events: auto;
+  width: auto;
+  min-height: 0;
+  margin: 0;
+  padding: 12px;
+  border: none;
+  background: transparent;
+  font: inherit;
+}
+
+/* El texto toma el color del título (inline en el botón). */
+.dateAdd button span {
+  color: inherit;
+  opacity: 1;
 }
