@@ -10,6 +10,7 @@ const ALLOWED_ORIGINS = [
   "http://localhost:3050", // puerto usado por el launch.json de iattend-vite en este entorno de preview
   "https://www.iattend.mx",
   "https://www.iattend.site",
+  "https://beta.iattend.site", // preview de iattend-vite (rama del editor nuevo)
 ];
 
 export function middleware(request: NextRequest) {

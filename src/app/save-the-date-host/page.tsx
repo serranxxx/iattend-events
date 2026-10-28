@@ -9,6 +9,7 @@ const ALLOWED_ORIGINS = [
   "http://localhost:3000",
   "https://www.iattend.mx",
   "https://www.iattend.site",
+  "https://beta.iattend.site", // preview de iattend-vite (rama del editor nuevo)
 ];
 
 type SaveTheDateConfig = {
