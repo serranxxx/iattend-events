@@ -9,6 +9,7 @@ import type { Generals, LayerItem } from "@/types/new_invitation";
 import { Separador } from "../Separator/Separator";
 import { iconsItinerary } from "@/helpers/icons";
 import styles from "./section-layer.module.css";
+import Vector from "../../Vector/Vector";
 
 // Capa de elementos sueltos de una sección (stickers, íconos, textos y
 // líneas que el organizador pone desde Elementos / Stickers del editor de
@@ -55,6 +56,19 @@ const dashFor = (style: string | null | undefined, sw: number) =>
   style === "dashed" ? `${sw * 3} ${sw * 2}` : style === "dotted" ? `0 ${sw * 2}` : undefined;
 
 const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v));
+
+// Lleva un elemento al centro del contenedor con scroll más cercano (el de la
+// invitación). No scrollIntoView(): ese también recorre el documento padre y
+// movía el editor de iattend-vite.
+const centrarEnScroll = (el?: HTMLElement | null) => {
+  if (!el) return;
+  let c = el.parentElement;
+  while (c && !(c.scrollHeight > c.clientHeight && /(auto|scroll)/.test(getComputedStyle(c).overflowY))) c = c.parentElement;
+  if (!c) return;
+  const r = el.getBoundingClientRect();
+  const cr = c.getBoundingClientRect();
+  c.scrollTo({ top: Math.max(0, c.scrollTop + r.top - cr.top - c.clientHeight / 2 + r.height / 2), behavior: "smooth" });
+};
 const newId = () => `l${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
 
 type Props = {
@@ -96,7 +110,9 @@ export function SectionLayer({ section, items, editMode = false, accent, titleFo
   // Guías que se ven mientras se mueve (en % de la sección).
   const [guides, setGuides] = useState<{ x: number[]; y: number[] }>({ x: [], y: [] });
 
-  const shown = items.map((it) => (draft && draft.id === it.id ? draft : it));
+  // Los ocultos con el ojo del panel Capas (`hidden`) se quedan guardados pero
+  // no se pintan, ni en el editor ni para el invitado.
+  const shown = items.filter((it) => !it.hidden).map((it) => (draft && draft.id === it.id ? draft : it));
   const current = shown.find((it) => it.id === selected) ?? null;
 
   const commit = (next: LayerItem[]) => onChange?.(next);
@@ -170,7 +186,11 @@ export function SectionLayer({ section, items, editMode = false, accent, titleFo
     };
     const onPick = (e: Event) => {
       const d = (e as CustomEvent).detail;
-      if (d?.section === section) select(d.id);
+      if (d?.section !== section) return;
+      select(d.id);
+      // Elegido desde el panel Capas del editor (o recién movido a este
+      // módulo): la pieza baja hasta él y lo deja al centro.
+      if (d.scroll) requestAnimationFrame(() => centrarEnScroll(itemRefs.current[d.id]));
     };
     const onDeselect = () => { finishText(); setSelected(null); };
     window.addEventListener("iattend-layer-selected", onOther);
@@ -379,6 +399,7 @@ export function SectionLayer({ section, items, editMode = false, accent, titleFo
     if (it.kind === "icon") {
       // SVG del catálogo del editor: pintado del color del elemento (mask) o
       // tal cual si no es de un solo color.
+      if (it.src && it.vector) return <Vector s={it} color={color} />;
       if (it.src) {
         return it.tint === false
           ? <img src={it.src} alt="" draggable={false} className={styles.icon} />

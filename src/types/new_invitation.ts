@@ -83,6 +83,12 @@ export interface ItineraryItem {
   subtext: string | null;
   // active: boolean;
   icon: number | string | null; // number = catálogo de iconos, string = ruta de imagen (/assets/itinerary/*)
+  // Color propio del ícono (solo íconos de Elementos: "lucide:", "svg:",
+  // "shape:"). Ausente = el del estilo del itinerario.
+  icon_color?: string | null;
+  // Grosor del trazo del ícono, en px de un ícono de 24 px (escala con el
+  // tamaño de cada estilo). Ausente = 1.6, el de los íconos.
+  icon_stroke?: number | null;
   id: number | null;
   address?: Address;
   moments?: MomentItem[];
@@ -401,6 +407,11 @@ export interface LayerItem {
   // pinta del color del elemento (mask). Sin `src` se usa `icon`.
   src?: string;
   tint?: boolean | null;
+  // Vector: SVG en línea con color y grosor propios (helpers/vector.ts).
+  vector?: boolean | null;
+  strokeRel?: number | null;
+  strokePx?: number | null;
+  strokeFixed?: boolean | null;
   text?: string;
   // texto: "title" | "subtitle" | "body"; línea: "solid" | "dashed" | "dotted" | "double";
   // separador: su número ("1" … "14", los mismos de generals.separator)
@@ -418,6 +429,7 @@ export interface LayerItem {
   flipX?: boolean | null;
   flipY?: boolean | null;
   radius?: number | null; // esquinas de cuadrado / rectángulo, px a 390 de ancho (999 = píldora)
+  hidden?: boolean | null; // oculto con el ojo del panel Capas: guardado, sin pintarse
   x: number;
   y: number;
   w: number;

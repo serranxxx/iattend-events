@@ -10,13 +10,23 @@ import styles from "./clima.module.css";
   (desde una antes de que empiece) con el rango del evento resaltado (de la
   primera a la última hora: inicio y actividades del itinerario). Solo
   aparece cuando el pronóstico ya alcanza el día del evento; antes, oculto.
+  El organizador elige el modo (body.weatherMode): "auto" (eso) o "always"
+  (siempre: sin pronóstico del día todavía, el de hoy marcado "Hoy"). Oculto
+  = hideWeather.
   Misma API que WeatherWidget (el de las invitaciones, que no se toca), en
   español.
 */
 
 type Condicion = { text: string; icon: string; code?: number };
 type Hora = { time: string; temp_c: number; is_day?: number; condition: Condicion };
-type Dia = { date: string; day: { maxtemp_c: number; mintemp_c: number; avgtemp_c: number; condition: Condicion }; hour?: Hora[] };
+type Dia = {
+  date: string;
+  day: {
+    maxtemp_c: number; mintemp_c: number; avgtemp_c: number; condition: Condicion;
+    daily_will_it_rain?: number; daily_chance_of_rain?: number; totalprecip_mm?: number;
+  };
+  hour?: Hora[];
+};
 type Respuesta = {
   location: { name: string; localtime: string };
   current: { temp_c: number; is_day?: number; condition: Condicion };
@@ -67,6 +77,7 @@ const Icono = ({ tipo, size }: { tipo: Tipo; size: number }) => (
 
 type Props = {
   ciudad: string;
+  modo?: "auto" | "always" | null;
   // Fecha del evento (YYYY-MM-DD, en la zona del lugar).
   fechaEvento?: string | null;
   // Horas (0–23) del día del evento en que pasa algo: inicio y actividades.
@@ -75,7 +86,7 @@ type Props = {
 
 const hh = (h: Hora) => Number(h.time.slice(11, 13));
 
-export default function ClimaVidrio({ ciudad, fechaEvento, horasEvento = [] }: Props) {
+export default function ClimaVidrio({ ciudad, fechaEvento, horasEvento = [], modo }: Props) {
   const [clima, setClima] = useState<Respuesta | null>(null);
 
   useEffect(() => {
@@ -93,8 +104,12 @@ export default function ClimaVidrio({ ciudad, fechaEvento, horasEvento = [] }: P
   // Solo el clima del día del evento: si el pronóstico todavía no llega a
   // ese día (o el evento ya pasó), no se muestra nada. Antes caía al de hoy
   // y confundía: parecía el clima del evento.
-  const elegido = fechaEvento ? dias.find((d) => d.date === fechaEvento) : null;
+  const delEvento = fechaEvento ? dias.find((d) => d.date === fechaEvento) : null;
+  // "Siempre": sin pronóstico del día todavía (o ya pasó), el de hoy.
+  const elegido = delEvento ?? (modo === "always" ? dias.find((d) => d.date === hoy) ?? dias[0] ?? null : null);
   if (!elegido) return null;
+  const deHoySinEvento = !delEvento;
+  const lluvia = elegido.day.daily_chance_of_rain ?? 0;
 
   const esHoy = elegido.date === hoy;
   const temp = Math.round(esHoy ? clima.current.temp_c : elegido.day.avgtemp_c);
@@ -118,14 +133,18 @@ export default function ClimaVidrio({ ciudad, fechaEvento, horasEvento = [] }: P
       <span className={styles.resplandor} aria-hidden />
       <div className={styles.arriba}>
         <div className={styles.izquierda}>
-          <span className={styles.ciudad}>{clima.location.name}</span>
+          <span className={styles.ciudad}>
+            {clima.location.name}
+            {/* Siempre visible y sin pronóstico del día del evento: es el de hoy. */}
+            {deHoySinEvento && <span className={styles.hoy}>Hoy</span>}
+          </span>
           <span className={styles.temperatura}>{temp}°</span>
         </div>
         <div className={styles.derecha}>
           <Icono tipo={tipoDe(condicion?.code, !esHoy || clima.current.is_day !== 0)} size={40} />
           <span className={styles.condicion}>{condicion?.text}</span>
           <span className={styles.rango}>
-            Máx {elegido.day.maxtemp_c}° · Mín {elegido.day.mintemp_c}°
+            Máx {elegido.day.maxtemp_c}° · Mín {elegido.day.mintemp_c}°{lluvia > 0 ? ` · Lluvia ${lluvia}%` : ""}
           </span>
         </div>
       </div>

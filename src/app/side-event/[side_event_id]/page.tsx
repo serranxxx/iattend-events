@@ -16,6 +16,8 @@ type RouteParams = {
 
 type SearchParams = {
   password?: string;
+  // Link de un acompañante que se registra después (Registro de asistentes).
+  registro?: string;
 };
 
 type PageProps = {
@@ -103,6 +105,7 @@ export default async function InvitationDynamicPage({ params, searchParams }: Pa
 
   const sideEvent = data as SideEvent;
   const password = typeof resolvedSearchParams?.password === "string" ? resolvedSearchParams.password : undefined;
+  const registro = typeof resolvedSearchParams?.registro === "string" ? resolvedSearchParams.registro : undefined;
 
-  return <SideEvents info={sideEvent} password={password} />;
+  return <SideEvents info={sideEvent} password={password} registroToken={registro} />;
 }

@@ -7,7 +7,7 @@ import { InvitationUIBundle, ItineraryItem, NewInvitation } from "@/types/new_in
 import { EditableText } from "../../EditableText";
 import { ArrowLeft } from "lucide-react";
 import { useEditableList } from "../../useEditableList";
-import { getItineraryIcon, isGlyphIcon, isImageIcon } from "@/helpers/icons";
+import { conColorDeIcono, getItineraryIcon, isGlyphIcon, isImageIcon } from "@/helpers/icons";
 import { MomentGlyph } from "../MomentGlyph";
 import { buttonsColorText, lighter } from "@/helpers/functions";
 import OpenCard from "../OpenCard/OpenCard";
@@ -48,6 +48,8 @@ export default function Card({ ui, invitation, dev, editMode = false, onAddMomen
   const isTabletPortrait = useIsTabletPortrait();
 
   const steps = invitation.itinerary.object;
+  // Para pintar: el color propio de cada ícono va pegado a su valor.
+  const pintados = steps.map(conColorDeIcono);
   const open: ItineraryItem | null = openIndex !== null ? steps[openIndex] ?? null : null;
   // Momentos en la línea, en modo edición: se eligen (borde) y se arrastran
   // para cambiar el orden.
@@ -139,7 +141,7 @@ export default function Card({ ui, invitation, dev, editMode = false, onAddMomen
       {styleId !== "1a" ? (
         <StyledItinerary
           styleId={styleId}
-          items={steps}
+          items={pintados}
           ink={ink}
           surface={surface}
           onSurface={onSurface}
@@ -180,7 +182,7 @@ export default function Card({ ui, invitation, dev, editMode = false, onAddMomen
           }}
         />
 
-        {steps.map((item, index) => {
+        {pintados.map((item, index) => {
           const leftSide = index % 2 === 0;
 
           return (

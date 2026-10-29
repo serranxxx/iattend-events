@@ -99,5 +99,15 @@ export const isImageIcon = (icon: number | string | null | undefined): icon is s
 // Ícono elegido desde Elementos del editor: "lucide:Heart", "shape:circle" o
 // "svg:<url>" (SVG del catálogo, pintado del color del momento). Lo dibuja
 // MomentGlyph.
+// Color y grosor propios de un ícono de momento (`icon_color`, `icon_stroke`):
+// viajan pegados al valor del ícono ("<ícono>§<color>§<grosor>") hasta
+// MomentGlyph, así cada estilo del itinerario los respeta sin cambiar cómo
+// llama a renderIcon. Solo para pintar; lo guardado no cambia.
+export const SEPARADOR_COLOR = "\u00a7";
+export const conColorDeIcono = <T extends { icon: number | string | null; icon_color?: string | null; icon_stroke?: number | null }>(item: T): T =>
+  (item.icon_color || item.icon_stroke) && isGlyphIcon(item.icon)
+    ? { ...item, icon: [item.icon, item.icon_color ?? "", item.icon_stroke ?? ""].join(SEPARADOR_COLOR) }
+    : item;
+
 export const isGlyphIcon = (icon: number | string | null | undefined): icon is string =>
   typeof icon === "string" && (icon.startsWith("lucide:") || icon.startsWith("shape:") || icon.startsWith("svg:"));

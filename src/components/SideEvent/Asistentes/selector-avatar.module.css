@@ -1,0 +1,107 @@
+/* Selector de avatar al confirmar (SelectorAvatar.tsx): vidrio de los campos
+   del registro (#FFFFFF20, radio 12) sobre la tarjeta de confirmación. */
+
+.selector {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  padding: 12px;
+  border-radius: 16px;
+  background: #FFFFFF14;
+  border: 1px solid #FFFFFF2E;
+  box-sizing: border-box;
+  color: #FFF;
+  font-family: 'Poppins';
+}
+
+.cabecera {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.textos {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+}
+
+.titulo {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.hint {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+/* Emojis: una fila que se desliza. */
+.fila {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  margin: 0 -12px;
+  padding: 2px 12px;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.fila::-webkit-scrollbar {
+  display: none;
+}
+
+.opcion {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid #FFFFFF33;
+  border-radius: 99px;
+  background: #FFFFFF14;
+  color: #FFF;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.opcion[data-on] {
+  background: #FFFFFF40;
+  border-color: #FFFFFF;
+  transform: scale(1.06);
+}
+
+.iniciales {
+  font-family: 'Poppins';
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.colores {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.color {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 99px;
+  box-shadow: inset 0 0 0 1px #FFFFFF40;
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.color[data-on] {
+  border-color: #FFF;
+  transform: scale(1.12);
+}

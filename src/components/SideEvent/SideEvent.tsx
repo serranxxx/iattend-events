@@ -17,7 +17,17 @@ import confetti from "canvas-confetti";
 import { AnimatePresence, motion } from "motion/react";
 import SongPlayer from "@/components/Invitation/SongPlayer/SongPlayer";
 import Efectos from "./Efectos";
+import FlashElemento from "./FlashElemento";
+import { fontExtras } from "@/components/Invitation/fontExtras";
 import ClimaVidrio from "./ClimaVidrio";
+import Asistentes from "./Asistentes/Asistentes";
+import SelectorAvatar, { type AvatarElegido } from "./Asistentes/SelectorAvatar";
+import { avatarAlAzar, cargarAsistentes, contenidoDe, emojiDe, fondoDe, inicialesDe, LISTA_EJEMPLO, modoAvatar, perfilDe, type ListaAsistentes } from "./Asistentes/datosAsistentes";
+import { estiloNotas, portadaOculta, tarjetasDe } from "@/helpers/tarjetasSide";
+import ChatFlash from "./Chat/ChatFlash";
+import RegistroCard from "./Registro/RegistroCard";
+import FilaChat from "./Chat/FilaChat";
+import { useChatFlash } from "./Chat/useChatFlash";
 
 // Lienzo de los PNG de un Flash: la pieza del editor (iattend-vite, SideCanvas,
 // 390×700) escalada para cubrir la pantalla y centrada, como object-fit:
@@ -70,10 +80,12 @@ const lienzoCover = (ancho: number, alto: number) => {
 type invProps = {
   info: SideEvent | null;
   password?: string;
-  preview?: boolean
+  preview?: boolean;
+  // Link de un acompañante para registrarse después (?registro=<token>).
+  registroToken?: string;
 };
 
-export default function SideEvents({ info, password, preview }: invProps) {
+export default function SideEvents({ info, password, preview, registroToken }: invProps) {
   const [validated, setValidated] = useState<boolean>(false);
   const [guestCode, setGuestCode] = useState<string>("");
   const supabase = createClient();
@@ -108,6 +120,23 @@ export default function SideEvents({ info, password, preview }: invProps) {
   const [draftCompanions, setDraftCompanions] = useState<SideGuestSubabasePayload[]>([]);
   const [draftMainName, setDraftMainName] = useState<string>("");
   const [draftMainRejected, setDraftMainRejected] = useState<boolean>(false);
+  // Asistentes (solo Flash, opcional): la lista y el avatar que elige quien
+  // confirma. En la vista previa del organizador, sin confirmados, un ejemplo.
+  const mostrarAsistentes = Boolean(info && !info.invitation_id && info.body?.showAttendees);
+  const [listaAsistentes, setListaAsistentes] = useState<ListaAsistentes | null>(null);
+  const [avatar, setAvatar] = useState<AvatarElegido>({ emoji: null, perfil: null });
+  // Emoji o iniciales (lo elige el organizador). Con emoji, el invitado ya
+  // confirmado puede tocar su avatar para cambiarlo (no se le pide al confirmar).
+  const modo = modoAvatar(info?.body?.attendeesStyle);
+  const [editandoAvatar, setEditandoAvatar] = useState(false);
+  const [guardandoAvatar, setGuardandoAvatar] = useState(false);
+  // Chat de asistentes (opcional, con Asistentes visible): solo confirmados.
+  const chatActivo = mostrarAsistentes && Boolean(info?.body?.chat?.enabled);
+  const codigoChat = guestInfo?.state === "confirmado" ? guestInfo.password : null;
+  const chat = useChatFlash({ eventoId: info?.id, codigo: codigoChat, activo: chatActivo, preview });
+  const [chatAbierto, setChatAbierto] = useState(false);
+  const marcarVistoChat = chat.marcarVisto;
+  const cerrarChat = useCallback(() => { setChatAbierto(false); marcarVistoChat(); }, [marcarVistoChat]);
 
   interface CSSVars extends React.CSSProperties {
     ["--hover-color"]?: string;
@@ -292,12 +321,34 @@ export default function SideEvents({ info, password, preview }: invProps) {
 
       // Si quieres hacer algo después de actualizar
       setGuestInfo(data)
+      recargarAsistentes();
       // messageApi.success("Estado actualizado");
 
     } catch (error) {
       console.log(error);
     }
   };
+
+  // Vista previa: el editor manda los confirmados reales que ya tiene.
+  const asistentesDelEditor = preview && info?._asistentes?.total ? info._asistentes : null;
+  const recargarAsistentes = useCallback(async () => {
+    if (!mostrarAsistentes || !info?.id) return;
+    if (asistentesDelEditor) { setListaAsistentes(asistentesDelEditor); return; }
+    const lista = await cargarAsistentes(info.id);
+    // Vista previa: sin confirmados (o con el interruptor sin guardar) se ve el ejemplo.
+    if (preview) setListaAsistentes(lista && lista.total > 0 ? lista : LISTA_EJEMPLO);
+    else if (lista) setListaAsistentes(lista);
+  }, [mostrarAsistentes, info?.id, preview, asistentesDelEditor]);
+
+  useEffect(() => {
+    if (!mostrarAsistentes) { setListaAsistentes(null); return; }
+    if (preview) setListaAsistentes((prev) => prev ?? asistentesDelEditor ?? LISTA_EJEMPLO);
+    recargarAsistentes();
+    if (preview) return;
+    // Quien tiene la página abierta ve llegar a los demás.
+    const id = window.setInterval(() => { if (document.visibilityState === "visible") recargarAsistentes(); }, 20000);
+    return () => window.clearInterval(id);
+  }, [mostrarAsistentes, recargarAsistentes, preview]);
 
   const onClick = useCallback(() => {
     confetti({
@@ -355,6 +406,33 @@ export default function SideEvents({ info, password, preview }: invProps) {
     onClick(); // si esto cierra modal, avanza paso, etc.
   };
 
+  // El invitado confirmado cambia su emoji / color desde su tarjeta.
+  const abrirAvatar = () => {
+    if (!guestInfo) return;
+    const id = String(guestInfo.id ?? "");
+    setAvatar({ emoji: emojiDe({ id, emoji: guestInfo.emoji ?? null }), perfil: perfilDe({ id, perfil: guestInfo.profile ?? null }) });
+    setEditandoAvatar(true);
+  };
+  const guardarAvatar = async () => {
+    if (!guestInfo || guardandoAvatar) return;
+    setGuardandoAvatar(true);
+    const { data, error } = await supabase
+      .from("side_events_guests")
+      .update({ emoji: avatar.emoji, profile: avatar.perfil })
+      .eq("password", guestInfo.password)
+      .eq("side_events_id", info?.id)
+      .select()
+      .maybeSingle();
+    setGuardandoAvatar(false);
+    if (error || !data) {
+      messageApi.error("No se pudo guardar tu avatar");
+      return;
+    }
+    setGuestInfo(data);
+    setEditandoAvatar(false);
+    recargarAsistentes();
+  };
+
   const enviarRegistro = async () => {
     if (!registro || !info?.id || regEnviando) return;
     if (!regNombre.trim()) {
@@ -373,6 +451,8 @@ export default function SideEvents({ info, password, preview }: invProps) {
             ? regAcompanantes.map((n) => n.trim() || `Acompañante de ${regNombre.trim()}`)
             : [],
           estado: registro,
+          // Asistentes: emoji y color automáticos (luego los puede cambiar tocando su avatar).
+          ...(mostrarAsistentes && registro === "confirmado" ? (({ emoji, perfil }) => ({ emoji, perfil }))(avatarAlAzar()) : {}),
         }),
       });
       const data = await res.json();
@@ -385,6 +465,7 @@ export default function SideEvents({ info, password, preview }: invProps) {
       if (claveRegistro) window.localStorage.setItem(claveRegistro, data.invitado.password);
       if (registro === "confirmado") onClick();
       setRegistro(null);
+      recargarAsistentes();
     } catch (error) {
       console.log(error);
       messageApi.error("No se pudo enviar tu respuesta");
@@ -441,7 +522,10 @@ export default function SideEvents({ info, password, preview }: invProps) {
 
       const { data, error } = await supabase
         .from("side_events_guests")
-        .update({ state: draftMainRejected ? "rechazado" : "confirmado", name: draftMainName })
+        .update({
+          state: draftMainRejected ? "rechazado" : "confirmado",
+          name: draftMainName,
+        })
         .eq("password", guestInfo.password)
         .eq("side_events_id", info?.id)
         .select()
@@ -457,6 +541,7 @@ export default function SideEvents({ info, password, preview }: invProps) {
       setGuestInfo(data);
       setConfirmStep(false);
       onClick();
+      recargarAsistentes();
     } catch (error) {
       console.log(error);
     }
@@ -522,7 +607,9 @@ export default function SideEvents({ info, password, preview }: invProps) {
 
   useEffect(() => {
 
-    if (preview) {
+    if (preview || registroToken) {
+      // Vista previa, o un acompañante con su link de registro (el token ya
+      // prueba que lo invitaron): entra sin código.
       setValidated(true);
     } else {
       if (info?.type === "open") {
@@ -547,6 +634,18 @@ export default function SideEvents({ info, password, preview }: invProps) {
   return (
     <>
       {contextHolder}
+      {chatActivo && (
+        <ChatFlash
+          open={chatAbierto}
+          onClose={cerrarChat}
+          modo={modo}
+          preview={preview}
+          confirmados={listaAsistentes?.total ?? 0}
+          asistentes={listaAsistentes?.asistentes ?? []}
+          // Vista previa: el fijado sale de lo que se está editando (sin guardar).
+          chat={preview ? { ...chat, fijado: info?.body?.chat?.pinned?.text ? { text: info.body.chat.pinned.text } : null } : chat}
+        />
+      )}
       {/* Canción de un Flash: el mismo reproductor compacto del Save the Date
           (disco arriba a la izquierda; gira mientras suena). */}
       {info?.body.song && (
@@ -609,7 +708,22 @@ export default function SideEvents({ info, password, preview }: invProps) {
                   pesaba ~1 MB; así ~100 KB). Van en la primera pantalla, con
                   prioridad. width/height solo dan la proporción inicial: el
                   alto real sale de la imagen (height: auto). */}
-              {(info?.body.stickers ?? []).filter((st) => !st.hidden).map((st) => (
+              {(info?.body.stickers ?? []).filter((st) => !st.hidden).map((st) => {
+                const giro = `translate(-50%, -50%) rotate(${st.rot ?? 0}deg)${st.flipX || st.flipY ? ` scale(${st.flipX ? -1 : 1}, ${st.flipY ? -1 : 1})` : ""}`;
+                // Texto, ícono, forma, línea o decoración del panel Elementos.
+                if (st.kind && st.kind !== "sticker") {
+                  return (
+                    <div
+                      key={st.id}
+                      className={`${styles.sticker} ${styles.elemento}`}
+                      style={{ left: `${st.x}%`, top: `${st.y}%`, width: `${st.w}%`, transform: giro, opacity: st.opacity ?? 1 }}
+                    >
+                      <FlashElemento s={st} titleFont={info?.body.title?.font ?? "Poppins"} />
+                    </div>
+                  );
+                }
+                if (!st.url) return null;
+                return (
                 <Image
                   key={st.id}
                   src={st.url}
@@ -626,11 +740,12 @@ export default function SideEvents({ info, password, preview }: invProps) {
                     top: `${st.y}%`,
                     width: `${st.w}%`,
                     height: "auto",
-                    transform: `translate(-50%, -50%) rotate(${st.rot ?? 0}deg)`,
+                    transform: giro,
                     opacity: st.opacity ?? 1,
                   }}
                 />
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
@@ -688,7 +803,8 @@ export default function SideEvents({ info, password, preview }: invProps) {
                 sube encima de la portada fija. El editor (iattend-vite,
                 SideCanvas) acomoda la pieza igual. */}
             <div className={styles.primera_pantalla}>
-              <span
+              {/* Título, fecha y lugar se pueden ocultar desde Capas (coverHidden). */}
+              {!portadaOculta(info?.body, "title") && <span
                 style={{
                   fontFamily: info?.body.title.font,
                   fontWeight: info?.body.title.weight,
@@ -696,12 +812,21 @@ export default function SideEvents({ info, password, preview }: invProps) {
                   lineHeight: info?.body.title.line_height,
                   opacity: info?.body.title.opacity,
                   textAlign: "center",
-                  color: "#FFF",
+                  color: info?.body.title.color || "#FFF",
                   textShadow: sombraDeTexto(info?.body.title.shadow) ?? "0px 0px 18px rgba(0, 0, 0, 0.35)",
+                  // Cursiva, subrayado, tachado, mayúsculas y espaciado: la misma
+                  // barra de texto que la invitación (editor de iattend-vite).
+                  ...fontExtras({
+                    italic: info?.body.title.italic ?? undefined,
+                    underline: info?.body.title.underline ?? undefined,
+                    strike: info?.body.title.strike ?? undefined,
+                    transform: info?.body.title.transform ?? undefined,
+                    letterSpacing: info?.body.title.letterSpacing ?? undefined,
+                  } as Parameters<typeof fontExtras>[0]),
                 }}
               >
                 {info?.name}
-              </span>
+              </span>}
 
               <div
                 className={styles.col}
@@ -713,10 +838,10 @@ export default function SideEvents({ info, password, preview }: invProps) {
                 } as React.CSSProperties}
               >
                 {/* Un Flash puede tener varias fechas: una por renglón. */}
-                {lineasDeFechas(info?.body, { state: info?.body.address?.state, timezone: info?.body.timezone }).map((linea) => (
+                {!portadaOculta(info?.body, "date") && lineasDeFechas(info?.body, { state: info?.body.address?.state, timezone: info?.body.timezone }).map((linea) => (
                   <span key={linea}>{linea}</span>
                 ))}
-                {info?.body.place_name ? (
+                {portadaOculta(info?.body, "place") ? null : info?.body.place_name ? (
                   <span>{info.body.place_name}</span>
                 ) : (
                   <>
@@ -917,8 +1042,9 @@ export default function SideEvents({ info, password, preview }: invProps) {
                     Cancelar
                   </Button>
                 </motion.div>
-              ) : guestInfo?.state === 'confirmado' ? null : (
-                // Ya confirmó: sin botón de "Asistencia confirmada"; su tarjeta
+              ) : guestInfo?.state === 'confirmado' || registroToken ? null : (
+                // Ya confirmó (o llega con su link de registro, que ya prueba que
+                // confirmó): sin botones de asistencia; su tarjeta
                 // de invitado (abajo) ya lo dice.
                 <motion.div
                   key="buttons-step"
@@ -957,13 +1083,43 @@ export default function SideEvents({ info, password, preview }: invProps) {
                   className={`${styles.tarjeta} ${styles.invitado}`}
                 >
                   {/* Avatar flotante con las iniciales del invitado. */}
-                  <span className={styles.invitado_avatar} aria-hidden>
-                    <span>{iniciales(guestInfo.name)}</span>
-                  </span>
+                  {/* Con "Asistentes" y ya confirmado: su avatar de la lista. En
+                      modo emoji se toca para cambiarlo (lápiz chico). */}
+                  {mostrarAsistentes && guestInfo.state === "confirmado" ? (() => {
+                    const a = { id: String(guestInfo.id ?? ""), emoji: guestInfo.emoji ?? null, perfil: guestInfo.profile ?? null, iniciales: inicialesDe(guestInfo.name) };
+                    const contenido = (
+                      <span style={{ background: fondoDe(a, modo), fontSize: modo === "initials" ? "20px" : "28px" }}>
+                        {contenidoDe(a, modo)}
+                      </span>
+                    );
+                    return modo === "emoji" ? (
+                      <button type="button" className={`${styles.invitado_avatar} ${styles.invitado_avatar_boton}`} onClick={abrirAvatar} aria-label="Cambiar mi emoji">
+                        {contenido}
+                        <span className={styles.invitado_avatar_lapiz} aria-hidden>
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
+                        </span>
+                      </button>
+                    ) : <span className={styles.invitado_avatar} aria-hidden>{contenido}</span>;
+                  })() : (
+                    <span className={styles.invitado_avatar} aria-hidden>
+                      <span>{iniciales(guestInfo.name)}</span>
+                    </span>
+                  )}
                   <span className={styles.invitado_etiqueta}>
                     {esPublico ? "Registrado como" : "Invitación dirigida a"}
                   </span>
                   <span className={styles.invitado_nombre}>{guestInfo.name}</span>
+                  {editandoAvatar && (
+                    <div className={styles.invitado_selector}>
+                      <SelectorAvatar nombre={guestInfo.name ?? ""} valor={avatar} onChange={setAvatar} idBase={String(guestInfo.id ?? "")} />
+                      <div className={styles.invitado_selector_botones}>
+                        <Button type="text" onClick={() => setEditandoAvatar(false)} style={{ color: "#FFFFFF", opacity: 0.8 }}>Cancelar</Button>
+                        <Button className={styles.locked_btn} style={{ ...btnStyle, width: "auto", height: "44px", fontSize: "14px", letterSpacing: "1px", paddingInline: "24px" }} loading={guardandoAvatar} onClick={guardarAvatar}>
+                          Listo
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                   {guestInfo.has_companion && companions.some((c) => c.state !== "rechazado") && (
                     <div className={styles.invitado_acompanantes}>
                       {companions.filter((c) => c.state !== "rechazado").map((c, i) => (
@@ -983,91 +1139,145 @@ export default function SideEvents({ info, password, preview }: invProps) {
               )}
             </AnimatePresence>
 
-            {/* Itinerario de un Flash (widget), arriba de Cómo llegar. */}
-            {info?.body && itinerarioPorDia(info.body).length > 0 && <ItinerarioWidget body={info.body} />}
-
-            {info?.body.address.street &&
-              info?.body.address.number &&
-              info?.body.address.neighborhood &&
-              info?.body.address.zipcode &&
-              info?.body.address.city &&
-              info?.body.address.state &&
-              info?.body.address.country && (
-                <div className={`${styles.tarjeta} ${styles.llegar}`}>
-                  <div className={styles.llegar_cabecera}>
-                    <div className={styles.llegar_textos}>
-                      <span className={styles.llegar_titulo}>Cómo llegar</span>
-                      <span className={styles.llegar_direccion}>
-                        {[`${info.body.address.street} ${info.body.address.number}`.trim(), info.body.address.city].filter(Boolean).join(", ")}
-                      </span>
-                    </div>
-                    <a
-                      className={`${styles.relieve} ${styles.llegar_abrir}`}
-                      href={info.body.address.url || `https://maps.google.com/?q=${encodeURIComponent([info.body.place_name, info.body.address.street, info.body.address.number, info.body.address.city, info.body.address.state].filter(Boolean).join(" "))}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      Abrir
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" aria-hidden>
-                        <path d="M7 17L17 7M9 7h8v8" />
-                      </svg>
-                    </a>
-                  </div>
-                  <div className={styles.llegar_mapa}>
-                    <iframe
-                      title="Mapa"
-                      loading="lazy"
-                      allowFullScreen
-                      referrerPolicy="no-referrer-when-downgrade"
-                      src={simpleaddress(
-                        info?.body.address.street,
-                        info?.body.address.number,
-                        info?.body.address.neighborhood,
-                        info?.body.address.zipcode,
-                        info?.body.address.city,
-                        info?.body.address.state,
-                        info?.body.address.country
-                      )}
-                    />
-                    <div className={styles.llegar_etiqueta}>
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                        <path d="M12 21s-7-6.5-7-12a7 7 0 0 1 14 0c0 5.5-7 12-7 12z" />
-                        <circle cx="12" cy="9" r="2.5" />
-                      </svg>
-                      <span>{info.body.place_name || info.body.address.neighborhood}</span>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-
-
-            {/* Notas: debajo de Cómo llegar. */}
-            {info?.body.extras && (
-              <div className={styles.mapa_container} style={{ padding: "12px 18px" }}>
-                <span
+            {/* Tarjetas debajo de la portada, en el orden y sin las ocultas del
+                panel Capas del editor (helpers/tarjetasSide.ts). Cada una
+                conserva sus condiciones (dirección completa, ciudad, etc.). */}
+            {tarjetasDe(info?.body, !info?.invitation_id).filter((c) => !c.hidden).map(({ key }) => (
+              <React.Fragment key={key}>
+                {key === "registration" && info?.body?.form && (preview || codigoChat || registroToken) && (
+                  <RegistroCard
+                    form={info.body.form}
+                    eventoId={info.id}
+                    codigo={codigoChat}
+                    token={registroToken ?? null}
+                    preview={preview}
+                  />
+                )}
+                {key === "attendees" && (
+                  <>
+                  {/* Asistentes de un Flash (opcional): debajo de la tarjeta del invitado. */}
+                  {mostrarAsistentes && listaAsistentes && (
+                    <Asistentes
+                lista={listaAsistentes}
+                colorTema={info?.body.color}
+                modo={modo}
+                pie={chatActivo ? (
+                  <FilaChat
+                    bloqueada={!preview && !codigoChat}
+                    noLeidos={chat.noLeidos}
+                    ultimo={chat.ultimo ? {
+                      nombre: chat.ultimo.autor === chat.yo ? "Tú" : chat.autores[chat.ultimo.autor]?.nombre ?? "",
+                      texto: chat.ultimo.text,
+                    } : null}
+                    onOpen={() => {
+                      // Sin confirmar: a los botones de confirmar, arriba.
+                      if (!preview && !codigoChat) { paginaRef.current?.scrollTo({ top: 0, behavior: "smooth" }); return; }
+                      setChatAbierto(true);
+                      chat.marcarVisto();
+                    }}
+                  />
+                ) : null}
+              />
+                  )}
+                  </>
+                )}
+                {key === "itinerary" && (
+                  <>
+                  {/* Itinerario de un Flash (widget), arriba de Cómo llegar. */}
+                  {info?.body && itinerarioPorDia(info.body).length > 0 && <ItinerarioWidget body={info.body} />}
+                  </>
+                )}
+                {key === "map" && (
+                  <>
+                  {info?.body.address.street &&
+                    info?.body.address.number &&
+                    info?.body.address.neighborhood &&
+                    info?.body.address.zipcode &&
+                    info?.body.address.city &&
+                    info?.body.address.state &&
+                    info?.body.address.country && (
+                      <div className={`${styles.tarjeta} ${styles.llegar}`}>
+                        <div className={styles.llegar_cabecera}>
+                          <div className={styles.llegar_textos}>
+                            <span className={styles.llegar_titulo}>Cómo llegar</span>
+                            <span className={styles.llegar_direccion}>
+                              {[`${info.body.address.street} ${info.body.address.number}`.trim(), info.body.address.city].filter(Boolean).join(", ")}
+                            </span>
+                          </div>
+                          <a
+                            className={`${styles.relieve} ${styles.llegar_abrir}`}
+                            href={info.body.address.url || `https://maps.google.com/?q=${encodeURIComponent([info.body.place_name, info.body.address.street, info.body.address.number, info.body.address.city, info.body.address.state].filter(Boolean).join(" "))}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            Abrir
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" aria-hidden>
+                              <path d="M7 17L17 7M9 7h8v8" />
+                            </svg>
+                          </a>
+                        </div>
+                        <div className={styles.llegar_mapa}>
+                          <iframe
+                            title="Mapa"
+                            loading="lazy"
+                            allowFullScreen
+                            referrerPolicy="no-referrer-when-downgrade"
+                            src={simpleaddress(
+                              info?.body.address.street,
+                              info?.body.address.number,
+                              info?.body.address.neighborhood,
+                              info?.body.address.zipcode,
+                              info?.body.address.city,
+                              info?.body.address.state,
+                              info?.body.address.country
+                            )}
+                          />
+                          <div className={styles.llegar_etiqueta}>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                              <path d="M12 21s-7-6.5-7-12a7 7 0 0 1 14 0c0 5.5-7 12-7 12z" />
+                              <circle cx="12" cy="9" r="2.5" />
+                            </svg>
+                            <span>{info.body.place_name || info.body.address.neighborhood}</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+                {key === "notes" && (
+                  <>
+                  {/* Notas: debajo de Cómo llegar. */}
+                  {info?.body.extras && (
+                    <div className={styles.mapa_container} style={{ padding: "12px 18px" }}>
+                      <span
                   style={{
-                    color: "#FFFFFF",
                     whiteSpace: "pre-line",
-                    textAlign: "center",
-                    fontFamily: "Poppins",
-                    fontSize: "14px",
-                    mixBlendMode: "soft-light",
+                    width: "100%",
+                    // Tipografía, tamaño, color… de la barra de texto del editor.
+                    ...estiloNotas(info.body),
                   }}
                 >
                   {renderTextWithStrong(info.body.extras ?? "")}
-                </span>
-              </div>
-            )}
-
-            {
-              info?.body.address.city && !info?.body.hideWeather &&
-              <ClimaVidrio
-                ciudad={info.body.address.city}
-                horasEvento={horasDelEvento(info.body, getEventDateOnly(info?.body.hour, { state: info?.body?.address?.state, timezone: info?.body?.timezone }))}
-                fechaEvento={getEventDateOnly(info?.body.hour, { state: info?.body?.address?.state, timezone: info?.body?.timezone })}
-              />
-            }
+                      </span>
+                    </div>
+                  )}
+                  </>
+                )}
+                {key === "weather" && (
+                  <>
+                  {
+                    info?.body.address.city && !info?.body.hideWeather &&
+                    <ClimaVidrio
+                      modo={info.body.weatherMode}
+                      ciudad={info.body.address.city}
+                      horasEvento={horasDelEvento(info.body, getEventDateOnly(info?.body.hour, { state: info?.body?.address?.state, timezone: info?.body?.timezone }))}
+                      fechaEvento={getEventDateOnly(info?.body.hour, { state: info?.body?.address?.state, timezone: info?.body?.timezone })}
+                    />
+                  }
+                  </>
+                )}
+              </React.Fragment>
+            ))}
 
             <FooterCompact />
           </div>

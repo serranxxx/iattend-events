@@ -1,0 +1,377 @@
+/* Tarjeta "Asistentes" de un Flash (Asistentes.tsx): el mismo vidrio, radio,
+   título y chip que las demás tarjetas de la página (Itinerario,
+   itinerario-widget.module.css; .tarjeta en side-event.module.css). Los
+   avatares se mueven como en el handoff "Pop Event — Asistentes 2c". */
+
+.panel {
+  position: relative;
+  /* Al cerrar, la página sube hasta aquí con un poco de aire. */
+  scroll-margin-top: 16px;
+  width: 100%;
+  max-width: 450px;
+  box-sizing: border-box;
+  padding: 22px;
+  border-radius: 32px;
+  background: var(--vidrio-tinte, rgba(28, 52, 78, 0.32));
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.38);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.65),
+    inset 0 -1px 1px rgba(255, 255, 255, 0.12),
+    inset 0 0 30px rgba(255, 255, 255, 0.08),
+    0 14px 34px rgba(20, 40, 110, 0.28);
+  color: #FFF;
+  font-family: Poppins, sans-serif;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  /* Lo que se mueve (avatares en camino) nunca se sale de la tarjeta. */
+  overflow: hidden;
+}
+
+/* Reflejo diagonal. */
+.panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0) 40%);
+  pointer-events: none;
+}
+
+.panel > * {
+  position: relative;
+}
+
+.cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  /* Una sola línea: el chip es compacto ("66 · 19 grupos"). */
+  flex-wrap: nowrap;
+  gap: 8px 12px;
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.titulo {
+  min-width: 0;
+  font-size: 24px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Chip "● 14 asistentes" (vidrio secundario, como "14 nov · 2 actividades"). */
+.resumen {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  transform-origin: right center;
+  transition: transform 400ms cubic-bezier(.3, 1.6, .5, 1);
+}
+
+.live_dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 99px;
+  background: #A0D97B;
+  animation: livePulse 1.6s linear infinite;
+}
+
+.vacio {
+  font-size: 14px;
+  opacity: 0.85;
+}
+
+.area {
+  width: 100%;
+  transition: height 650ms cubic-bezier(.2, .9, .25, 1);
+}
+
+/* Cerrando: se encoge recortando (lo de abajo se desvanece adentro).
+   Un poco más corto que al abrir, con salida suave. */
+.area_cerrada {
+  overflow: hidden;
+  transition: height 520ms cubic-bezier(.3, .0, .2, 1);
+}
+
+.item {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 44px;
+  /* No se tocan (los pases se tocan con su botón): invisibles no estorban. */
+  pointer-events: none;
+  transform-origin: 22px 22px;
+  transition-property: transform, opacity;
+  transition-duration: 650ms, 400ms;
+  transition-timing-function: cubic-bezier(.2, .9, .25, 1), ease;
+}
+
+.avatar {
+  flex: none;
+  line-height: 1;
+  width: 44px;
+  height: 44px;
+  box-sizing: border-box;
+  border-radius: 99px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  color: #FFF;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+  border: 1px solid var(--blur-color--darker);
+  transition: box-shadow 600ms ease;
+}
+
+.avatar_letras {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  font-family: 'Poppins';
+}
+
+/* Cápsulas de la tarjeta abierta (opción 3a): un pase en vidrio; alguien
+   solo, sin fondo. Detrás de los avatares; su etiqueta va centrada debajo. */
+.capsula {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 0;
+  height: 52px;
+  box-sizing: border-box;
+  border-radius: 99px;
+  border: 1px solid transparent;
+  pointer-events: none;
+  transition:
+    transform 650ms cubic-bezier(.2, .9, .25, 1),
+    width 650ms cubic-bezier(.2, .9, .25, 1),
+    opacity 350ms ease;
+}
+
+.capsula_grupo {
+  background: #FFFFFF14;
+  border-color: #FFFFFF2E;
+}
+
+.capsula_etiqueta {
+  position: absolute;
+  left: -20px;
+  top: 58px;
+  text-align: center;
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+
+.more {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 44px;
+  height: 44px;
+  box-sizing: border-box;
+  border-radius: 99px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  transition: transform 500ms cubic-bezier(.2, .9, .25, 1), opacity 300ms ease;
+}
+
+/* Pie: nombres a la izquierda, "Ver todos" a la derecha. */
+.pie {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.names {
+  min-width: 0;
+  flex: 1;
+  font-size: 12px;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: rgba(255, 255, 255, 0.75);
+  transition: opacity 300ms ease;
+}
+
+.ejemplo {
+  margin-right: 6px;
+  padding: 1px 6px;
+  border-radius: 99px;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+}
+
+.toggle {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.chevron {
+  transition: transform 500ms cubic-bezier(.2, .9, .25, 1);
+}
+
+.collapse {
+  display: grid;
+  transition: grid-template-rows 450ms cubic-bezier(.2, .9, .25, 1);
+  margin-top: -16px;
+}
+
+.collapse > div {
+  overflow: hidden;
+  min-height: 0;
+}
+
+.toast {
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: max-content;
+  max-width: 100%;
+  padding: 6px 12px 6px 6px;
+  border-radius: 99px;
+  font-size: 12px;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  transition: opacity 350ms ease, transform 450ms cubic-bezier(.2, .9, .25, 1);
+}
+
+.toast b {
+  font-weight: 600;
+}
+
+@keyframes livePulse {
+  0% { box-shadow: 0 0 0 2px rgba(160, 217, 123, 0.45); }
+  100% { box-shadow: 0 0 0 7px rgba(160, 217, 123, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .item, .area, .capsula, .more, .collapse, .toast, .resumen, .chevron, .names {
+    transition-duration: 120ms !important;
+    transition-delay: 0ms !important;
+  }
+  .live_dot { animation: none; }
+}
+
+/* Toque sobre un pase (tarjeta abierta): cubre la cápsula y su etiqueta. */
+.capsula_toque {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 80;
+  height: 72px;
+  padding: 0;
+  border: none;
+  border-radius: 26px;
+  background: transparent;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.capsula_toque[aria-expanded="true"] {
+  box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.55);
+}
+
+/* Lista del pase tocado (vidrio, encima de todo). */
+.detalle {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 90;
+  box-sizing: border-box;
+  padding: 8px 40px 8px 12px;
+  border-radius: 20px;
+  /* Casi opaco: encima de los avatares, que no se mezclen con la lista. */
+  background: rgba(24, 26, 40, 0.88);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.38);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  animation: detalleEntra 260ms cubic-bezier(.2, .9, .25, 1);
+}
+
+.detalle_cerrar {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: none;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.15);
+  color: #FFF;
+  cursor: pointer;
+}
+
+.detalle_fila {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 40px;
+}
+
+.detalle_nombre {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* `scale` (no transform): el transform lleva la posición del detalle. */
+@keyframes detalleEntra {
+  from { opacity: 0; scale: 0.96; }
+}

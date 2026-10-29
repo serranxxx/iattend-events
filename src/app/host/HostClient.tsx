@@ -199,6 +199,10 @@ export default function HostClient({ textures, giftBrands }: Props) {
         window.parent?.postMessage({ type: "REMOTE_SELECT_SECTION", payload: { section, field: null } }, ev.origin);
         requestAnimationFrame(() => window.dispatchEvent(new CustomEvent("iattend-layer-select", { detail: { section, id: item.id } })));
       }
+      // Capas del editor: elegir un elemento suelto desde el panel.
+      if (type === "HOST_LAYER_SELECT" && payload?.section && payload?.id) {
+        window.dispatchEvent(new CustomEvent("iattend-layer-select", { detail: { section: payload.section, id: payload.id, scroll: true } }));
+      }
       if (type === "HOST_SCROLL_TO" && payload?.section) {
         setScrollToSection(payload.section as string);
         setScrollKey((k) => k + 1);
@@ -318,6 +322,51 @@ export default function HostClient({ textures, giftBrands }: Props) {
     };
     document.addEventListener("paste", onPaste);
     return () => document.removeEventListener("paste", onPaste);
+  }, [editMode, hostOrigin]);
+
+  // ⌘C / ⌘X / ⌘V de los elementos sueltos con el foco en la pieza: el editor
+  // lleva el portapapeles (iattend-vite useElementClipboard) y pega en el
+  // módulo elegido. Escribiendo un texto, se respeta el del navegador.
+  useEffect(() => {
+    if (!editMode || !hostOrigin) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (!(e.metaKey || e.ctrlKey) || e.altKey) return;
+      const t = e.target as HTMLElement | null;
+      if (t?.isContentEditable || t?.tagName === "INPUT" || t?.tagName === "TEXTAREA") return;
+      const action = ({ c: "copy", x: "cut", v: "paste" } as Record<string, string>)[e.key.toLowerCase()];
+      if (!action) return;
+      window.parent?.postMessage({ type: "REMOTE_ELEMENT_KEY", payload: { action } }, hostOrigin);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [editMode, hostOrigin]);
+
+  // Texto con el foco (escribiendo): el editor recibe dónde quedó dentro de
+  // la pieza para subirla si el teclado de pantalla (iPad) lo tapa. null al
+  // soltar el foco.
+  useEffect(() => {
+    if (!editMode || !hostOrigin) return;
+    const editable = (t: EventTarget | null) => {
+      const el = t as HTMLElement | null;
+      return el && (el.isContentEditable || el.tagName === "INPUT" || el.tagName === "TEXTAREA") ? el : null;
+    };
+    const post = (el: HTMLElement | null) => {
+      const r = el?.getBoundingClientRect();
+      const rect = r ? { x: r.left, y: r.top, w: r.width, h: r.height } : null;
+      window.parent?.postMessage({ type: "REMOTE_TEXT_FOCUS", payload: { rect } }, hostOrigin);
+    };
+    const onIn = (e: FocusEvent) => { const el = editable(e.target); if (el) post(el); };
+    const onOut = (e: FocusEvent) => { if (editable(e.target) && !editable(e.relatedTarget)) post(null); };
+    // Al escribir el texto puede crecer (otro renglón): se vuelve a avisar.
+    const onInput = (e: Event) => { const el = editable(e.target); if (el) post(el); };
+    document.addEventListener("focusin", onIn);
+    document.addEventListener("focusout", onOut);
+    document.addEventListener("input", onInput);
+    return () => {
+      document.removeEventListener("focusin", onIn);
+      document.removeEventListener("focusout", onOut);
+      document.removeEventListener("input", onInput);
+    };
   }, [editMode, hostOrigin]);
 
   const handleClearField = useCallback(() => {

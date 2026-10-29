@@ -3,7 +3,8 @@
 import React, { useState } from "react";
 import { ArrowRight, ArrowUpRight } from "lucide-react";
 import { Address, ItineraryItem } from "@/types/new_invitation";
-import { isImageIcon } from "@/helpers/icons";
+import { isGlyphIcon, isImageIcon, SEPARADOR_COLOR } from "@/helpers/icons";
+import { esUrlDeVector } from "@/helpers/vector";
 
 // Catálogo de estilos del itinerario (handoff "Itinerario Catálogo"). El
 // estilo vive en itinerary.style; "1a" (o vacío) es el zigzag de siempre y
@@ -16,7 +17,8 @@ import { isImageIcon } from "@/helpers/icons";
 // color del botón "Detalles" del zigzag (`surface` / `onSurface`); los
 // botones dentro de una tarjeta, primary con texto accent. `ink` es el color de los textos del bloque.
 //
-// Visual de cada momento (handoff §3): "art" = ilustración → foto → ícono;
+// Visual de cada momento (handoff §3): "art" = ilustración → foto → ícono
+// (un ícono / vector elegido en Elementos va primero: es la ilustración);
 // "photo" = foto → ilustración → ícono; "map" = mapa de Maps → foto →
 // ilustración → ícono; "icon" = solo el ícono.
 
@@ -89,14 +91,19 @@ export function StyledItinerary(p: StyledItineraryProps) {
   const visual = (item: ItineraryItem, mode: "art" | "photo" | "map", box: React.CSSProperties, iconColor = onSurface) => {
     const art = isImageIcon(item.icon) ? item.icon : null;
     const photo = item.image || null;
-    const size = Math.round(Math.min(Number(box.width) || 96, Number(box.height) || 96) * 0.4);
+    // Ícono elegido en Elementos (vector, ícono, forma): en los acomodos de
+    // ilustración ("art") cuenta como la ilustración del momento y gana sobre
+    // la foto. Un vector llena más el círculo, como una ilustración.
+    const elegido = isGlyphIcon(item.icon);
+    const esVector = elegido && String(item.icon).startsWith("svg:") && esUrlDeVector(String(item.icon).slice(4).split(SEPARADOR_COLOR)[0]);
+    const size = Math.round(Math.min(Number(box.width) || 96, Number(box.height) || 96) * (mode === "art" && esVector ? 0.62 : 0.4));
     const glyph = (
       <div style={{ ...box, display: "grid", placeItems: "center", background: surface, overflow: "hidden" }}>
         {renderIcon(item.icon, size || 28, iconColor)}
       </div>
     );
     const order = mode === "art" ? [art, photo] : [photo, art];
-    const src = order.find(Boolean) as string | undefined;
+    const src = mode === "art" && elegido ? undefined : (order.find(Boolean) as string | undefined);
     const imgNode = src
       // El marco (círculo de 1h, recuadro de 1b…) va del color de las
       // tarjetas; la ilustración entra con aire para no cortarse.

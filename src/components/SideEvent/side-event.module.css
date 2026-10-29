@@ -460,6 +460,10 @@
   left: 0;
   width: 100%;
   height: 100%;
+  /* Sin el translateX(-50%) de .stickers_capa: aquí va con left 0. Antes
+     se quedaba puesto hasta el primer scroll (el zoom lo reemplaza con
+     scale()) y los PNG salían corridos media pantalla a la izquierda. */
+  transform: none;
   /* Mismo zoom que la foto al hacer scroll (centro de la
      pantalla como origen). */
   transform-origin: 50% 50%;
@@ -544,6 +548,15 @@
    SideEvent.tsx (lienzoCover). Los PNG van en % de ella. */
 .stickers_lienzo {
   position: absolute;
+  /* Los textos del panel Elementos miden en cqw (FlashElemento). */
+  container-type: inline-size;
+}
+
+/* Texto, ícono, forma, línea o decoración (FlashElemento). */
+.elemento {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .sticker {
@@ -881,3 +894,44 @@
 /* Tapa del encabezado (ver SideEvent.tsx): franja fija arriba de la pantalla
    visible, con el color del encabezado. Lo que sube con el scroll se corta
    donde empieza la barra de estado. */
+
+/* Asistentes (modo emoji): el invitado toca su avatar para cambiarlo. */
+.invitado_avatar_boton {
+  border: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.2s ease;
+}
+
+.invitado_avatar_boton:active {
+  transform: translateX(-50%) scale(0.95);
+}
+
+.invitado_avatar_lapiz {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  width: 22px !important;
+  height: 22px !important;
+  display: grid !important;
+  place-items: center;
+  border-radius: 50%;
+  background: #fff !important;
+  color: #29262D;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
+.invitado_selector {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  margin-top: 6px;
+}
+
+.invitado_selector_botones {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+}
