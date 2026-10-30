@@ -1,21 +1,23 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Check, Clock, Lock, AlertCircle } from "lucide-react";
+import { ArrowLeft, Check, Clock, Lock, AlertCircle, CircleSlash } from "lucide-react";
 import { AvatarAsistente } from "../Asistentes/Asistentes";
 import { inicialesDe } from "../Asistentes/datosAsistentes";
 import CampoRegistro from "./CampoRegistro";
 import {
-  chipResumen, errorDe, formVisible, lineaResumen, prellenado,
+  chipResumen, errorDe, formPublicado, formVisible, lineaResumen, prellenado,
   type FormRegistro, type Miembro, type Respuestas,
 } from "./datosRegistro";
 import styles from "./registro.module.css";
 
 /*
-  Tarjeta "Registro" de un Flash (handoff "Pop Event — Registro de asistentes,
-  paso a paso", opción 2a). Una pregunta por pantalla con barra por bloques;
-  con "Por persona" el titular registra también a sus acompañantes (puede
-  copiarles la dirección o dejarles un link para que lo hagan después).
+  Tarjeta "Formulario" de un Flash (handoff "Pop Event — Registro de
+  asistentes, paso a paso" 2a, con los formularios propios del organizador:
+  body.form.snapshot). Una pregunta por pantalla con barra por sección; con
+  "Cada persona" el titular responde también por sus acompañantes (o les deja
+  un link para que lo hagan después). Con "Aceptar respuestas" apagado
+  (body.form.accepting = false) ya no se puede responder.
   Todo pasa por el backend (iattend--backend router/sideEventForm.js) con el
   código del invitado o el token del link. Solo la ven los confirmados.
   En la vista previa del organizador ("Ver en vivo") se recorre con un
@@ -35,10 +37,16 @@ type Props = {
   codigo?: string | null;
   token?: string | null;
   preview?: boolean;
+  // Dentro de la hoja de la página (handoff "Flash Layout" 3a): sin vidrio
+  // propio, la hoja ya lo tiene.
+  enHoja?: boolean;
+  // Avisa cuando ya no le falta nada (todo respondido o dejado con link).
+  onTerminado?: () => void;
 };
 
-export default function RegistroCard({ form: formCompleto, eventoId, codigo, token, preview }: Props) {
-  const form = useMemo(() => formVisible(formCompleto), [formCompleto]);
+export default function RegistroCard({ form: formCompleto, eventoId, codigo, token, preview, enHoja, onTerminado }: Props) {
+  const form = useMemo(() => formVisible(formPublicado(formCompleto) ?? formCompleto), [formCompleto]);
+  const cerrado = form.accepting === false;
   const borradorKey = `iattend_registro_${eventoId}_${token ?? codigo ?? "preview"}`;
   const [fase, setFase] = useState<Fase>("cargando");
   const [miembros, setMiembros] = useState<Miembro[]>([]);
@@ -46,7 +54,6 @@ export default function RegistroCard({ form: formCompleto, eventoId, codigo, tok
   // Pantalla entre personas: quién sigue (el siguiente que falte).
   const [proximo, setProximo] = useState<number | null>(null);
   const [step, setStep] = useState(0);
-  const [copiar, setCopiar] = useState(true);
   const [answers, setAnswers] = useState<Respuestas[]>([]);
   const [errores, setErrores] = useState<Record<string, string>>({});
   const [errorServidor, setErrorServidor] = useState<string | null>(null);
@@ -62,7 +69,7 @@ export default function RegistroCard({ form: formCompleto, eventoId, codigo, tok
     return h;
   }, [token, codigo]);
 
-  // Carga: quiénes se registran y qué ya está hecho.
+  // Carga: quiénes responden y qué ya está hecho.
   const cargar = useCallback(async () => {
     if (preview) {
       setMiembros([MIEMBRO_EJEMPLO]);
@@ -91,7 +98,7 @@ export default function RegistroCard({ form: formCompleto, eventoId, codigo, tok
       } catch { /* borrador dañado: se ignora */ }
       setAnswers(inicial);
       const primero = ms.findIndex((m) => m.estado === "sin");
-      // El titular ya quedó y falta alguien: se retoma en "ahora sigue…" (copiar dirección / link después).
+      // El titular ya quedó y falta alguien: se retoma en "ahora sigue…" (responder por él o link después).
       if (primero > 0 && ms[0].estado === "completo") {
         setMember(Math.max(0, ms.findLastIndex((m, i) => i < primero && m.estado === "completo")));
         setProximo(primero);
@@ -107,15 +114,16 @@ export default function RegistroCard({ form: formCompleto, eventoId, codigo, tok
 
   useEffect(() => { cargar(); }, [cargar]);
 
+  useEffect(() => { if (fase === "done") onTerminado?.(); }, [fase]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const flat = useMemo(() => form.sections.flatMap((s, si) => s.fields.map((f) => ({ f, si }))), [form]);
-  const steps = (m: number) => flat.filter((o) => !(m > 0 && copiar && form.allowCopyAddress !== false && o.f.address));
-  const st = steps(member);
+  const st = flat;
   const cur = st[Math.min(step, Math.max(0, st.length - 1))];
 
   // Borrador en cada paso.
   useEffect(() => {
-    if (fase === "q" && !preview) localStorage.setItem(borradorKey, JSON.stringify({ answers, member, step, copiar }));
-  }, [answers, member, step, copiar, fase, preview, borradorKey]);
+    if (fase === "q" && !preview) localStorage.setItem(borradorKey, JSON.stringify({ answers, member, step }));
+  }, [answers, member, step, fase, preview, borradorKey]);
 
   const ir = (dir: 1 | -1, cambio: () => void) => {
     const reducir = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -129,10 +137,6 @@ export default function RegistroCard({ form: formCompleto, eventoId, codigo, tok
     }, 170);
   };
 
-  const conDireccion = (a: Respuestas[]) => a.map((x, i) => (i > 0 && copiar && form.allowCopyAddress !== false
-    ? { ...x, ...Object.fromEntries(flat.filter((o) => o.f.address).map((o) => [o.f.id, a[0]?.[o.f.id]])) }
-    : x));
-
   const setValor = (v: unknown) => {
     if (!cur) return;
     setAnswers((a) => a.map((x, i) => (i === member ? { ...x, [cur.f.id]: v } : x)));
@@ -145,7 +149,7 @@ export default function RegistroCard({ form: formCompleto, eventoId, codigo, tok
     const e = errorDe(cur.f, answers[member]?.[cur.f.id]);
     if (e) { setErrores({ [cur.f.id]: e }); return; }
     if (step < st.length - 1) { ir(1, () => setStep((s) => s + 1)); return; }
-    const completas = conDireccion(answers);
+    const completas = answers;
     let folio = "PREVIA";
     if (!preview) {
       setEnviando(true);
@@ -186,9 +190,9 @@ export default function RegistroCard({ form: formCompleto, eventoId, codigo, tok
     if (step < st.length - 1) ir(1, () => setStep((s) => s + 1));
     else siguiente();
   };
-  const registrar = (m: number) => ir(1, () => { setAnswers(conDireccion); setMember(m); setStep(0); setFase("q"); });
+  const registrar = (m: number) => ir(1, () => { setMember(m); setStep(0); setFase("q"); });
 
-  // "Se registra después": queda pendiente con su link; se sigue con el resto.
+  // "Lo responde después": queda pendiente con su link; se sigue con el resto.
   const despues = async () => {
     if (proximo === null) return;
     const m = proximo;
@@ -215,26 +219,26 @@ export default function RegistroCard({ form: formCompleto, eventoId, codigo, tok
     const url = `${window.location.origin}/side-event/${eventoId}?registro=${m.token}`;
     try {
       const compartir = Boolean(navigator.share);
-      if (compartir) await navigator.share({ title: form.title, text: `${m.nombre}, registra tus datos aquí:`, url });
+      if (compartir) await navigator.share({ title: form.title, text: `${m.nombre}, responde el formulario aquí:`, url });
       else await navigator.clipboard.writeText(url);
       setCopiado({ id: m.id, texto: compartir ? "¡Listo!" : "¡Copiado!" });
       window.setTimeout(() => setCopiado(null), 2000);
     } catch { /* cancelado */ }
   };
 
-  const hostIniciales = form.hostInitials || (form.hostLabel ? inicialesDe(form.hostLabel) : "") || "✓";
+  const tarjeta = `${styles.card} ${enHoja ? styles.en_hoja : ""}`;
+  const hostIniciales = form.hostInitials || inicialesDe(form.hostLabel || form.title) || "✓";
   const asAvatar = (m: Miembro) => ({ id: m.id, nombre: m.nombre, iniciales: inicialesDe(m.nombreCompleto || m.nombre), emoji: m.emoji, perfil: m.perfil });
   const porHacer = miembros.filter((m) => m.estado !== "completo");
   const ultimoDeLaPersona = step === st.length - 1;
   const quedanOtros = miembros.some((m, i) => i > member && m.estado !== "completo" && m.estado !== "pendiente");
-  const etiquetaSiguiente = !ultimoDeLaPersona ? "Siguiente" : quedanOtros ? "Terminar" : "Enviar registro";
+  const etiquetaSiguiente = !ultimoDeLaPersona ? "Siguiente" : quedanOtros ? "Terminar" : "Enviar";
   const barras = form.sections.map((_, si) => {
     const enSeccion = st.filter((o) => o.si === si).length;
     const hechas = st.slice(0, step).filter((o) => o.si === si).length;
     return enSeccion ? (hechas / enSeccion) * 100 : 100;
   });
   const siguienteMiembro = proximo !== null ? miembros[proximo] : undefined;
-  const dir0 = answers[0] ?? {};
   const animStyle = { transform: `translateX(${anim.x}px)`, opacity: anim.op, transition: anim.tr ? undefined : "none" } as React.CSSProperties;
 
   const encabezado = (
@@ -247,26 +251,32 @@ export default function RegistroCard({ form: formCompleto, eventoId, codigo, tok
     </div>
   );
 
-  if (fase === "cargando") return <div className={styles.card}>{encabezado}<div className={styles.cargando}>Cargando…</div></div>;
+  if (fase === "cargando") return <div className={tarjeta}>{encabezado}<div className={styles.cargando}>Cargando…</div></div>;
   if (!miembros.length) return null;
 
   return (
-    <div className={styles.card}>
+    <div className={tarjeta}>
       {encabezado}
 
       {fase === "intro" && (
         <>
-          <p className={styles.intro}>{form.intro}</p>
-          <div className={styles.intro_chips}>{form.sections.map((s) => <span key={s.title}>{s.title}</span>)}</div>
+          {form.intro && <p className={styles.intro}>{form.intro}</p>}
+          {form.sections.some((s) => s.title) && (
+            <div className={styles.intro_chips}>{form.sections.filter((s) => s.title).map((s, i) => <span key={s.id ?? i}>{s.title}</span>)}</div>
+          )}
           <div className={styles.who}>
             <span className={styles.who_stack}>
               {porHacer.map((m) => <span key={m.id}><AvatarAsistente a={asAvatar(m)} size={24} /></span>)}
             </span>
-            <span>{preview ? "Así se registrarán tus invitados" : <>Vas a registrar a <b>{unir(porHacer.map((m) => m.nombre))}</b></>}</span>
+            <span>{preview ? "Así lo responderán tus invitados" : porHacer.length > 1 ? <>Vas a responder por <b>{unir(porHacer.map((m) => m.nombre))}</b></> : <>Lo responde <b>{porHacer[0]?.nombre}</b></>}</span>
           </div>
-          <button type="button" className={styles.primary_lg} onClick={() => ir(1, () => { setStep(0); setFase("q"); })}>
-            {hayBorrador ? "Continuar registro" : "Empezar registro"}
-          </button>
+          {cerrado && !preview ? (
+            <div className={styles.closed}><CircleSlash size={18} />Este formulario ya no recibe respuestas.</div>
+          ) : (
+            <button type="button" className={styles.primary_lg} onClick={() => ir(1, () => { setStep(0); setFase("q"); })}>
+              {hayBorrador ? "Continuar" : "Empezar"}
+            </button>
+          )}
           <div className={styles.privacy}>
             <Lock size={13} />
             <span>Solo lo ve el equipo organizador{form.privacyUrl ? " ·" : ""}</span>
@@ -280,13 +290,13 @@ export default function RegistroCard({ form: formCompleto, eventoId, codigo, tok
           <div className={styles.top_row}>
             <span className={styles.member_pill}>
               <span><AvatarAsistente a={asAvatar(miembros[member])} size={22} /></span>
-              Registrando a {miembros[member].nombre}
+              {miembros.length > 1 ? `Responde ${miembros[member].nombre}` : miembros[member].nombre}
             </span>
             <span className={styles.step_label}>{step + 1} de {st.length}</span>
           </div>
           <div className={styles.bars}>{barras.map((w, i) => <span key={i}><span style={{ width: `${w}%` }} /></span>)}</div>
           <div className={styles.anim} style={animStyle}>
-            <span className={styles.section_label}>{form.sections[cur.si].title}</span>
+            {form.sections[cur.si].title && <span className={styles.section_label}>{form.sections[cur.si].title}</span>}
             <CampoRegistro
               key={`${member}-${cur.f.id}`}
               field={cur.f}
@@ -314,24 +324,20 @@ export default function RegistroCard({ form: formCompleto, eventoId, codigo, tok
           <div className={styles.between_head}>
             <span className={styles.ok_circle}><Check size={18} strokeWidth={3} /></span>
             <span className={styles.header_col}>
-              <span className={styles.between_title}>Listo, {miembros[member].nombre} ya tiene su registro</span>
-              <span className={styles.between_sub}>Ahora sigue {siguienteMiembro.nombre}. Necesita su propio registro y autorización.</span>
+              <span className={styles.between_title}>Listo, {miembros[member].nombre} ya respondió</span>
+              <span className={styles.between_sub}>Ahora sigue {siguienteMiembro.nombre}: sus respuestas y su autorización son aparte.</span>
             </span>
           </div>
-          {form.allowCopyAddress !== false && flat.some((o) => o.f.address) && (
-            <div role="checkbox" aria-checked={copiar} tabIndex={0} className={styles.check} onClick={() => setCopiar((c) => !c)}
-              onKeyDown={(e) => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); setCopiar((c) => !c); } }}>
-              <span className={`${styles.box} ${copiar ? styles.box_on : ""}`}><Check size={14} strokeWidth={3.2} /></span>
-              <span className={styles.check_col}>
-                <span className={styles.check_label}>Usar la misma dirección de {miembros[0].nombre}</span>
-                <span className={styles.check_help}>{lineaResumen(form, dir0)}</span>
-              </span>
-            </div>
-          )}
           {errorServidor && <span className={styles.server_error}><AlertCircle size={14} />{errorServidor}</span>}
-          <button type="button" className={styles.primary_lg} onClick={() => registrar(proximo!)}>Registrar a {siguienteMiembro.nombre}</button>
-          {form.allowLater !== false && (
-            <button type="button" className={styles.later} onClick={despues}>{siguienteMiembro.nombre} se registra después con su propio link</button>
+          {cerrado && !preview ? (
+            <div className={styles.closed}><CircleSlash size={18} />Este formulario ya no recibe respuestas.</div>
+          ) : (
+            <>
+              <button type="button" className={styles.primary_lg} onClick={() => registrar(proximo!)}>Responder por {siguienteMiembro.nombre}</button>
+              {form.allowLater !== false && (
+                <button type="button" className={styles.later} onClick={despues}>{siguienteMiembro.nombre} lo responde después con su propio link</button>
+              )}
+            </>
           )}
         </div>
       )}
@@ -340,7 +346,7 @@ export default function RegistroCard({ form: formCompleto, eventoId, codigo, tok
         <>
           <div className={styles.success}>
             <span className={styles.ok_sm}><Check size={16} strokeWidth={3} /></span>
-            <span><b>Registro enviado.</b> {preview ? "En la vista previa no se guarda nada." : "Guarda tu folio."}</span>
+            <span><b>Respuestas enviadas.</b> {preview ? "En la vista previa no se guarda nada." : "Guarda tu folio."}</span>
           </div>
           <div className={styles.summary}>
             {miembros.map((m, i) => {
@@ -353,7 +359,7 @@ export default function RegistroCard({ form: formCompleto, eventoId, codigo, tok
                   <span className={styles.sum_av}><AvatarAsistente a={asAvatar(m)} size={36} /></span>
                   <span className={styles.sum_col}>
                     <span className={styles.sum_name}>{pendiente ? m.nombre : nombreCompleto}</span>
-                    <span className={styles.sum_line}>{pendiente ? "Registro pendiente · mándale su link" : lineaResumen(form, a)}</span>
+                    <span className={styles.sum_line}>{pendiente ? "Pendiente · mándale su link" : lineaResumen(form, a)}</span>
                     {chip && <span className={styles.sum_chip}>{chip}</span>}
                   </span>
                   {pendiente ? (

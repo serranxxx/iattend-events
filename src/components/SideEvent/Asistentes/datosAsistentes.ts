@@ -66,18 +66,58 @@ export const avatarAlAzar = () => ({
   perfil: PERFILES_AVATAR[Math.floor(Math.random() * PERFILES_AVATAR.length)],
 });
 
-const formalDe = (id: string) => FORMALES[hashDe(id, 3) % FORMALES.length];
+// Modo iniciales con el color del tema: tonos parecidos al color base (mismo
+// matiz con variaciones ligeras de tono y luz), oscuros para que las letras
+// blancas se lean. Tema gris o negro: grises. Sin tema, los sobrios de siempre.
+// Gemela: iattend-vite/src/modules/SideEvents/datosAsistentes.js.
+const aHsl = (hex: string) => {
+  const n = parseInt(hex.slice(1), 16);
+  const r = ((n >> 16) & 255) / 255, g = ((n >> 8) & 255) / 255, b = (n & 255) / 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b), l = (max + min) / 2;
+  if (max === min) return { h: 0, s: 0, l };
+  const d = max - min;
+  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+  const h = max === r ? (g - b) / d + (g < b ? 6 : 0) : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  return { h: h * 60, s, l };
+};
+const aHex = (h: number, s: number, l: number) => {
+  const k = (n: number) => (n + h / 30) % 12;
+  const a = s * Math.min(l, 1 - l);
+  const f = (n: number) => Math.round(255 * (l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)))));
+  return `#${[f(0), f(8), f(4)].map((x) => x.toString(16).padStart(2, "0")).join("")}`;
+};
+// [desplazamiento de tono, luz] de cada variante.
+const VARIANTES_TEMA: [number, number][] = [[0, 0.3], [-14, 0.36], [14, 0.42], [-7, 0.48], [7, 0.34], [-20, 0.4], [20, 0.46], [0, 0.26]];
+const formalesCache = new Map<string, [string, string][]>();
+const formalesDe = (tema?: string | null): [string, string][] => {
+  if (!tema || !/^#[0-9a-f]{6}$/i.test(tema)) return FORMALES;
+  const guardado = formalesCache.get(tema);
+  if (guardado) return guardado;
+  const { h, s } = aHsl(tema);
+  const sat = s < 0.08 ? s : Math.min(0.55, Math.max(0.18, s * 0.75));
+  const lista = VARIANTES_TEMA.map(([dh, l]): [string, string] => {
+    const tono = (h + (sat < 0.08 ? 0 : dh) + 360) % 360;
+    return [aHex(tono, sat, l), aHex(tono, sat, Math.max(0.12, l - 0.08))];
+  });
+  formalesCache.set(tema, lista);
+  return lista;
+};
+const formalDe = (id: string, tema?: string | null) => {
+  const lista = formalesDe(tema);
+  return lista[hashDe(id, 3) % lista.length];
+};
 
-export const fondoDe = (a: { id: string; perfil: number | null }, modo: ModoAvatar = "emoji") => {
-  if (modo === "initials") { const [claro, oscuro] = formalDe(a.id); return `linear-gradient(to bottom, ${claro}, ${oscuro})`; }
+// `tema`: color del tema del Flash (body.color), para el modo iniciales.
+export const fondoDe = (a: { id: string; perfil: number | null }, modo: ModoAvatar = "emoji", tema?: string | null) => {
+  if (modo === "initials") { const [claro, oscuro] = formalDe(a.id, tema); return `linear-gradient(to bottom, ${claro}, ${oscuro})`; }
   return profilesMap[perfilDe(a)].gradient;
 };
-export const brilloDe = (a: { id: string; perfil: number | null }, modo: ModoAvatar = "emoji") =>
-  modo === "initials" ? formalDe(a.id)[0] : profilesMap[perfilDe(a)].light;
+export const brilloDe = (a: { id: string; perfil: number | null }, modo: ModoAvatar = "emoji", tema?: string | null) =>
+  modo === "initials" ? formalDe(a.id, tema)[0] : profilesMap[perfilDe(a)].light;
 
 // Tono oscuro de cada quien (burbujas del chat).
-export const oscuroDe = (a: { id: string; perfil: number | null }, modo: ModoAvatar = "emoji") =>
-  modo === "initials" ? formalDe(a.id)[1] : profilesMap[perfilDe(a)].dark;
+export const oscuroDe = (a: { id: string; perfil: number | null }, modo: ModoAvatar = "emoji", tema?: string | null) =>
+  modo === "initials" ? formalDe(a.id, tema)[1] : profilesMap[perfilDe(a)].dark;
 
 // Lo que va dentro del círculo según el modo.
 export const contenidoDe = (a: { id: string; emoji: string | null; iniciales: string }, modo: ModoAvatar = "emoji") =>

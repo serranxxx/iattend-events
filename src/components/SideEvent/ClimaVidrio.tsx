@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import styles from "./clima.module.css";
 
 /*
@@ -56,17 +56,17 @@ const Icono = ({ tipo, size }: { tipo: Tipo; size: number }) => (
         </g>
       </>
     )}
-    {tipo === "luna" && <path d="M26 30a11 11 0 0 1-8.5-18 11 11 0 1 0 14 14A11 11 0 0 1 26 30z" fill="#f2f6ff" />}
-    {tipo === "nube" && <path d="M12 30h17a7 7 0 0 0 0-14 9 9 0 0 0-17 2 6 6 0 0 0 0 12z" fill="#f2f6ff" />}
+    {tipo === "luna" && <path d="M26 30a11 11 0 0 1-8.5-18 11 11 0 1 0 14 14A11 11 0 0 1 26 30z" fill="currentColor" />}
+    {tipo === "nube" && <path d="M12 30h17a7 7 0 0 0 0-14 9 9 0 0 0-17 2 6 6 0 0 0 0 12z" fill="currentColor" />}
     {tipo === "mixto" && (
       <>
         <circle cx="15" cy="14" r="6" fill="#ffd34d" />
-        <path d="M14 32h15a6 6 0 0 0 0-12 8 8 0 0 0-15 2 5 5 0 0 0 0 10z" fill="#f2f6ff" />
+        <path d="M14 32h15a6 6 0 0 0 0-12 8 8 0 0 0-15 2 5 5 0 0 0 0 10z" fill="currentColor" />
       </>
     )}
     {tipo === "lluvia" && (
       <>
-        <path d="M12 26h17a7 7 0 0 0 0-14 9 9 0 0 0-17 2 6 6 0 0 0 0 12z" fill="#f2f6ff" />
+        <path d="M12 26h17a7 7 0 0 0 0-14 9 9 0 0 0-17 2 6 6 0 0 0 0 12z" fill="currentColor" />
         <g stroke="#9fd0ff" strokeWidth="2.5" strokeLinecap="round">
           <path d="M14 30l-2 5M21 30l-2 5M28 30l-2 5" />
         </g>
@@ -86,7 +86,9 @@ type Props = {
 
 const hh = (h: Hora) => Number(h.time.slice(11, 13));
 
-export default function ClimaVidrio({ ciudad, fechaEvento, horasEvento = [], modo }: Props) {
+// Pronóstico del día del evento (o null si no hay que mostrar nada): lo
+// comparten la tarjeta grande y la fila de la tarjeta Lugar.
+function useClimaEvento({ ciudad, fechaEvento, horasEvento = [], modo }: Props, horas: number, desdeInicio: boolean) {
   const [clima, setClima] = useState<Respuesta | null>(null);
 
   useEffect(() => {
@@ -108,40 +110,54 @@ export default function ClimaVidrio({ ciudad, fechaEvento, horasEvento = [], mod
   // "Siempre": sin pronóstico del día todavía (o ya pasó), el de hoy.
   const elegido = delEvento ?? (modo === "always" ? dias.find((d) => d.date === hoy) ?? dias[0] ?? null : null);
   if (!elegido) return null;
-  const deHoySinEvento = !delEvento;
   const lluvia = elegido.day.daily_chance_of_rain ?? 0;
 
   const esHoy = elegido.date === hoy;
   const temp = Math.round(esHoy ? clima.current.temp_c : elegido.day.avgtemp_c);
   const condicion = esHoy ? clima.current.condition : elegido.day.condition;
 
-  // Por hora, siempre alrededor del evento: 6 horas desde una antes de que
-  // empiece (o desde las 9 si no hay hora), sin pasarse de las 23.
-  // Se resalta el rango del evento completo (de la primera a la última hora:
-  // inicio y actividades), p. ej. 16 a 18.
+  // Por hora, siempre alrededor del evento: desde una antes de que empiece
+  // (la fila de Lugar, desde que empieza) o desde las 9 si no hay hora, sin
+  // pasarse de las 23. Se resalta el rango del evento completo (de la primera
+  // a la última hora: inicio y actividades), p. ej. 16 a 18.
   const primera = horasEvento.length ? Math.min(...horasEvento) : null;
   const ultima = horasEvento.length ? Math.max(...horasEvento) : null;
   const enRango = (h: number) => primera !== null && ultima !== null && h >= primera && h <= ultima;
-  const desde = Math.max(0, Math.min((primera ?? 10) - 1, 18));
+  const desde = Math.max(0, Math.min((primera ?? 10) - (desdeInicio ? 0 : 1), 24 - horas));
   const franja = (elegido.hour ?? [])
     .filter((h) => hh(h) >= desde)
-    .slice(0, 6)
+    .slice(0, horas)
     .map((h) => ({ hora: h, destacada: enRango(hh(h)), etiqueta: `${hh(h)}:00` }));
 
+  return {
+    ciudad: clima.location.name,
+    deHoySinEvento: !delEvento,
+    temp, condicion, lluvia, elegido, franja,
+    esDeDia: !esHoy || clima.current.is_day !== 0,
+  };
+}
+
+export default function ClimaVidrio(props: Props & { antes?: React.ReactNode }) {
+  const c = useClimaEvento(props, 6, false);
+  if (!c) return null;
+  const { elegido, lluvia, temp, condicion, franja } = c;
+
   return (
+    <>
+    {props.antes}
     <div className={styles.clima}>
       <span className={styles.resplandor} aria-hidden />
       <div className={styles.arriba}>
         <div className={styles.izquierda}>
           <span className={styles.ciudad}>
-            {clima.location.name}
+            {c.ciudad}
             {/* Siempre visible y sin pronóstico del día del evento: es el de hoy. */}
-            {deHoySinEvento && <span className={styles.hoy}>Hoy</span>}
+            {c.deHoySinEvento && <span className={styles.hoy}>Hoy</span>}
           </span>
           <span className={styles.temperatura}>{temp}°</span>
         </div>
         <div className={styles.derecha}>
-          <Icono tipo={tipoDe(condicion?.code, !esHoy || clima.current.is_day !== 0)} size={40} />
+          <Icono tipo={tipoDe(condicion?.code, c.esDeDia)} size={40} />
           <span className={styles.condicion}>{condicion?.text}</span>
           <span className={styles.rango}>
             Máx {elegido.day.maxtemp_c}° · Mín {elegido.day.mintemp_c}°{lluvia > 0 ? ` · Lluvia ${lluvia}%` : ""}
@@ -155,6 +171,35 @@ export default function ClimaVidrio({ ciudad, fechaEvento, horasEvento = [], mod
             <Icono tipo={tipoDe(hora.condition?.code, hora.is_day !== 0)} size={26} />
             <span className={styles.celdaTemp}>{Math.round(hora.temp_c)}°</span>
           </div>
+        ))}
+      </div>
+    </div>
+    </>
+  );
+}
+
+// Fila compacta del clima dentro de la tarjeta Lugar (handoff "Flash Layout"
+// 3a): ícono, temperatura y condición, y 4 horas desde que empieza el evento.
+export function ClimaFila(props: Props) {
+  const c = useClimaEvento(props, 4, true);
+  if (!c) return null;
+  return (
+    <div className={styles.fila}>
+      <div className={styles.filaAhora}>
+        <Icono tipo={tipoDe(c.condicion?.code, c.esDeDia)} size={28} />
+        <span className={styles.filaCol}>
+          <span className={styles.filaTemp}>{c.temp}°</span>
+          <span className={styles.filaCond}>
+            {c.deHoySinEvento ? "Hoy · " : ""}{c.condicion?.text}{c.lluvia > 0 ? ` · ${c.lluvia}%` : ""}
+          </span>
+        </span>
+      </div>
+      <div className={styles.filaHoras} style={{ gridTemplateColumns: `repeat(${Math.max(1, c.franja.length)}, minmax(0, 1fr))` }}>
+        {c.franja.map(({ hora, etiqueta }) => (
+          <span key={hora.time} className={styles.filaCelda}>
+            <span>{etiqueta}</span>
+            <b>{Math.round(hora.temp_c)}°</b>
+          </span>
         ))}
       </div>
     </div>

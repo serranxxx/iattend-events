@@ -15,7 +15,8 @@ import type { SideEventBody } from "@/types/side_event";
 
 export type TarjetaSide = "registration" | "attendees" | "itinerary" | "map" | "notes" | "weather";
 
-// Registro va primero: después de confirmar es lo que sigue.
+// Registro (formulario) sigue en la lista por su "oculto", pero ya no va en
+// el scroll: llega como aviso al confirmar (handoff "Flash Layout" 3a).
 export const ORDEN_TARJETAS: TarjetaSide[] = ["registration", "itinerary", "map", "notes", "attendees", "weather"];
 
 const SOLO_FLASH = new Set<TarjetaSide>(["registration", "attendees", "itinerary"]);
@@ -34,6 +35,27 @@ export const tarjetasDe = (body: SideEventBody | undefined, esFlash: boolean) =>
     .filter((k) => ORDEN_TARJETAS.includes(k));
   const orden = [...new Set([...guardadas, ...ORDEN_TARJETAS])];
   return orden.filter((k) => aplica(k, esFlash)).map((key) => ({ key, hidden: ocultaDe(body, key) }));
+};
+
+// Grupos de la página (handoff "Flash Layout" 3a), cada uno con su etiqueta
+// centrada. Recibe las llaves que de verdad se pintan, en orden; el grupo sale
+// donde aparece su primera tarjeta. Gemela: agruparTarjetas en iattend-vite.
+export type GrupoTarjetas = "info" | "lugar" | "gente";
+export const GRUPO_DE_TARJETA: Partial<Record<TarjetaSide, GrupoTarjetas>> = {
+  itinerary: "info", notes: "info", map: "lugar", weather: "lugar", attendees: "gente",
+};
+export const ETIQUETA_DE_GRUPO: Record<GrupoTarjetas, string> = { info: "INFORMACIÓN", lugar: "UBICACIÓN", gente: "ASISTENTES" };
+
+export const agruparTarjetas = (keys: TarjetaSide[]) => {
+  const grupos: { id: GrupoTarjetas; keys: TarjetaSide[] }[] = [];
+  for (const key of keys) {
+    const id = GRUPO_DE_TARJETA[key];
+    if (!id) continue;
+    let grupo = grupos.find((g) => g.id === id);
+    if (!grupo) grupos.push((grupo = { id, keys: [] }));
+    grupo.keys.push(key);
+  }
+  return grupos;
 };
 
 export const portadaOculta = (body: SideEventBody | undefined, key: "title" | "date" | "place") =>

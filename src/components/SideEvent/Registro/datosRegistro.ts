@@ -1,26 +1,37 @@
 /*
-  Registro de asistentes de un Flash (body.form; lo arma el organizador en el
-  editor de iattend-vite con plantillas: plantillasRegistro.js). Mismas reglas
-  y mensajes que el backend (iattend--backend router/sideEventForm.js).
+  Formulario de un Flash (body.form). El organizador lo arma desde cero en el
+  editor de iattend-vite (modules/SideEvents/Formularios/) y lo guarda en "Mis
+  formularios"; al Flash llega como snapshot congelado (body.form.snapshot)
+  junto a sus reglas. Mismas reglas y mensajes que el backend (iattend--backend
+  router/sideEventForm.js).
 */
 
-export type TipoCampo = "text" | "single" | "multi" | "yesno" | "check";
-export type Regla = "name2" | "age16" | "cp5" | "digits4" | "phone10" | "email";
+export type TipoCampo = "text" | "long" | "single" | "multi" | "yesno" | "date" | "check";
+export type Regla = "name2" | "age16" | "cp5" | "digits4" | "phone10" | "email" | "number";
 
 export type Campo = {
   id: string; label: string; type: TipoCampo; required: boolean; enabled?: boolean;
+  // Tipo del editor (short, phone, email, number…): solo informativo aquí.
+  kind?: string;
   placeholder?: string; help?: string; link?: string;
   inputMode?: "text" | "numeric" | "tel" | "email"; prefix?: string; maxLength?: number;
   options?: string[]; max?: number; validate?: Regla; address?: boolean;
   prefillFrom?: "name" | "phone_number";
 };
 
+export type Seccion = { id?: string; title: string; fields: Campo[] };
+
 export type FormRegistro = {
   enabled?: boolean;
-  title: string; hostLabel?: string; hostInitials?: string; intro: string;
-  scope?: "grupo" | "persona"; allowCopyAddress?: boolean; allowLater?: boolean; privacyUrl?: string;
+  formId?: string;
+  snapshot?: { title: string; intro: string; sections: Seccion[]; version?: string } | null;
+  title: string; intro: string;
+  // Reglas del Flash.
+  scope?: "grupo" | "persona"; allowLater?: boolean; accepting?: boolean; privacyUrl?: string;
   folioPrefix?: string; version?: string;
-  sections: { title: string; fields: Campo[] }[];
+  // Formularios viejos de plantilla (antes del snapshot).
+  hostLabel?: string; hostInitials?: string; allowCopyAddress?: boolean;
+  sections: Seccion[];
 };
 
 export type Miembro = {
@@ -29,6 +40,13 @@ export type Miembro = {
 };
 
 export type Respuestas = Record<string, unknown>;
+
+// body.form tal como se pinta: el snapshot con las reglas del Flash (o un formulario viejo de plantilla).
+export const formPublicado = (form?: Partial<FormRegistro> | null): FormRegistro | null => {
+  if (!form) return null;
+  const base = form.snapshot ? { ...form, ...form.snapshot } : form;
+  return { ...base, title: base.title ?? "", intro: base.intro ?? "", sections: base.sections ?? [] } as FormRegistro;
+};
 
 // Solo secciones y preguntas prendidas.
 export const formVisible = (form: FormRegistro): FormRegistro => ({
@@ -44,11 +62,20 @@ export const presente = (f: Campo, v: unknown) =>
   : f.type === "check" ? v === true
   : typeof v === "string" && v.trim().length > 0;
 
+const fechaValida = (s: string) => {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
+  const [y, m, d] = s.split("-").map(Number);
+  const f = new Date(Date.UTC(y, m - 1, d));
+  return f.getUTCFullYear() === y && f.getUTCMonth() === m - 1 && f.getUTCDate() === d && y >= 1900 && y <= 2100;
+};
+
 export function errorDe(f: Campo, v: unknown): string | null {
   if (f.required && !presente(f, v))
-    return f.type === "check" ? "Necesitamos tu autorización para registrarte" : f.type === "single" ? "Elige una opción" : "Este dato es obligatorio";
-  if (!presente(f, v) || !f.validate) return null;
+    return f.type === "check" ? "Necesitamos tu autorización para continuar" : f.type === "single" ? "Elige una opción" : f.type === "date" ? "Elige una fecha" : "Este dato es obligatorio";
+  if (!presente(f, v)) return null;
   const s = String(v).trim();
+  if (f.type === "date") return fechaValida(s) ? null : "Revisa la fecha";
+  if (!f.validate) return null;
   switch (f.validate) {
     case "name2": return s.split(/\s+/).length < 2 ? "Escribe nombre y apellido" : null;
     case "age16": return +s >= 16 && +s <= 110 ? null : "Escribe una edad entre 16 y 110";
@@ -56,6 +83,7 @@ export function errorDe(f: Campo, v: unknown): string | null {
     case "digits4": return /^\d{4}$/.test(s) ? null : "La sección tiene 4 dígitos";
     case "phone10": return s.replace(/\D/g, "").length === 10 ? null : "Escribe 10 dígitos";
     case "email": return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(s) ? null : "Revisa el correo";
+    case "number": return /^\d+$/.test(s) ? null : "Escribe solo números";
   }
   return null;
 }
@@ -70,16 +98,12 @@ export const prellenado = (form: FormRegistro, m: Miembro): Respuestas => {
   return r;
 };
 
-// Línea corta del resumen: la dirección si la hay; si no, las dos primeras respuestas de texto.
+// Línea corta del resumen: las dos primeras respuestas escritas.
 export const lineaResumen = (form: FormRegistro, a: Respuestas) => {
   const campos = form.sections.flatMap((s) => s.fields);
-  const dir = campos.filter((f) => f.address).map((f) => {
-    const v = a[f.id];
-    if (!presente(f, v)) return null;
-    return f.validate === "cp5" ? `CP ${v}` : f.validate === "digits4" ? `Secc. ${v}` : String(v);
-  }).filter(Boolean);
-  if (dir.length) return dir.join(" · ");
-  return campos.filter((f) => f.type === "text" && f.prefillFrom !== "name" && presente(f, a[f.id])).slice(0, 2).map((f) => String(a[f.id])).join(" · ");
+  return campos
+    .filter((f) => f.type === "text" && f.prefillFrom !== "name" && f.prefillFrom !== "phone_number" && presente(f, a[f.id]))
+    .slice(0, 2).map((f) => String(a[f.id])).join(" · ");
 };
 
 // Chip del resumen: la primera respuesta de opción única.

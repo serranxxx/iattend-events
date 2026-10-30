@@ -6,14 +6,12 @@ import styles from "./side-event.module.css";
 import Image from "next/image";
 import { Button, Input, message } from "antd";
 import { LuCircleCheck, LuCircleX } from "react-icons/lu";
-import { simpleaddress } from "../Invitation/Itinerary/OpenCard/OpenCard";
 import { FooterCompact } from "../FooterCompact/FooterCompact";
 import { FaLock } from "react-icons/fa";
 import { createClient } from "@/lib/supabase/client";
 import {  SideGuestSubabasePayload } from "@/types/guests";
 import { darker, getEventDateOnly, itinerarioPorDia, lineasDeFechas, sombraDeTexto, colorDeVelo } from "@/helpers/functions";
 import { ItinerarioWidget } from "./ItinerarioWidget";
-import confetti from "canvas-confetti";
 import { AnimatePresence, motion } from "motion/react";
 import SongPlayer from "@/components/Invitation/SongPlayer/SongPlayer";
 import Efectos from "./Efectos";
@@ -23,11 +21,23 @@ import ClimaVidrio from "./ClimaVidrio";
 import Asistentes from "./Asistentes/Asistentes";
 import SelectorAvatar, { type AvatarElegido } from "./Asistentes/SelectorAvatar";
 import { avatarAlAzar, cargarAsistentes, contenidoDe, emojiDe, fondoDe, inicialesDe, LISTA_EJEMPLO, modoAvatar, perfilDe, type ListaAsistentes } from "./Asistentes/datosAsistentes";
-import { estiloNotas, portadaOculta, tarjetasDe } from "@/helpers/tarjetasSide";
+import { estiloDe, tintaDeNotas, variablesDeEstilo } from "@/helpers/estilosBloque";
+import { agruparTarjetas, estiloNotas, ETIQUETA_DE_GRUPO, portadaOculta, tarjetasDe, type GrupoTarjetas } from "@/helpers/tarjetasSide";
 import ChatFlash from "./Chat/ChatFlash";
 import RegistroCard from "./Registro/RegistroCard";
+import { formPublicado, formVisible } from "./Registro/datosRegistro";
+import { useEstadoRegistro } from "./Registro/useEstadoRegistro";
 import FilaChat from "./Chat/FilaChat";
 import { useChatFlash } from "./Chat/useChatFlash";
+import ConfetiExplosion from "./Layout/ConfetiExplosion";
+import HojaFlash from "./Layout/HojaFlash";
+import NotificacionFormulario from "./Layout/NotificacionFormulario";
+import PaseFlash from "./Layout/PaseFlash";
+import { qrPaseSide } from "@/helpers/paseSide";
+import TarjetaLugar, { direccionCompleta } from "./Layout/TarjetaLugar";
+import layout from "./Layout/layout.module.css";
+import { useAnchoFlash } from "./Layout/useAnchoFlash";
+import { ClipboardList, MessageCircle } from "lucide-react";
 
 // Lienzo de los PNG de un Flash: la pieza del editor (iattend-vite, SideCanvas,
 // 390×700) escalada para cubrir la pantalla y centrada, como object-fit:
@@ -39,9 +49,11 @@ const PIEZA_ALTO = 700;
 // `sizes` de un PNG que ocupa w% del lienzo. El lienzo mide lo de la columna
 // (hasta 450 px) y en pantallas alargadas un poco más (cover): se pide con
 // 25% de holgura para que no salga borroso.
+// En iPad y Mac los elementos van en la pieza (357 × 631 escalada al alto de
+// la pantalla, ~57 vh de ancho).
 const tamanoDeSticker = (w: number) => {
   const vw = Math.min(100, Math.ceil(w * 1.25));
-  return `(max-width: 450px) ${vw}vw, ${Math.ceil(450 * (w / 100) * 1.25)}px`;
+  return `(max-width: 450px) ${vw}vw, (min-width: 600px) ${Math.ceil(w * 0.57 * 1.25)}vh, ${Math.ceil(450 * (w / 100) * 1.25)}px`;
 };
 
 // Horas (0–23) del día del evento en que pasa algo, para resaltarlas en el
@@ -106,6 +118,10 @@ export default function SideEvents({ info, password, preview, registroToken }: i
   // Fondo de la página y barra de Safari: el color de la invitación al 80%.
   // El fundido de abajo de la portada termina en este mismo color, para que
   // no quede línea. Mismo valor en el editor.
+  // Estilo de bloques (body.blockStyle): variables de la piel de las
+  // tarjetas, también para lo que se abre fuera de ellas (hojas, aviso).
+  const estiloBloque = estiloDe(info?.body);
+  const varsEstilo = variablesDeEstilo(estiloBloque, info?.body?.color);
   const colorFondoPagina = darker(info?.body.color ?? "#000000", 0.8) ?? info?.body.color;
   // Capa de los PNG de un Flash (para medir su lienzo).
   const capaStickersRef = useRef<HTMLDivElement>(null);
@@ -117,6 +133,22 @@ export default function SideEvents({ info, password, preview, registroToken }: i
   // Lienzo de los PNG (px dentro de la capa): la pieza del editor escalada
   // para cubrir la pantalla, ver lienzoCover.
   const [lienzoStickers, setLienzoStickers] = useState<{ left: number; top: number; width: number; height: number } | null>(null);
+  // Dibujos a mano (herramienta Dibujar del editor) anclados a la FOTO: van en
+  // el recuadro de la foto tal como se ve (cover de la portada, que es más
+  // alta que la pantalla), así lo que se calcó sobre la foto cuadra aunque la
+  // foto y el lienzo de los PNG se recorten distinto. Igual en el editor.
+  const heroRef = useRef<HTMLDivElement>(null);
+  // iPad y Mac (handoff "Evento Flash en iPad y Mac", 9b): la foto de la
+  // portada a pantalla completa, los elementos en la pieza del editor
+  // (357 × 631) centrada, y debajo las tarjetas (una columna en tableta,
+  // mosaico de dos en escritorio). En celular no cambia nada.
+  const esFlash = Boolean(info && !info.invitation_id);
+  const ancho = useAnchoFlash();
+  const escena = esFlash && ancho !== "tel";
+  const mosaico = esFlash && ancho === "escritorio";
+  const escenaRef = useRef<HTMLDivElement>(null);
+  const [tamFoto, setTamFoto] = useState<{ w: number; h: number } | null>(null);
+  const [marcoFoto, setMarcoFoto] = useState<{ left: number; top: number; width: number; height: number } | null>(null);
   const [draftCompanions, setDraftCompanions] = useState<SideGuestSubabasePayload[]>([]);
   const [draftMainName, setDraftMainName] = useState<string>("");
   const [draftMainRejected, setDraftMainRejected] = useState<boolean>(false);
@@ -138,6 +170,36 @@ export default function SideEvents({ info, password, preview, registroToken }: i
   const marcarVistoChat = chat.marcarVisto;
   const cerrarChat = useCallback(() => { setChatAbierto(false); marcarVistoChat(); }, [marcarVistoChat]);
 
+  // Acomodo 3a (handoff "Flash Layout"): el pase y el formulario salen del
+  // scroll y se abren en una hoja; el formulario llega como aviso al confirmar.
+  const [hoja, setHoja] = useState<null | "pase" | "form">(null);
+  const [confeti, setConfeti] = useState<number | null>(null);
+  // En la vista previa, "Asistiré" no guarda nada: solo enseña el confeti y el aviso.
+  const [previewConfirmado, setPreviewConfirmado] = useState(false);
+  const formActivo = Boolean(info && !info.invitation_id && info.body?.form?.enabled)
+    && (formPublicado(info?.body?.form)?.sections.length ?? 0) > 0;
+  const formPreguntas = formActivo ? formVisible(formPublicado(info!.body!.form)!).sections.reduce((n, sec) => n + sec.fields.length, 0) : 0;
+  const yaConfirmo = guestInfo?.state === "confirmado" || Boolean(registroToken) || (preview && previewConfirmado);
+  const estadoForm = useEstadoRegistro({
+    eventoId: info?.id, codigo: codigoChat, token: registroToken ?? null,
+    activo: formActivo && (Boolean(preview) || Boolean(codigoChat) || Boolean(registroToken)), preview,
+  });
+  // La ✕ del aviso se recuerda por invitado: no vuelve en cada visita.
+  const claveAviso = info?.id ? `iattend_form_aviso_${info.id}_${registroToken ?? guestInfo?.id ?? "preview"}` : null;
+  const [avisoCerrado, setAvisoCerrado] = useState(false);
+  useEffect(() => {
+    setAvisoCerrado(Boolean(!preview && claveAviso && window.localStorage.getItem(claveAviso)));
+  }, [claveAviso, preview]);
+  const cerrarAviso = () => {
+    setAvisoCerrado(true);
+    if (claveAviso && !preview) window.localStorage.setItem(claveAviso, "1");
+  };
+  const formPendiente = formActivo && yaConfirmo && estadoForm.pendiente;
+  const formIniciales = (() => {
+    const f = formActivo ? formPublicado(info!.body!.form) : null;
+    return inicialesDe(f?.hostLabel || f?.title || "") || "✓";
+  })();
+
   interface CSSVars extends React.CSSProperties {
     ["--hover-color"]?: string;
   }
@@ -155,9 +217,9 @@ export default function SideEvents({ info, password, preview, registroToken }: i
 
   // Campos del registro público: mismos que el paso de acompañantes.
   const registroInputStyle: React.CSSProperties = {
-    backgroundColor: "#FFFFFF20",
+    backgroundColor: "var(--bloque-suave, #FFFFFF20)",
     borderWidth: "1px",
-    color: "#FFF",
+    color: "var(--bloque-tinta, #FFF)",
     // 16 px: con menos, iOS hace zoom al enfocar el campo.
     fontSize: "16px",
     borderRadius: "12px",
@@ -167,9 +229,9 @@ export default function SideEvents({ info, password, preview, registroToken }: i
   };
 
   const rejectButtonStyle: React.CSSProperties = {
-    color: "#FFFFFF",
-    backgroundColor: "#FFFFFF25",
-    border: "1px solid #FFFFFF55",
+    color: "var(--bloque-tinta, #FFFFFF)",
+    backgroundColor: "var(--bloque-suave, #FFFFFF25)",
+    border: "1px solid var(--bloque-linea, #FFFFFF55)",
     borderRadius: "10px",
     fontSize: "12px",
     height: "44px",
@@ -179,9 +241,9 @@ export default function SideEvents({ info, password, preview, registroToken }: i
   };
 
   const undoButtonStyle: React.CSSProperties = {
-    color: "#FFFFFF",
+    color: "var(--bloque-tinta, #FFFFFF)",
     backgroundColor: "transparent",
-    border: "1px solid #FFFFFF40",
+    border: "1px solid var(--bloque-linea, #FFFFFF40)",
     borderRadius: "10px",
     fontSize: "12px",
     height: "44px",
@@ -350,14 +412,9 @@ export default function SideEvents({ info, password, preview, registroToken }: i
     return () => window.clearInterval(id);
   }, [mostrarAsistentes, recargarAsistentes, preview]);
 
-  const onClick = useCallback(() => {
-    confetti({
-      particleCount: 200,
-      spread: 80,
-      angle: 90,                 // 90 = hacia abajo, 270 = hacia arriba
-      origin: { x: 0.5, y: 0.9 }
-    });
-  }, []);
+  // Confeti en explosión desde el botón (ConfetiExplosion).
+  const onClick = useCallback(() => setConfeti(Date.now()), []);
+  const finConfeti = useCallback(() => setConfeti(null), []);
 
   // Mide la capa de PNG (del alto de la pantalla) para su lienzo. La portada
   // ocupa toda la pantalla, sin zona segura: los botones flotan encima.
@@ -368,6 +425,24 @@ export default function SideEvents({ info, password, preview, registroToken }: i
       // Tamaño de layout (offset*), no getBoundingClientRect: ese incluye el
       // zoom del scroll y, medido a media página, descentraba los PNG.
       setLienzoStickers(lienzoCover(capa.offsetWidth, capa.offsetHeight));
+      // Recuadro de la foto dentro de la capa: la foto cubre la portada (todo
+      // el ancho, centrada) y la capa es la columna centrada.
+      const hero = heroRef.current;
+      const columna = capa.parentElement;
+      if (escena && hero && columna && tamFoto) {
+        // iPad / Mac: la foto cubre toda la ventana y la capa es la pieza
+        // centrada (a lo ancho y a lo alto).
+        const escala = Math.max(hero.offsetWidth / tamFoto.w, hero.offsetHeight / tamFoto.h);
+        const width = tamFoto.w * escala;
+        const height = tamFoto.h * escala;
+        setMarcoFoto({ left: (hero.offsetWidth - width) / 2 - columna.offsetLeft, top: (hero.offsetHeight - height) / 2 - columna.offsetTop, width, height });
+      } else if (hero && tamFoto) {
+        const escala = Math.max(hero.offsetWidth / tamFoto.w, hero.offsetHeight / tamFoto.h);
+        const width = tamFoto.w * escala;
+        const height = tamFoto.h * escala;
+        const izquierdaCapa = (hero.offsetWidth - capa.offsetWidth) / 2;
+        setMarcoFoto({ left: (hero.offsetWidth - width) / 2 - izquierdaCapa, top: (hero.offsetHeight - height) / 2, width, height });
+      }
     };
     medir();
     // Los botones entran con una animación de 0.25 s que los mueve 12 px.
@@ -381,11 +456,12 @@ export default function SideEvents({ info, password, preview, registroToken }: i
       window.removeEventListener("resize", medir);
       ro.disconnect();
     };
-  }, [validated, confirmStep, info]);
+  }, [validated, confirmStep, info, tamFoto, escena]);
 
   const handleConfirmAttendance = () => {
     if (!guestInfo) {
       if (esPublico) setRegistro("confirmado");
+      else if (preview) { setPreviewConfirmado(true); onClick(); }
       return;
     }
 
@@ -584,6 +660,31 @@ export default function SideEvents({ info, password, preview, registroToken }: i
     let ultima = -1;
     const pagina = paginaRef.current;
     if (!pagina) return;
+    // iPad / Mac: la portada (foto a pantalla completa + elementos) no se
+    // acerca; se desvanece (1 → 0.15) y crece un 4% en los primeros 520 px.
+    // Con movimiento reducido, solo opacidad.
+    if (escena) {
+      const capas = [heroRef.current, escenaRef.current].filter((el): el is HTMLDivElement => Boolean(el));
+      document.querySelectorAll<HTMLElement>("[data-zoom]").forEach((el) => { el.style.transform = ""; });
+      const reducir = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const aplicarEscena = () => {
+        const k = Math.min(1, Math.max(0, pagina.scrollTop / 520));
+        const opacidad = String(Math.round((1 - 0.85 * k) * 1000) / 1000);
+        const escala = reducir ? "" : `scale(${Math.round((1 + 0.04 * k) * 1000) / 1000})`;
+        capas.forEach((el) => { el.style.opacity = opacidad; el.style.transform = escala; });
+      };
+      const onScrollEscena = () => {
+        cancelAnimationFrame(cuadro);
+        cuadro = requestAnimationFrame(aplicarEscena);
+      };
+      aplicarEscena();
+      pagina.addEventListener("scroll", onScrollEscena, { passive: true });
+      return () => {
+        cancelAnimationFrame(cuadro);
+        pagina.removeEventListener("scroll", onScrollEscena);
+        capas.forEach((el) => { el.style.opacity = ""; el.style.transform = ""; });
+      };
+    }
     const aplicar = () => {
       const avance = Math.min(1, Math.max(0, pagina.scrollTop / (pagina.clientHeight * 0.6)));
       const escala = Math.round((1 + 0.5 * avance) * 1000) / 1000;
@@ -603,7 +704,7 @@ export default function SideEvents({ info, password, preview, registroToken }: i
       cancelAnimationFrame(cuadro);
       pagina.removeEventListener("scroll", onScroll);
     };
-  }, [validated, info?.body.effect?.type]);
+  }, [validated, info?.body.effect?.type, escena]);
 
   useEffect(() => {
 
@@ -631,84 +732,93 @@ export default function SideEvents({ info, password, preview, registroToken }: i
   }, []);
 
 
-  return (
-    <>
-      {contextHolder}
-      {chatActivo && (
-        <ChatFlash
-          open={chatAbierto}
-          onClose={cerrarChat}
-          modo={modo}
-          preview={preview}
-          confirmados={listaAsistentes?.total ?? 0}
-          asistentes={listaAsistentes?.asistentes ?? []}
-          // Vista previa: el fijado sale de lo que se está editando (sin guardar).
-          chat={preview ? { ...chat, fijado: info?.body?.chat?.pinned?.text ? { text: info.body.chat.pinned.text } : null } : chat}
-        />
+  // Privada y dirigida a alguien que aún no confirma: su dedicatoria va en la
+  // primera pantalla, arriba de los botones de confirmar.
+  const dedicatoriaArriba = !esPublico && Boolean(guestInfo?.name) && guestInfo?.state !== "confirmado" && !confirmStep && !registro;
+  // Tarjeta del invitado ("Invitación dirigida a" / "Registrado como").
+  const tarjetaInvitado = guestInfo?.name ? (
+    <motion.div
+      key="guest-name-card"
+      initial={{ opacity: 0, y: 12, scale: 0.98 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: -12, scale: 0.98 }}
+      transition={{ duration: 0.25, ease: "easeInOut" }}
+      className={`${styles.tarjeta} ${styles.invitado}`}
+    >
+      {/* Avatar flotante con las iniciales del invitado. */}
+      {/* Con "Asistentes" y ya confirmado: su avatar de la lista. En
+          modo emoji se toca para cambiarlo (lápiz chico). */}
+      {mostrarAsistentes && guestInfo.state === "confirmado" ? (() => {
+        const a = { id: String(guestInfo.id ?? ""), emoji: guestInfo.emoji ?? null, perfil: guestInfo.profile ?? null, iniciales: inicialesDe(guestInfo.name) };
+        const contenido = (
+          <span style={{ background: fondoDe(a, modo, info?.body.color), fontSize: modo === "initials" ? "26px" : "34px" }}>
+            {contenidoDe(a, modo)}
+          </span>
+        );
+        return modo === "emoji" ? (
+          <button type="button" className={`${styles.invitado_avatar} ${styles.invitado_avatar_boton}`} onClick={abrirAvatar} aria-label="Cambiar mi emoji">
+            {contenido}
+            <span className={styles.invitado_avatar_lapiz} aria-hidden>
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
+            </span>
+          </button>
+        ) : <span className={styles.invitado_avatar} aria-hidden>{contenido}</span>;
+      })() : (
+        <span className={styles.invitado_avatar} aria-hidden>
+          <span>{iniciales(guestInfo.name)}</span>
+        </span>
       )}
-      {/* Canción de un Flash: el mismo reproductor compacto del Save the Date
-          (disco arriba a la izquierda; gira mientras suena). */}
-      {info?.body.song && (
-        <SongPlayer song={info.body.song} accent="#FFFFFF" secondary="#FFFFFF" dev={false} compact />
-      )}
-      {/* Con video de fondo se apagan los desenfoques en vivo (con_video): se
-          recalculaban en cada cuadro del video y lo trababan. */}
-      <div
-        ref={paginaRef}
-        className={`${styles.side_event_main_cont} ${info?.body.video ? styles.con_video : ""}`}
-        // Lo que se asome detrás de la portada (p. ej. bajo la barra de Safari)
-        // es el color del tema oscurecido, no el gris de arranque.
-        style={info?.body.color ? { backgroundColor: darker(info.body.color, 0.8) ?? undefined, backgroundImage: "none" } : undefined}
-      >
-        <div className={styles.hero}>
-          {/* Flash con video de fondo: en bucle y sin sonido; la imagen es su cuadro fijo. */}
-          {info?.body.video ? (
-            <video
-              className={styles.hero_bg}
-              data-zoom
-              src={info.body.video}
-              poster={info.body.image || undefined}
-              autoPlay
-              muted
-              loop
-              playsInline
-              preload="auto"
-            />
-          ) : (
-            info?.body.image && <Image className={styles.hero_bg} data-zoom fill src={info?.body.image} alt="" style={{ objectFit: "cover" }} />
-          )}
-          <div className={styles.blur_cover}></div>
-          <div className={styles.shadow}></div>
+      <span className={styles.invitado_etiqueta}>
+        {esPublico ? "Registrado como" : "Invitación dirigida a"}
+      </span>
+      <span className={styles.invitado_nombre}>{guestInfo.name}</span>
+      {editandoAvatar && (
+        <div className={styles.invitado_selector}>
+          <SelectorAvatar nombre={guestInfo.name ?? ""} valor={avatar} onChange={setAvatar} idBase={String(guestInfo.id ?? "")} />
+          <div className={styles.invitado_selector_botones}>
+            <Button type="text" onClick={() => setEditandoAvatar(false)} style={{ color: "var(--bloque-tinta, #FFFFFF)", opacity: 0.8 }}>Cancelar</Button>
+            <Button className={styles.locked_btn} style={{ ...btnStyle, width: "auto", height: "44px", fontSize: "14px", letterSpacing: "1px", paddingInline: "24px" }} loading={guardandoAvatar} onClick={guardarAvatar}>
+              Listo
+            </Button>
+          </div>
         </div>
+      )}
+      {guestInfo.has_companion && companions.some((c) => c.state !== "rechazado") && (
+        <div className={styles.invitado_acompanantes}>
+          {companions.filter((c) => c.state !== "rechazado").map((c, i) => (
+            <span key={c.id ?? i} className={`${styles.chip_vidrio} ${styles.invitado_chip}`}>
+              <span className={styles.invitado_chip_mas} aria-hidden>+</span>
+              <span>{c.name?.trim() || "Acompañante"}</span>
+            </span>
+          ))}
+        </div>
+      )}
+      {guestInfo.state === "confirmado" && !editandoAvatar && (
+        <button type="button" className={layout.ver_pase} onClick={() => setHoja("pase")}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z" />
+            <path d="M13 5v2M13 17v2M13 11v2" />
+          </svg>
+          Ver mi pase
+        </button>
+      )}
+      {formPendiente && avisoCerrado && (
+        <button type="button" className={layout.falta_form} onClick={() => setHoja("form")}>
+          Te falta el formulario
+        </button>
+      )}
+      {esPublico && (
+        <button type="button" onClick={olvidarRegistro} className={styles.invitado_no_eres}>
+          ¿No eres {guestInfo.name}?
+        </button>
+      )}
+    </motion.div>
+  ) : null;
 
-        {/* Portada fija: no se mueve con el scroll (como la foto, que es
-            sticky). Lleva los PNG, los efectos, el velo y el título, la fecha y
-            el lugar; los botones y las tarjetas (.info_cont, z 2) suben encima
-            al hacer scroll. */}
-        <div className={styles.portada_fija}>
-        {/* Columna de la pieza (450 px como máximo): en pantallas anchas los
-            PNG y los efectos se quedan en ella y su zoom se recorta a sus
-            orillas; el velo, el tinte y el fundido sí cubren todo el ancho. */}
-        <div className={styles.columna_fija}>
-        {/* PNG de un Flash sobre la portada: capa del alto de la pantalla,
-            sin recorte (la portada ocupa toda la pantalla y los botones flotan
-            encima). Van detrás del título, la fecha y el lugar. */}
-        {/* Los ocultos (`hidden`) los dejó el organizador guardados sin mostrar. */}
-        {(info?.body.stickers ?? []).some((st) => !st.hidden) && (
-          <div
-            ref={capaStickersRef}
-            aria-hidden
-            className={styles.stickers_capa}
-            data-zoom
-          >
-            {/* Hasta medir la pantalla no se pinta, para que no brinquen. */}
-            <div className={styles.stickers_lienzo} style={lienzoStickers ?? { visibility: "hidden" }}>
-              {/* Por el optimizador de Next, como la portada: cada teléfono
-                  recibe WebP/AVIF del ancho que ocupa el PNG (un PNG pegado
-                  pesaba ~1 MB; así ~100 KB). Van en la primera pantalla, con
-                  prioridad. width/height solo dan la proporción inicial: el
-                  alto real sale de la imagen (height: auto). */}
-              {(info?.body.stickers ?? []).filter((st) => !st.hidden).map((st) => {
+  // Dibujo anclado a la foto (sin foto medida todavía, va en el lienzo).
+  const enFoto = (st: NonNullable<SideEvent["body"]["stickers"]>[number]) => st.kind === "dibujo" && Boolean(st.foto) && Boolean(marcoFoto);
+  // Los elementos de la portada en un recuadro (lienzo de los PNG o foto).
+  const pintarStickers = (lista: NonNullable<SideEvent["body"]["stickers"]>) => lista.map((st) => {
                 const giro = `translate(-50%, -50%) rotate(${st.rot ?? 0}deg)${st.flipX || st.flipY ? ` scale(${st.flipX ? -1 : 1}, ${st.flipY ? -1 : 1})` : ""}`;
                 // Texto, ícono, forma, línea o decoración del panel Elementos.
                 if (st.kind && st.kind !== "sticker") {
@@ -745,8 +855,200 @@ export default function SideEvents({ info, password, preview, registroToken }: i
                   }}
                 />
                 );
-              })}
+  });
+
+  // Velo opcional del panel Fondo y tinte del tema: tiñen la portada y los PNG,
+  // detrás del texto, en toda la pantalla.
+  const veloYTinte = (
+    <>
+      {colorDeVelo(info?.body.color, info?.body.veil) && (
+        <div aria-hidden className={styles.velo_fijo} style={{ background: colorDeVelo(info?.body.color, info?.body.veil) }} />
+      )}
+      <div
+        aria-hidden
+        className={styles.tinte_fijo}
+        style={{ "--blur-color": info?.body.color ?? "#000000" } as React.CSSProperties}
+      />
+    </>
+  );
+
+  return (
+    <>
+      {contextHolder}
+      {chatActivo && (
+        <ChatFlash
+          open={chatAbierto}
+          onClose={cerrarChat}
+          modo={modo}
+          preview={preview}
+          confirmados={listaAsistentes?.total ?? 0}
+          asistentes={listaAsistentes?.asistentes ?? []}
+          vars={varsEstilo}
+          colorTema={info?.body.color}
+          // Vista previa: el fijado sale de lo que se está editando (sin guardar).
+          chat={preview ? { ...chat, fijado: info?.body?.chat?.pinned?.text ? { text: info.body.chat.pinned.text } : null } : chat}
+        />
+      )}
+      {confeti && <ConfetiExplosion key={confeti} onFin={finConfeti} />}
+      {/* Escritorio (≥ 1024): los disparadores del panel lateral van fijos a la
+          derecha (formulario arriba, chat abajo) y se desvanecen mientras el
+          panel está abierto. */}
+      {mosaico && formPendiente && (
+        <button
+          type="button"
+          className={`${layout.disparador_form} ${hoja !== null || chatAbierto ? layout.disparador_oculto : ""}`}
+          style={{ "--blur-color": info?.body.color ?? "#6E7FD8", ...varsEstilo } as React.CSSProperties}
+          onClick={() => setHoja("form")}
+        >
+          <span className={layout.disparador_orbe} aria-hidden><ClipboardList size={20} strokeWidth={2} /></span>
+          <span className={layout.disparador_textos}>
+            <span className={layout.disparador_titulo}>Formulario</span>
+            <span className={layout.disparador_sub}>Te falta responder</span>
+          </span>
+        </button>
+      )}
+      {mosaico && chatActivo && (
+        <button
+          type="button"
+          className={`${layout.disparador_chat} ${hoja !== null || chatAbierto ? layout.disparador_oculto : ""}`}
+          onClick={() => {
+            // Sin confirmar: a los botones de confirmar, arriba.
+            if (!preview && !codigoChat) { paginaRef.current?.scrollTo({ top: 0, behavior: "smooth" }); return; }
+            setChatAbierto(true);
+            chat.marcarVisto();
+          }}
+        >
+          <MessageCircle size={20} strokeWidth={2} />
+          Chat
+          {chat.noLeidos > 0 && (
+            <span className={layout.disparador_contador} aria-label={`${chat.noLeidos} ${chat.noLeidos === 1 ? "mensaje nuevo" : "mensajes nuevos"}`}>
+              {chat.noLeidos > 99 ? "99+" : chat.noLeidos}
+            </span>
+          )}
+        </button>
+      )}
+      {!mosaico && formPendiente && !avisoCerrado && hoja === null && !chatAbierto && (
+        <NotificacionFormulario
+          // Al volver (ya confirmado de antes) entra casi al momento.
+          retrasoMs={confeti ? 900 : 400}
+          vars={varsEstilo}
+          titulo={formPublicado(info!.body!.form)!.title || "Formulario"}
+          iniciales={formIniciales}
+          preguntas={formPreguntas}
+          color={info?.body.color}
+          onLlenar={() => setHoja("form")}
+          onCerrar={cerrarAviso}
+        />
+      )}
+      <HojaFlash
+        vars={varsEstilo}
+        open={hoja !== null}
+        // Al cerrar el formulario (a medias o terminado) se vuelve a leer su
+        // estado: el pendiente y el folio del pase.
+        onClose={() => { if (hoja === "form" && !preview) estadoForm.recargar(); setHoja(null); }}
+        color={info?.body.color}
+        label={hoja === "pase" ? "Tu pase" : "Formulario"}
+        // iPad y Mac: encabezado del panel (el pase ya trae el suyo).
+        titulo={hoja === "form" ? formPublicado(info?.body?.form)?.title || "Formulario" : undefined}
+        subtitulo={hoja === "form" ? "Menos de un minuto · solo lo ve el organizador" : undefined}
+      >
+        {hoja === "pase" && guestInfo && (
+          <PaseFlash
+            nombres={[guestInfo.name ?? "", ...companions.filter((c) => c.state === "confirmado").map((c) => c.name ?? "")].filter(Boolean)}
+            qr={guestInfo.id != null ? qrPaseSide(guestInfo.id) : guestInfo.password ?? ""}
+            folio={estadoForm.folio}
+            codigo={guestInfo.password}
+            eventoId={preview ? null : info?.id}
+            invitadoId={guestInfo.id}
+            color={info?.body.color}
+          />
+        )}
+        {hoja === "form" && formActivo && (
+          <RegistroCard
+            form={info!.body!.form!}
+            eventoId={info!.id}
+            codigo={codigoChat}
+            token={registroToken ?? null}
+            preview={preview}
+            enHoja
+            onTerminado={() => { if (preview) estadoForm.terminar(); else estadoForm.recargar(); }}
+          />
+        )}
+      </HojaFlash>
+      {/* Canción de un Flash: el mismo reproductor compacto del Save the Date
+          (disco arriba a la izquierda; gira mientras suena). */}
+      {info?.body.song && (
+        <SongPlayer song={info.body.song} accent="#FFFFFF" secondary="#FFFFFF" dev={false} compact />
+      )}
+      {/* Con video de fondo se apagan los desenfoques en vivo (con_video): se
+          recalculaban en cada cuadro del video y lo trababan. */}
+      <div
+        ref={paginaRef}
+        className={`${styles.side_event_main_cont} ${info?.body.video ? styles.con_video : ""} ${esFlash ? styles.flash : ""}`}
+        // Lo que se asome detrás de la portada (p. ej. bajo la barra de Safari)
+        // es el color del tema oscurecido, no el gris de arranque.
+        style={info?.body.color ? { backgroundColor: darker(info.body.color, 0.8) ?? undefined, backgroundImage: "none", "--tema": info.body.color } as React.CSSProperties : undefined}
+      >
+        <div ref={heroRef} className={styles.hero}>
+          {/* Flash con video de fondo: en bucle y sin sonido; la imagen es su cuadro fijo. */}
+          {info?.body.video ? (
+            <video
+              className={styles.hero_bg}
+              data-zoom
+              src={info.body.video}
+              poster={info.body.image || undefined}
+              autoPlay
+              muted
+              loop
+              playsInline
+              preload="auto"
+              onLoadedMetadata={(e) => setTamFoto({ w: e.currentTarget.videoWidth, h: e.currentTarget.videoHeight })}
+            />
+          ) : (
+            info?.body.image && <Image className={styles.hero_bg} data-zoom fill src={info?.body.image} alt="" style={{ objectFit: "cover" }} onLoad={(e) => setTamFoto({ w: e.currentTarget.naturalWidth, h: e.currentTarget.naturalHeight })} />
+          )}
+          <div className={styles.blur_cover}></div>
+          <div className={styles.shadow}></div>
+        </div>
+
+        {/* Portada fija: no se mueve con el scroll (como la foto, que es
+            sticky). Lleva los PNG, los efectos, el velo y el título, la fecha y
+            el lugar; los botones y las tarjetas (.info_cont, z 2) suben encima
+            al hacer scroll. */}
+        <div ref={escenaRef} className={styles.portada_fija}>
+        {/* Columna de la pieza (450 px como máximo): en pantallas anchas los
+            PNG y los efectos se quedan en ella y su zoom se recorta a sus
+            orillas; el velo, el tinte y el fundido sí cubren todo el ancho. */}
+        {/* En iPad y Mac la foto sigue a pantalla completa (el hero) y los
+            elementos van en la pieza del editor (357 × 631) escalada al alto
+            de la pantalla y centrada, sin recuadro visible. */}
+        <div className={styles.columna_fija}>
+        {/* PNG de un Flash sobre la portada: capa del alto de la pantalla,
+            sin recorte (la portada ocupa toda la pantalla y los botones flotan
+            encima). Van detrás del título, la fecha y el lugar. */}
+        {/* Los ocultos (`hidden`) los dejó el organizador guardados sin mostrar. */}
+        {(info?.body.stickers ?? []).some((st) => !st.hidden) && (
+          <div
+            ref={capaStickersRef}
+            aria-hidden
+            className={styles.stickers_capa}
+            data-zoom
+          >
+            {/* Hasta medir la pantalla no se pinta, para que no brinquen. */}
+            <div className={styles.stickers_lienzo} style={lienzoStickers ?? { visibility: "hidden" }}>
+              {/* Por el optimizador de Next, como la portada: cada teléfono
+                  recibe WebP/AVIF del ancho que ocupa el PNG (un PNG pegado
+                  pesaba ~1 MB; así ~100 KB). Van en la primera pantalla, con
+                  prioridad. width/height solo dan la proporción inicial: el
+                  alto real sale de la imagen (height: auto). */}
+              {pintarStickers((info?.body.stickers ?? []).filter((st) => !st.hidden && !enFoto(st)))}
             </div>
+            {/* Dibujos anclados a la foto, en su recuadro. */}
+            {marcoFoto && (
+              <div className={styles.stickers_lienzo} style={marcoFoto}>
+                {pintarStickers((info?.body.stickers ?? []).filter((st) => !st.hidden && enFoto(st)))}
+              </div>
+            )}
           </div>
         )}
 
@@ -760,17 +1062,7 @@ export default function SideEvents({ info, password, preview, registroToken }: i
 
         </div>
 
-        {/* Velo opcional del panel Fondo: tiñe la portada y los PNG, detrás
-            del texto. */}
-        {colorDeVelo(info?.body.color, info?.body.veil) && (
-          <div aria-hidden className={styles.velo_fijo} style={{ background: colorDeVelo(info?.body.color, info?.body.veil) }} />
-        )}
-
-        <div
-          aria-hidden
-          className={styles.tinte_fijo}
-          style={{ "--blur-color": info?.body.color ?? "#000000" } as React.CSSProperties}
-        />
+        {veloYTinte}
 
         {/* Fundido inferior: en iOS 26 Safari no pinta nada bajo su barra
             flotante (ahí solo se ve el fondo de la página), así que la portada
@@ -794,6 +1086,7 @@ export default function SideEvents({ info, password, preview, registroToken }: i
                 // Con video no hay desenfoque detrás de las tarjetas: más opacas
                 // (85% en vez de 50%) para que se sigan leyendo.
                 "--blur-color--dark": `${darker(info?.body.color ?? "#000", 0.8) ?? "#000000"}${info?.body.video ? "D9" : "80"}`,
+                ...varsEstilo,
               } as React.CSSProperties
             }
           >
@@ -802,10 +1095,13 @@ export default function SideEvents({ info, password, preview, registroToken }: i
                 scroll todo esto y lo demás (itinerario, cómo llegar, notas…)
                 sube encima de la portada fija. El editor (iattend-vite,
                 SideCanvas) acomoda la pieza igual. */}
-            <div className={styles.primera_pantalla}>
+            <div className={`${styles.primera_pantalla} ${!confirmStep && !registro && (guestInfo?.state === "confirmado" || registroToken) ? styles.primera_confirmado : ""}`}>
               {/* Título, fecha y lugar se pueden ocultar desde Capas (coverHidden). */}
               {!portadaOculta(info?.body, "title") && <span
+                className={styles.titulo_portada}
                 style={{
+                  // En iPad y Mac crece con la escena (side-event.module.css).
+                  "--titulo-tam": info?.body.title.size ?? 32,
                   fontFamily: info?.body.title.font,
                   fontWeight: info?.body.title.weight,
                   fontSize: `${info?.body.title.size}px`,
@@ -823,7 +1119,7 @@ export default function SideEvents({ info, password, preview, registroToken }: i
                     transform: info?.body.title.transform ?? undefined,
                     letterSpacing: info?.body.title.letterSpacing ?? undefined,
                   } as Parameters<typeof fontExtras>[0]),
-                }}
+                } as React.CSSProperties}
               >
                 {info?.name}
               </span>}
@@ -854,6 +1150,9 @@ export default function SideEvents({ info, password, preview, registroToken }: i
                   </>
                 )}
               </div>
+              <AnimatePresence>
+                {dedicatoriaArriba && tarjetaInvitado}
+              </AnimatePresence>
               <AnimatePresence mode="wait">
               {confirmStep ? (
                 <motion.div
@@ -867,7 +1166,7 @@ export default function SideEvents({ info, password, preview, registroToken }: i
                 >
                   <span
                     style={{
-                      color: "#FFFFFF",
+                      color: "var(--bloque-tinta, #FFFFFF)",
                       textAlign: "center",
                       fontFamily: "Poppins",
                       fontSize: "12px",
@@ -884,9 +1183,9 @@ export default function SideEvents({ info, password, preview, registroToken }: i
                       placeholder="Tu nombre"
                       className={styles.locked_input}
                       style={{
-                        backgroundColor: "#FFFFFF20",
+                        backgroundColor: "var(--bloque-suave, #FFFFFF20)",
                         borderWidth: "1px",
-                        color: "#FFF",
+                        color: "var(--bloque-tinta, #FFF)",
                         fontSize: "16px",
                         fontWeight: 700,
                         textAlign: "center",
@@ -921,9 +1220,9 @@ export default function SideEvents({ info, password, preview, registroToken }: i
                           placeholder={`Acompañante de ${draftMainName || guestInfo?.name}`}
                           className={styles.locked_input}
                           style={{
-                            backgroundColor: "#FFFFFF20",
+                            backgroundColor: "var(--bloque-suave, #FFFFFF20)",
                             borderWidth: "1px",
-                            color: "#FFF",
+                            color: "var(--bloque-tinta, #FFF)",
                             // 16 px: con menos, iOS hace zoom al enfocar el campo.
                             fontSize: "16px",
                             borderRadius: "12px",
@@ -959,7 +1258,7 @@ export default function SideEvents({ info, password, preview, registroToken }: i
                   {draftCompanions.some((c) => !c.name || c.name.trim() === "") && (
                     <span
                       style={{
-                        color: "#FFFFFF",
+                        color: "var(--bloque-tinta, #FFFFFF)",
                         textAlign: "center",
                         fontFamily: "Poppins",
                         fontSize: "12px",
@@ -973,7 +1272,7 @@ export default function SideEvents({ info, password, preview, registroToken }: i
                   <Button className={styles.locked_btn} style={{ ...btnStyle, width: "100%" }} onClick={confirmWithCompanions}>
                     Confirmar
                   </Button>
-                  <Button type="text" onClick={cancelConfirmStep} style={{ color: "#FFFFFF", opacity: 0.7 }}>
+                  <Button type="text" onClick={cancelConfirmStep} style={{ color: "var(--bloque-tinta, #FFFFFF)", opacity: 0.7 }}>
                     Cancelar
                   </Button>
                 </motion.div>
@@ -1015,7 +1314,7 @@ export default function SideEvents({ info, password, preview, registroToken }: i
                             aria-label="Quitar acompañante"
                             icon={<LuCircleX size={18} />}
                             onClick={() => setRegAcompanantes((prev) => prev.filter((_, j) => j !== i))}
-                            style={{ color: "#FFFFFF", opacity: 0.8 }}
+                            style={{ color: "var(--bloque-tinta, #FFFFFF)", opacity: 0.8 }}
                           />
                         </div>
                       ))}
@@ -1023,7 +1322,7 @@ export default function SideEvents({ info, password, preview, registroToken }: i
                         <Button
                           type="text"
                           onClick={() => setRegAcompanantes((prev) => [...prev, ""])}
-                          style={{ color: "#FFFFFF", fontFamily: "Poppins" }}
+                          style={{ color: "var(--bloque-tinta, #FFFFFF)", fontFamily: "Poppins" }}
                         >
                           + Agregar acompañante
                         </Button>
@@ -1038,7 +1337,7 @@ export default function SideEvents({ info, password, preview, registroToken }: i
                   >
                     {registro === "confirmado" ? "Confirmar asistencia" : "Enviar respuesta"}
                   </Button>
-                  <Button type="text" onClick={() => setRegistro(null)} style={{ color: "#FFFFFF", opacity: 0.7 }}>
+                  <Button type="text" onClick={() => setRegistro(null)} style={{ color: "var(--bloque-tinta, #FFFFFF)", opacity: 0.7 }}>
                     Cancelar
                   </Button>
                 </motion.div>
@@ -1057,12 +1356,15 @@ export default function SideEvents({ info, password, preview, registroToken }: i
                 >
                   {
                     guestInfo?.state !== 'rechazado' &&
-                    <Button onClick={handleConfirmAttendance} style={{ height: '64px', borderRadius: '99px 0px 0px 99px' }} icon={<LuCircleCheck size={18} style={{ opacity: "0.5" }} />} type="text" className={styles.side_buttons}>
+                    <>
+                    <Button onClick={handleConfirmAttendance} style={{ height: 'var(--alto-botones, 80px)', borderRadius: '99px 0px 0px 99px' }} icon={<LuCircleCheck size={20} strokeWidth={1.6} style={{ opacity: "0.8" }} />} type="text" className={styles.side_buttons}>
                       Asistiré
                     </Button>
+                    <span className={styles.botones_divisor} aria-hidden />
+                    </>
                   }
                   {
-                    <Button onClick={() => (!guestInfo && esPublico ? setRegistro("rechazado") : updateGuestStatus(guestInfo?.state === 'rechazado' ? 'creado' : 'rechazado'))} style={{ height: '64px', borderRadius: guestInfo?.state === 'rechazado' ? '99px' : '0px 99px 99px 0px' }} icon={guestInfo?.state !== 'rechazado' && <LuCircleX size={18} style={{ opacity: "0.5" }} />} type="text" className={styles.side_buttons}>
+                    <Button onClick={() => (!guestInfo && esPublico ? setRegistro("rechazado") : preview && !guestInfo ? setPreviewConfirmado(false) : updateGuestStatus(guestInfo?.state === 'rechazado' ? 'creado' : 'rechazado'))} style={{ height: 'var(--alto-botones, 80px)', borderRadius: guestInfo?.state === 'rechazado' ? '99px' : '0px 99px 99px 0px' }} icon={guestInfo?.state !== 'rechazado' && <LuCircleX size={20} strokeWidth={1.6} style={{ opacity: "0.8" }} />} type="text" className={styles.side_buttons}>
                       {guestInfo?.state === 'rechazado' ? 'Asistencia declinada' : 'No asistiré'}
                     </Button>
                   }
@@ -1072,212 +1374,110 @@ export default function SideEvents({ info, password, preview, registroToken }: i
               </AnimatePresence>
             </div>
 
+            {/* Tarjeta del invitado. Privada y dirigida a alguien que aún no
+                confirma: va arriba, en la primera pantalla, con los botones de
+                confirmar debajo de la dedicatoria. */}
             <AnimatePresence>
-              {!confirmStep && guestInfo?.name && (
-                <motion.div
-                  key="guest-name-card"
-                  initial={{ opacity: 0, y: 12, scale: 0.98 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -12, scale: 0.98 }}
-                  transition={{ duration: 0.25, ease: "easeInOut" }}
-                  className={`${styles.tarjeta} ${styles.invitado}`}
-                >
-                  {/* Avatar flotante con las iniciales del invitado. */}
-                  {/* Con "Asistentes" y ya confirmado: su avatar de la lista. En
-                      modo emoji se toca para cambiarlo (lápiz chico). */}
-                  {mostrarAsistentes && guestInfo.state === "confirmado" ? (() => {
-                    const a = { id: String(guestInfo.id ?? ""), emoji: guestInfo.emoji ?? null, perfil: guestInfo.profile ?? null, iniciales: inicialesDe(guestInfo.name) };
-                    const contenido = (
-                      <span style={{ background: fondoDe(a, modo), fontSize: modo === "initials" ? "20px" : "28px" }}>
-                        {contenidoDe(a, modo)}
-                      </span>
-                    );
-                    return modo === "emoji" ? (
-                      <button type="button" className={`${styles.invitado_avatar} ${styles.invitado_avatar_boton}`} onClick={abrirAvatar} aria-label="Cambiar mi emoji">
-                        {contenido}
-                        <span className={styles.invitado_avatar_lapiz} aria-hidden>
-                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
-                        </span>
-                      </button>
-                    ) : <span className={styles.invitado_avatar} aria-hidden>{contenido}</span>;
-                  })() : (
-                    <span className={styles.invitado_avatar} aria-hidden>
-                      <span>{iniciales(guestInfo.name)}</span>
-                    </span>
-                  )}
-                  <span className={styles.invitado_etiqueta}>
-                    {esPublico ? "Registrado como" : "Invitación dirigida a"}
-                  </span>
-                  <span className={styles.invitado_nombre}>{guestInfo.name}</span>
-                  {editandoAvatar && (
-                    <div className={styles.invitado_selector}>
-                      <SelectorAvatar nombre={guestInfo.name ?? ""} valor={avatar} onChange={setAvatar} idBase={String(guestInfo.id ?? "")} />
-                      <div className={styles.invitado_selector_botones}>
-                        <Button type="text" onClick={() => setEditandoAvatar(false)} style={{ color: "#FFFFFF", opacity: 0.8 }}>Cancelar</Button>
-                        <Button className={styles.locked_btn} style={{ ...btnStyle, width: "auto", height: "44px", fontSize: "14px", letterSpacing: "1px", paddingInline: "24px" }} loading={guardandoAvatar} onClick={guardarAvatar}>
-                          Listo
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                  {guestInfo.has_companion && companions.some((c) => c.state !== "rechazado") && (
-                    <div className={styles.invitado_acompanantes}>
-                      {companions.filter((c) => c.state !== "rechazado").map((c, i) => (
-                        <span key={c.id ?? i} className={`${styles.chip_vidrio} ${styles.invitado_chip}`}>
-                          <span className={styles.invitado_chip_mas} aria-hidden>+</span>
-                          <span>{c.name?.trim() || "Acompañante"}</span>
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                  {esPublico && (
-                    <button type="button" onClick={olvidarRegistro} className={styles.invitado_no_eres}>
-                      ¿No eres {guestInfo.name}?
-                    </button>
-                  )}
-                </motion.div>
-              )}
+              {!dedicatoriaArriba && !confirmStep && guestInfo?.name && tarjetaInvitado}
             </AnimatePresence>
 
             {/* Tarjetas debajo de la portada, en el orden y sin las ocultas del
-                panel Capas del editor (helpers/tarjetasSide.ts). Cada una
-                conserva sus condiciones (dirección completa, ciudad, etc.). */}
-            {tarjetasDe(info?.body, !info?.invitation_id).filter((c) => !c.hidden).map(({ key }) => (
-              <React.Fragment key={key}>
-                {key === "registration" && info?.body?.form && (preview || codigoChat || registroToken) && (
-                  <RegistroCard
-                    form={info.body.form}
-                    eventoId={info.id}
-                    codigo={codigoChat}
-                    token={registroToken ?? null}
-                    preview={preview}
-                  />
-                )}
-                {key === "attendees" && (
-                  <>
-                  {/* Asistentes de un Flash (opcional): debajo de la tarjeta del invitado. */}
-                  {mostrarAsistentes && listaAsistentes && (
-                    <Asistentes
-                lista={listaAsistentes}
-                colorTema={info?.body.color}
-                modo={modo}
-                pie={chatActivo ? (
-                  <FilaChat
-                    bloqueada={!preview && !codigoChat}
-                    noLeidos={chat.noLeidos}
-                    ultimo={chat.ultimo ? {
-                      nombre: chat.ultimo.autor === chat.yo ? "Tú" : chat.autores[chat.ultimo.autor]?.nombre ?? "",
-                      texto: chat.ultimo.text,
-                    } : null}
-                    onOpen={() => {
-                      // Sin confirmar: a los botones de confirmar, arriba.
-                      if (!preview && !codigoChat) { paginaRef.current?.scrollTo({ top: 0, behavior: "smooth" }); return; }
-                      setChatAbierto(true);
-                      chat.marcarVisto();
-                    }}
-                  />
-                ) : null}
-              />
-                  )}
-                  </>
-                )}
-                {key === "itinerary" && (
-                  <>
-                  {/* Itinerario de un Flash (widget), arriba de Cómo llegar. */}
-                  {info?.body && itinerarioPorDia(info.body).length > 0 && <ItinerarioWidget body={info.body} />}
-                  </>
-                )}
-                {key === "map" && (
-                  <>
-                  {info?.body.address.street &&
-                    info?.body.address.number &&
-                    info?.body.address.neighborhood &&
-                    info?.body.address.zipcode &&
-                    info?.body.address.city &&
-                    info?.body.address.state &&
-                    info?.body.address.country && (
-                      <div className={`${styles.tarjeta} ${styles.llegar}`}>
-                        <div className={styles.llegar_cabecera}>
-                          <div className={styles.llegar_textos}>
-                            <span className={styles.llegar_titulo}>Cómo llegar</span>
-                            <span className={styles.llegar_direccion}>
-                              {[`${info.body.address.street} ${info.body.address.number}`.trim(), info.body.address.city].filter(Boolean).join(", ")}
-                            </span>
-                          </div>
-                          <a
-                            className={`${styles.relieve} ${styles.llegar_abrir}`}
-                            href={info.body.address.url || `https://maps.google.com/?q=${encodeURIComponent([info.body.place_name, info.body.address.street, info.body.address.number, info.body.address.city, info.body.address.state].filter(Boolean).join(" "))}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                panel Capas del editor (helpers/tarjetasSide.ts), agrupadas bajo
+                su etiqueta (INFORMACIÓN · UBICACIÓN · ASISTENTES, handoff
+                "Flash Layout" 3a). Cada una conserva sus condiciones
+                (dirección completa, ciudad, etc.); una etiqueta solo sale si
+                su grupo tiene algo. El formulario ya no va aquí: llega como
+                aviso y se abre en la hoja. */}
+            {(() => {
+              const body = info?.body;
+              if (!body) return null;
+              const fecha = getEventDateOnly(body.hour, { state: body.address?.state, timezone: body.timezone });
+              const clima = body.address?.city ? {
+                modo: body.weatherMode,
+                ciudad: body.address.city,
+                horasEvento: horasDelEvento(body, fecha),
+                fechaEvento: fecha,
+              } : null;
+              const hay: Record<string, boolean> = {
+                itinerary: itinerarioPorDia(body).length > 0,
+                notes: Boolean(body.extras),
+                map: direccionCompleta(body),
+                weather: Boolean(clima),
+                attendees: mostrarAsistentes && Boolean(listaAsistentes),
+              };
+              const grupos = agruparTarjetas(tarjetasDe(body, !info?.invitation_id).filter((c) => !c.hidden && hay[c.key]).map((c) => c.key));
+              const etiqueta = (g: GrupoTarjetas) => <span className={layout.etiqueta}>{ETIQUETA_DE_GRUPO[g]}</span>;
+              // Cada grupo en su envoltura (display: contents en celular y
+              // tableta). En escritorio, mosaico de dos columnas: los grupos
+              // impares a la izquierda y los pares a la derecha, sin huecos.
+              const bloques = grupos.map(({ id, keys }) => (
+                <div key={id} className={`${layout.grupo} ${esFlash ? layout.grupo_flash : ""}`}>
+                  {/* Solo el clima (sin mapa): su tarjeta grande, y la etiqueta
+                      solo si hay pronóstico que enseñar. */}
+                  {id === "lugar" && !keys.includes("map") ? (
+                    clima && <ClimaVidrio {...clima} antes={etiqueta(id)} />
+                  ) : etiqueta(id)}
+                  {keys.map((key) => (
+                    <React.Fragment key={key}>
+                      {key === "itinerary" && <ItinerarioWidget body={body} sinTitulo />}
+                      {key === "notes" && (
+                        <div className={styles.mapa_container} style={{ padding: "20px" }}>
+                          <span
+                            style={{
+                              whiteSpace: "pre-line",
+                              width: "100%",
+                              // Tipografía, tamaño, color… de la barra de texto del editor.
+                              ...estiloNotas(body),
+                              // Con otro estilo de bloques: el color elegido si se lee, si no la tinta del estilo.
+                              ...(tintaDeNotas(estiloBloque, body.color, body.notes_style?.color)
+                                ? { color: tintaDeNotas(estiloBloque, body.color, body.notes_style?.color)!, mixBlendMode: "normal" as const }
+                                : {}),
+                            }}
                           >
-                            Abrir
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" aria-hidden>
-                              <path d="M7 17L17 7M9 7h8v8" />
-                            </svg>
-                          </a>
+                            {renderTextWithStrong(body.extras ?? "")}
+                          </span>
                         </div>
-                        <div className={styles.llegar_mapa}>
-                          <iframe
-                            title="Mapa"
-                            loading="lazy"
-                            allowFullScreen
-                            referrerPolicy="no-referrer-when-downgrade"
-                            src={simpleaddress(
-                              info?.body.address.street,
-                              info?.body.address.number,
-                              info?.body.address.neighborhood,
-                              info?.body.address.zipcode,
-                              info?.body.address.city,
-                              info?.body.address.state,
-                              info?.body.address.country
-                            )}
-                          />
-                          <div className={styles.llegar_etiqueta}>
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                              <path d="M12 21s-7-6.5-7-12a7 7 0 0 1 14 0c0 5.5-7 12-7 12z" />
-                              <circle cx="12" cy="9" r="2.5" />
-                            </svg>
-                            <span>{info.body.place_name || info.body.address.neighborhood}</span>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </>
-                )}
-                {key === "notes" && (
-                  <>
-                  {/* Notas: debajo de Cómo llegar. */}
-                  {info?.body.extras && (
-                    <div className={styles.mapa_container} style={{ padding: "12px 18px" }}>
-                      <span
-                  style={{
-                    whiteSpace: "pre-line",
-                    width: "100%",
-                    // Tipografía, tamaño, color… de la barra de texto del editor.
-                    ...estiloNotas(info.body),
-                  }}
-                >
-                  {renderTextWithStrong(info.body.extras ?? "")}
-                      </span>
-                    </div>
-                  )}
-                  </>
-                )}
-                {key === "weather" && (
-                  <>
-                  {
-                    info?.body.address.city && !info?.body.hideWeather &&
-                    <ClimaVidrio
-                      modo={info.body.weatherMode}
-                      ciudad={info.body.address.city}
-                      horasEvento={horasDelEvento(info.body, getEventDateOnly(info?.body.hour, { state: info?.body?.address?.state, timezone: info?.body?.timezone }))}
-                      fechaEvento={getEventDateOnly(info?.body.hour, { state: info?.body?.address?.state, timezone: info?.body?.timezone })}
-                    />
-                  }
-                  </>
-                )}
-              </React.Fragment>
-            ))}
+                      )}
+                      {/* Lugar: mapa y, si no está oculto, la fila del clima. */}
+                      {key === "map" && <TarjetaLugar body={body} clima={keys.includes("weather") ? clima : null} />}
+                      {key === "attendees" && listaAsistentes && (
+                        <Asistentes
+                          lista={listaAsistentes}
+                          colorTema={body.color}
+                          modo={modo}
+                          sinTitulo
+                          pie={chatActivo ? (
+                            <FilaChat
+                              bloqueada={!preview && !codigoChat}
+                              noLeidos={chat.noLeidos}
+                              ultimo={chat.ultimo ? {
+                                nombre: chat.ultimo.autor === chat.yo ? "Tú" : chat.autores[chat.ultimo.autor]?.nombre ?? "",
+                                texto: chat.ultimo.text,
+                              } : null}
+                              onOpen={() => {
+                                // Sin confirmar: a los botones de confirmar, arriba.
+                                if (!preview && !codigoChat) { paginaRef.current?.scrollTo({ top: 0, behavior: "smooth" }); return; }
+                                setChatAbierto(true);
+                                chat.marcarVisto();
+                              }}
+                            />
+                          ) : null}
+                        />
+                      )}
+                    </React.Fragment>
+                  ))}
+                </div>
+              ));
+              if (!mosaico || !bloques.length) return bloques;
+              const izquierda = bloques.filter((_, i) => i % 2 === 0);
+              const derecha = bloques.filter((_, i) => i % 2 === 1);
+              return (
+                <div className={`${layout.mosaico} ${derecha.length ? "" : layout.mosaico_uno}`}>
+                  <div className={layout.mosaico_col}>{izquierda}</div>
+                  {derecha.length > 0 && <div className={layout.mosaico_col}>{derecha}</div>}
+                </div>
+              );
+            })()}
 
             <FooterCompact />
           </div>

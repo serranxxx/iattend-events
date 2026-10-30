@@ -35,10 +35,12 @@ const safariUrl = (url: string) =>
 
 /**
  * Lógica de "Agregar a Apple Wallet" compartida entre el pase suelto
- * (`Ticket`) y el carrusel de pases del dock. `passUrl` distinto de null
- * significa que hay que mostrar la hoja de respaldo (`WalletHelpSheet`).
+ * (`Ticket`), el carrusel de pases del dock y el pase de un side event /
+ * Flash (`PaseFlash`, con `sideEventId`: pide /api/wallet/side-pass).
+ * `passUrl` distinto de null significa que hay que mostrar la hoja de
+ * respaldo (`WalletHelpSheet`).
  */
-export function useWalletPass(invitationId?: string) {
+export function useWalletPass(invitationId?: string, sideEventId?: number | string) {
   const [addingToWallet, setAddingToWallet] = useState(false);
   const [passUrl, setPassUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -51,6 +53,12 @@ export function useWalletPass(invitationId?: string) {
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
 
   const buildPassUrl = (guestId: number | string) => {
+    if (sideEventId != null) {
+      const url = new URL("/api/wallet/side-pass", window.location.origin);
+      url.searchParams.set("event", String(sideEventId));
+      url.searchParams.set("guest", String(guestId));
+      return url.toString();
+    }
     const url = new URL("/api/wallet/pass", window.location.origin);
     url.searchParams.set("invitation", String(invitationId));
     url.searchParams.set("guest", String(guestId));
@@ -68,7 +76,7 @@ export function useWalletPass(invitationId?: string) {
    * abre la hoja de respaldo con las instrucciones manuales.
    */
   const addToWallet = (guestId: number | string | null | undefined) => {
-    if (addingToWallet || !invitationId || guestId == null) return;
+    if (addingToWallet || (!invitationId && sideEventId == null) || guestId == null) return;
 
     const url = buildPassUrl(guestId);
     let left = false;

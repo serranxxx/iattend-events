@@ -11,17 +11,17 @@
   max-width: 450px;
   box-sizing: border-box;
   padding: 22px;
-  border-radius: 32px;
-  background: var(--vidrio-tinte, rgba(28, 52, 78, 0.32));
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  backdrop-filter: blur(24px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.38);
-  box-shadow:
+  border-radius: var(--bloque-radio, 32px);
+  background: var(--bloque-fondo, var(--vidrio-tinte, rgba(28, 52, 78, 0.32)));
+  -webkit-backdrop-filter: var(--bloque-blur, blur(24px) saturate(180%));
+  backdrop-filter: var(--bloque-blur, blur(24px) saturate(180%));
+  border: var(--bloque-borde, 1px solid rgba(255, 255, 255, 0.38));
+  box-shadow: var(--bloque-sombra,
     inset 0 1px 0 rgba(255, 255, 255, 0.65),
     inset 0 -1px 1px rgba(255, 255, 255, 0.12),
     inset 0 0 30px rgba(255, 255, 255, 0.08),
-    0 14px 34px rgba(20, 40, 110, 0.28);
-  color: #FFF;
+    0 14px 34px rgba(20, 40, 110, 0.28));
+  color: var(--bloque-tinta, #FFF);
   font-family: Poppins, sans-serif;
   text-align: left;
   display: flex;
@@ -37,7 +37,7 @@
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: linear-gradient(160deg, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0) 40%);
+  background: var(--bloque-reflejo, linear-gradient(160deg, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0) 40%));
   pointer-events: none;
 }
 
@@ -80,9 +80,9 @@
   gap: 8px;
   padding: 6px 12px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.35);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  background: var(--bloque-suave, rgba(255, 255, 255, 0.2));
+  border: 1px solid var(--bloque-linea, rgba(255, 255, 255, 0.35));
+  box-shadow: var(--bloque-brillo, inset 0 1px 0 rgba(255, 255, 255, 0.5));
   font-size: 12px;
   font-weight: 500;
   white-space: nowrap;
@@ -99,7 +99,10 @@
 }
 
 .vacio {
+  align-self: stretch;
+  padding: 6px 0;
   font-size: 14px;
+  text-align: center;
   opacity: 0.85;
 }
 
@@ -170,8 +173,8 @@
 }
 
 .capsula_grupo {
-  background: #FFFFFF14;
-  border-color: #FFFFFF2E;
+  background: var(--bloque-suave, #FFFFFF14);
+  border-color: var(--bloque-linea, #FFFFFF2E);
 }
 
 .capsula_etiqueta {
@@ -199,8 +202,8 @@
   justify-content: center;
   font-size: 13px;
   font-weight: 600;
-  background: rgba(255, 255, 255, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: var(--bloque-suave, rgba(255, 255, 255, 0.2));
+  border: 1px solid var(--bloque-linea, rgba(255, 255, 255, 0.35));
   transition: transform 500ms cubic-bezier(.2, .9, .25, 1), opacity 300ms ease;
 }
 
@@ -228,7 +231,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  color: rgba(255, 255, 255, 0.75);
+  color: color-mix(in srgb, var(--bloque-tinta, #fff) 75%, transparent);
   transition: opacity 300ms ease;
 }
 
@@ -240,8 +243,8 @@
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  background: rgba(255, 255, 255, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: var(--bloque-suave, rgba(255, 255, 255, 0.2));
+  border: 1px solid var(--bloque-linea, rgba(255, 255, 255, 0.35));
 }
 
 .toggle {
@@ -279,8 +282,8 @@
   padding: 6px 12px 6px 6px;
   border-radius: 99px;
   font-size: 12px;
-  background: rgba(255, 255, 255, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: var(--bloque-suave, rgba(255, 255, 255, 0.2));
+  border: 1px solid var(--bloque-linea, rgba(255, 255, 255, 0.35));
   transition: opacity 350ms ease, transform 450ms cubic-bezier(.2, .9, .25, 1);
 }
 
@@ -317,7 +320,7 @@
 }
 
 .capsula_toque[aria-expanded="true"] {
-  box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.55);
+  box-shadow: inset 0 0 0 1.5px var(--bloque-linea, rgba(255, 255, 255, 0.55));
 }
 
 /* Lista del pase tocado (vidrio, encima de todo). */
@@ -334,6 +337,8 @@
   -webkit-backdrop-filter: blur(24px) saturate(180%);
   backdrop-filter: blur(24px) saturate(180%);
   border: 1px solid rgba(255, 255, 255, 0.38);
+  /* Siempre oscura: texto blanco aunque el estilo sea de tinta oscura. */
+  color: #FFF;
   box-shadow: 0 14px 34px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.4);
   animation: detalleEntra 260ms cubic-bezier(.2, .9, .25, 1);
 }

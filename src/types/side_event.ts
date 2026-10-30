@@ -23,7 +23,8 @@ export type SideEventBody = {
   stickers?: FlashSticker[] | null;
   // Mini itinerario de un Flash: icon es el índice del catálogo del
   // itinerario (helpers/icons); date solo si el evento tiene varias fechas.
-  itinerary?: { id: string; name: string; time: string | null; icon: number | string | null; date?: string | null; place?: string | null }[] | null;
+  // desc: detalle opcional del momento (≤ 60), debajo del nombre en el itinerario.
+  itinerary?: { id: string; name: string; time: string | null; icon: number | string | null; date?: string | null; place?: string | null; desc?: string | null }[] | null;
   title: {
     font: string;
     size: number;
@@ -69,14 +70,16 @@ export type SideEventBody = {
   // Chat de asistentes (solo con Asistentes visible): prendido y mensaje
   // fijado del organizador. Ver iattend--backend router/sideEventChat.js.
   chat?: { enabled?: boolean | null; pinned?: { text: string; updated_at?: string } | null } | null;
-  // Registro de asistentes (solo Flash): el formulario que arma el
-  // organizador con plantillas. Ver SideEvent/Registro/datosRegistro.ts.
+  // Formulario (solo Flash): el que el organizador eligió de "Mis
+  // formularios" (snapshot + reglas). Ver SideEvent/Registro/datosRegistro.ts.
   form?: import("@/components/SideEvent/Registro/datosRegistro").FormRegistro | null;
   // Orden y ocultos de las tarjetas de abajo (panel Capas del editor;
   // helpers/tarjetasSide.ts) y textos ocultos de la portada.
   cards?: { key: string; hidden?: boolean | null }[] | null;
   coverHidden?: { title?: boolean | null; date?: boolean | null; place?: boolean | null } | null;
   // Estilo del texto de Notas (barra de texto del editor, como el título).
+  // Estilo de bloques de un Flash (panel Diseño, helpers/estilosBloque.ts). Sin él, "vidrio".
+  blockStyle?: "vidrio" | "hielo" | "noche" | "papel" | "tema" | "sticker" | "contorno" | null;
   notes_style?: {
     font?: string | null; size?: number | null; weight?: number | null; line_height?: number | null;
     opacity?: number | null; color?: string | null; italic?: boolean | null; underline?: boolean | null;
@@ -175,7 +178,17 @@ export type PopEvent = {
 // components/SideEvent/FlashElemento.tsx.
 export interface FlashSticker {
   id: string;
-  kind?: "sticker" | "icon" | "text" | "line" | "separator" | "shape" | null;
+  kind?: "sticker" | "icon" | "text" | "line" | "separator" | "shape" | "dibujo" | null;
+  // Dibujo a mano (herramienta Dibujar del editor, components/SideEvent/Dibujo.tsx):
+  // pincel, grosor, puntos en su caja (vbW × vbH) y lo borrado.
+  brush?: "pluma" | "marcador" | "resaltador" | "lapiz" | "neon" | null;
+  size?: number | null;
+  points?: [number, number][] | null;
+  vbW?: number | null;
+  vbH?: number | null;
+  erase?: { points: [number, number][]; size: number }[] | null;
+  // Dibujo anclado a la foto de fondo: x / y / w en % de la foto como se ve.
+  foto?: boolean | null;
   url?: string;
   icon?: string;
   src?: string;

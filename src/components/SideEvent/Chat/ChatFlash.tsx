@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { ArrowUp, ChevronDown, Pin, SmilePlus } from "lucide-react";
+import React, { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import { ArrowUp, ChevronDown, Pin, SmilePlus, X } from "lucide-react";
+import { useAnchoFlash, useFocoAtrapado } from "../Layout/useAnchoFlash";
 import { darker } from "@/helpers/functions";
 import { AvatarAsistente } from "../Asistentes/Asistentes";
 import { oscuroDe, type Asistente, type ModoAvatar } from "../Asistentes/datosAsistentes";
@@ -62,9 +63,14 @@ type Props = {
     cargarMas: () => void;
     avisarEscribiendo: () => void;
   };
+  // Variables del estilo de bloques (helpers/estilosBloque.ts): la hoja se
+  // viste como las tarjetas de la página. Sin ellas, la hoja oscura de siempre.
+  vars?: React.CSSProperties;
+  // Color del tema: con iniciales, los tonos de cada quien salen de él.
+  colorTema?: string | null;
 };
 
-export default function ChatFlash({ open, onClose, modo, preview, confirmados, asistentes, chat }: Props) {
+export default function ChatFlash({ open, onClose, modo, preview, confirmados, asistentes, chat, vars, colorTema }: Props) {
   const listRef = useRef<HTMLDivElement>(null);
   const capaRef = useRef<HTMLDivElement>(null);
   const hojaRef = useRef<HTMLDivElement>(null);
@@ -77,6 +83,12 @@ export default function ChatFlash({ open, onClose, modo, preview, confirmados, a
   const cercaDelFondo = useRef(true);
   const arrastreRef = useRef<{ y: number; t: number } | null>(null);
   const cuantos = useRef(chat.mensajes.length);
+  // iPad: hoja centrada de 640 px; Mac: panel lateral (handoff "Evento Flash
+  // en iPad y Mac"). Encabezado con título, subtítulo y ✕; foco atrapado.
+  const ancho = useAnchoFlash();
+  const grande = ancho !== "tel";
+  const idTitulo = useId();
+  useFocoAtrapado(hojaRef, open && grande);
 
   // Entrada de cada mensaje: monta abajo y transparente; al siguiente cuadro sube.
   useEffect(() => {
@@ -166,20 +178,38 @@ export default function ChatFlash({ open, onClose, modo, preview, confirmados, a
       <div
         ref={hojaRef}
         className={styles.sheet}
+        data-open={open}
         style={{
-          transform: open ? `translateY(${arrastre}px)` : "translateY(104%)",
+          ...vars,
+          "--tema": colorTema ?? "#6E7FD8",
+          "--arrastre": `${arrastre}px`,
           transition: arrastre ? "none" : undefined,
           pointerEvents: open ? "auto" : "none",
-        }}
+        } as React.CSSProperties}
         role="dialog"
-        aria-label="Chat de asistentes"
+        aria-modal={open || undefined}
+        aria-label={grande ? undefined : "Chat de asistentes"}
+        aria-labelledby={grande ? idTitulo : undefined}
         aria-hidden={!open}
+        tabIndex={-1}
       >
         <div className={styles.sheet_inner} style={{ opacity: open ? 1 : 0 }}>
-          <div className={styles.handle_wrap} onPointerDown={onAsaDown} onPointerMove={onAsaMove} onPointerUp={onAsaUp} onPointerCancel={onAsaUp}>
+          <div className={`${styles.handle_wrap} ${ancho === "escritorio" ? styles.sin_asa : ""}`} onPointerDown={onAsaDown} onPointerMove={onAsaMove} onPointerUp={onAsaUp} onPointerCancel={onAsaUp}>
             <div className={styles.handle} />
           </div>
 
+          {grande ? (
+            <div className={styles.header_panel}>
+              <div className={styles.header_col}>
+                <span id={idTitulo} className={styles.title_panel}>Chat de invitados</span>
+                <span className={styles.subtitle_panel}>
+                  {confirmados} {confirmados === 1 ? "asistente" : "asistentes"}
+                  {preview ? " · Vista previa" : ` · ${Math.max(1, chat.enLinea)} en línea`}
+                </span>
+              </div>
+              <button type="button" className={styles.close_panel} onClick={onClose} aria-label="Cerrar"><X size={18} strokeWidth={2.2} /></button>
+            </div>
+          ) : (
           <div className={styles.header}>
             <button type="button" className={styles.icon_btn} onClick={onClose} aria-label="Cerrar"><ChevronDown size={18} strokeWidth={2.2} /></button>
             <div className={styles.header_col}>
@@ -192,9 +222,10 @@ export default function ChatFlash({ open, onClose, modo, preview, confirmados, a
               </span>
             </div>
             <div className={styles.recent}>
-              {recientes.map((u) => <span key={u.id} className={styles.av_ring}><AvatarAsistente a={u} size={28} modo={modo} /></span>)}
+              {recientes.map((u) => <span key={u.id} className={styles.av_ring}><AvatarAsistente a={u} size={28} modo={modo} tema={colorTema} /></span>)}
             </div>
           </div>
+          )}
 
           {chat.fijado && (
             <div className={styles.pinned}>
@@ -273,10 +304,10 @@ export default function ChatFlash({ open, onClose, modo, preview, confirmados, a
                 <div key={m.id} className={styles.msg} style={estilo}>
                   <div className={styles.other_row}>
                     <span className={styles.group_av}>
-                      <AvatarAsistente a={u} size={32} modo={modo} />
+                      <AvatarAsistente a={u} size={32} modo={modo} tema={colorTema} />
                       {minis.length > 0 && (
                         <span className={styles.minis}>
-                          {minis.map((c) => <span key={c.id} className={styles.av_ring}><AvatarAsistente a={c} size={18} modo={modo} /></span>)}
+                          {minis.map((c) => <span key={c.id} className={styles.av_ring}><AvatarAsistente a={c} size={18} modo={modo} tema={colorTema} /></span>)}
                         </span>
                       )}
                     </span>
@@ -285,7 +316,7 @@ export default function ChatFlash({ open, onClose, modo, preview, confirmados, a
                         <b>{u.nombre}</b>
                         {con && <span className={styles.with}>{con}</span>}
                       </div>
-                      <div className={styles.bubble} style={{ background: darker(oscuroDe(u, modo), 0.72) ?? "#2B221C" }}>{m.text}</div>
+                      <div className={styles.bubble} style={{ background: darker(oscuroDe(u, modo, colorTema), 0.72) ?? "#2B221C" }}>{m.text}</div>
                       {fila}
                     </div>
                   </div>

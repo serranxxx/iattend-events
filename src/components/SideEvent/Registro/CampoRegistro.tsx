@@ -4,20 +4,22 @@ import { AlertCircle, Check } from "lucide-react";
 import type { Campo } from "./datosRegistro";
 import styles from "./registro.module.css";
 
-// Un campo del registro (handoff 2a, "Tipos de campo"): texto, una opción,
-// varias, sí/no y casilla, con su ayuda y su error.
+// Una pregunta del formulario de un Flash: texto (corto, número, WhatsApp,
+// correo), párrafo, fecha, una opción, varias, sí/no y casilla de
+// autorización, con su ayuda y su error.
 
 type Props = { field: Campo; value: unknown; error?: string; onChange: (_v: unknown) => void; onEnter: () => void; privacyUrl?: string };
 
 export default function CampoRegistro({ field: f, value, error, onChange, onEnter, privacyUrl }: Props) {
   const arr = (Array.isArray(value) ? value : []) as string[];
+  const lleno = (o: string) => !arr.includes(o) && Boolean(f.max) && arr.length >= (f.max ?? 0);
   return (
     <div className={styles.field}>
       {f.type !== "check" && (
         <div className={styles.label_row}>
           <span className={styles.label}>{f.label}</span>
-          {!f.required && f.type !== "multi" && <span className={styles.optional}>Opcional</span>}
-          {f.type === "multi" && <span className={styles.counter}>{arr.length}/{f.max}</span>}
+          {!f.required && !(f.type === "multi" && f.max) && <span className={styles.optional}>Opcional</span>}
+          {f.type === "multi" && f.max ? <span className={styles.counter}>{arr.length}/{f.max}</span> : null}
         </div>
       )}
 
@@ -29,6 +31,26 @@ export default function CampoRegistro({ field: f, value, error, onChange, onEnte
             value={(value as string) ?? ""} placeholder={f.placeholder}
             inputMode={f.inputMode} maxLength={f.maxLength}
             onChange={e => onChange(f.inputMode === "numeric" ? e.target.value.replace(/\D/g, "") : e.target.value)}
+            onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); onEnter(); } }}
+          />
+        </div>
+      )}
+
+      {f.type === "long" && (
+        <textarea
+          className={`${styles.textarea} ${error ? styles.has_error : ""}`} autoFocus
+          value={(value as string) ?? ""} placeholder={f.placeholder ?? "Escribe tu respuesta"}
+          maxLength={f.maxLength ?? 500} rows={4}
+          onChange={e => onChange(e.target.value)}
+        />
+      )}
+
+      {f.type === "date" && (
+        <div className={`${styles.input_wrap} ${error ? styles.has_error : ""}`}>
+          <input
+            type="date" className={`${styles.input} ${styles.date}`} autoFocus
+            value={(value as string) ?? ""} min="1900-01-01" max="2100-12-31"
+            onChange={e => onChange(e.target.value)}
             onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); onEnter(); } }}
           />
         </div>
@@ -48,7 +70,7 @@ export default function CampoRegistro({ field: f, value, error, onChange, onEnte
       {f.type === "multi" && (
         <div className={styles.multi}>
           {f.options!.map(o => {
-            const on = arr.includes(o), full = !on && arr.length >= (f.max ?? Infinity);
+            const on = arr.includes(o), full = lleno(o);
             return (
               <button key={o} type="button" aria-pressed={on} disabled={full}
                 className={`${styles.chip} ${on ? styles.on : ""}`}

@@ -9,6 +9,7 @@ import { iconsItinerary } from "@/helpers/icons";
 import { LAYER_ICONS } from "../Invitation/SectionLayer/SectionLayer";
 import Vector from "../Vector/Vector";
 import styles from "./flash-elemento.module.css";
+import Dibujo from "./Dibujo";
 
 // Elemento de la portada de un Flash que no es imagen (`body.stickers[n].kind`):
 // ícono, forma, texto, línea o decoración. Mismo modelo y mismo dibujo que los
@@ -37,6 +38,9 @@ const dashFor = (style: string | null | undefined, sw: number) =>
 
 export default function FlashElemento({ s, titleFont, bodyFont = "Poppins" }: { s: FlashSticker; titleFont?: string; bodyFont?: string }) {
   const color = s.color && s.color !== "transparent" ? s.color : DEFAULT_COLOR;
+
+  // Dibujo a mano (herramienta Dibujar del editor).
+  if (s.kind === "dibujo") return <Dibujo s={s} />;
 
   if (s.kind === "icon") {
     if (s.src && s.vector) return <Vector s={s} color={color} />;

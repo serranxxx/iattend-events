@@ -177,7 +177,9 @@
 
 .buttons_cont {
   width: 100%;
-  /* height: 60px; */
+  /* Cápsula de 80 px con dos mitades (handoff "Flash Layout" 3a). */
+  height: 80px;
+  overflow: hidden;
   border-radius: 999px;
   background-color: var(--blur-color--dark);
   backdrop-filter: blur(20px);
@@ -195,19 +197,25 @@
   align-items: center;
   justify-content: center;
   flex-direction: column;
-  gap: 2 !important;
-  color: #FFF;
-  border-right: 1px solid #FFFFFF40;
+  gap: 4px !important;
+  color: var(--bloque-tinta, #FFF);
   border-radius: 0;
-  font-size: 14px;
+  font-family: Poppins, sans-serif;
+  font-size: 16px;
+  font-weight: 600;
 }
 
-.side_buttons:last-of-type {
-  border: none;
+/* Divisor entre Asistiré y No asistiré, con aire arriba y abajo. */
+.botones_divisor {
+  align-self: stretch;
+  width: 1px;
+  margin: 14px 0;
+  flex-shrink: 0;
+  background: var(--bloque-linea, rgba(255, 255, 255, 0.3));
 }
 
 .side_buttons:hover {
-  color: #FFFFFF !important;
+  color: var(--bloque-tinta, #FFFFFF) !important;
 }
 
 .mapa_container {
@@ -287,7 +295,7 @@
 }
 
 .locked_input::placeholder {
-  color: #FFFFFF80;
+  color: color-mix(in srgb, var(--bloque-tinta, #FFFFFF) 50%, transparent);
   font-style: italic;
 }
 
@@ -411,6 +419,7 @@
    (iattend-vite, SideCanvas .primeraPantalla). */
 .primera_pantalla {
   width: 100%;
+  position: relative;
   /* La pantalla visible exacta (dvh), como la portada. */
   min-height: 100vh;
   min-height: 100dvh;
@@ -424,6 +433,16 @@
      tarjeta empieza a 12 px de ellos (el gap de .info_cont), como las demás. */
   margin-bottom: -16px;
   box-sizing: border-box;
+}
+
+/* Ya confirmado: la portada llena la pantalla y solo asoma la punta (36 px)
+   del avatar de la tarjeta del invitado (12 de gap + 40 de su margen − 40
+   del avatar). */
+.primera_confirmado {
+  min-height: calc(100vh - 48px);
+  min-height: calc(100dvh - 48px);
+  padding-bottom: 28px;
+  margin-bottom: 0;
 }
 
 /* Portada fija: del alto de la pantalla y del ancho de la columna, no se
@@ -523,6 +542,119 @@
 
 }
 
+/* ── Flash en iPad y Mac (handoff "Evento Flash en iPad y Mac", 9b) ──
+   En celular (< 600) no cambia nada. Desde 600 px:
+   · La portada es la misma que en celular, a pantalla completa: la foto (o
+     el video) cubre toda la ventana con sus mismas capas (desenfoque de
+     abajo, sombra, velo, tinte y fundido). Sin ambiente ni recuadro.
+   · Los elementos (PNG, textos, dibujos) van en la pieza del editor
+     (357 × 631) escalada al alto de la pantalla y centrada, sin recorte ni
+     recuadro visible; los dibujos anclados a la foto siguen a la foto.
+   · Al bajar la portada se desvanece y crece 4% (SideEvent.tsx).
+   · Título, fecha, lugar y botones desde el 54% de la pantalla; debajo las
+     tarjetas (una columna de 600 px; en escritorio el mosaico de
+     Layout/layout.module.css). */
+@media (min-width: 600px) {
+  .flash {
+    --escena-alto: min(100vh, calc(100vw * 631 / 357));
+    --escena-alto: min(100dvh, calc(100vw * 631 / 357));
+    --alto-botones: 92px;
+  }
+
+  /* Del alto de la pantalla, sin el sangrado de 140 px de Safari en iPhone. */
+  .flash .hero {
+    min-height: 100vh;
+    min-height: 100dvh;
+    transform-origin: 50% 50%;
+  }
+
+  .flash .velo_fijo,
+  .flash .tinte_fijo {
+    inset: 0;
+  }
+
+  .flash .portada_fija {
+    transform-origin: 50% 50%;
+  }
+
+  .flash .columna_fija {
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    width: calc(var(--escena-alto) * 357 / 631);
+    height: var(--escena-alto);
+    overflow: visible;
+  }
+
+  /* Sin recorte a los lados: los elementos (y el brillo del neón) siguen
+     sobre la foto hasta la orilla de la ventana. */
+  .flash .portada_fija .stickers_capa {
+    overflow: visible;
+  }
+
+  .flash .info_cont {
+    margin-top: -100vh;
+    margin-top: -100dvh;
+    padding: 0 32px;
+    gap: 12px;
+  }
+
+  .flash .primera_pantalla,
+  .flash .primera_confirmado {
+    min-height: 0;
+    justify-content: flex-start;
+    padding-top: 54vh;
+    padding-top: 54dvh;
+    padding-bottom: 0;
+    margin-bottom: 0;
+    max-width: 600px;
+  }
+
+  /* El tamaño que eligió el organizador, escalado como la pieza (hasta 76). */
+  .flash .titulo_portada {
+    font-size: clamp(calc(var(--titulo-tam) * 1px), calc(var(--titulo-tam) * var(--escena-alto) / 631), 76px) !important;
+  }
+
+  .flash .col {
+    font-size: 18px;
+  }
+
+  .flash .buttons_cont {
+    max-width: 520px;
+    height: var(--alto-botones);
+  }
+
+  .flash .side_buttons {
+    font-size: 17px;
+  }
+
+  /* La dedicatoria, del ancho de los botones. */
+  .flash .invitado {
+    max-width: 520px;
+  }
+
+  /* Tarjeta del invitado y lo demás que va suelto en la columna. */
+  .flash .info_cont > .mapa_container,
+  .flash .info_cont > .registro {
+    max-width: 600px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .flash {
+    --alto-botones: 96px;
+  }
+
+  .flash .titulo_portada {
+    font-size: clamp(calc(var(--titulo-tam) * 1px), calc(var(--titulo-tam) * var(--escena-alto) / 631), 88px) !important;
+  }
+
+  .flash .buttons_cont,
+  .flash .invitado {
+    max-width: 560px;
+  }
+}
+
 /* PNG de un Flash sobre la portada: capa del alto de la pantalla, centrada y
    del ancho de la columna (como la pieza del editor), que se mueve con la
    página. El hero es z 1 (sticky) y las tarjetas z 2: "detrás" va en 1
@@ -579,15 +711,17 @@
    después y trae su propio degradado. */
 .vidrio.vidrio {
   position: relative;
-  background: var(--vidrio-tinte);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  backdrop-filter: blur(24px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.38);
-  box-shadow:
+  /* Estilo de bloques (body.blockStyle, helpers/estilosBloque.ts): cada
+     estilo define --bloque-*; sin ellas, el vidrio de siempre. */
+  background: var(--bloque-fondo, var(--vidrio-tinte));
+  -webkit-backdrop-filter: var(--bloque-blur, blur(24px) saturate(180%));
+  backdrop-filter: var(--bloque-blur, blur(24px) saturate(180%));
+  border: var(--bloque-borde, 1px solid rgba(255, 255, 255, 0.38));
+  box-shadow: var(--bloque-sombra,
     inset 0 1px 0 rgba(255, 255, 255, 0.65),
     inset 0 -1px 1px rgba(255, 255, 255, 0.12),
     inset 0 0 30px rgba(255, 255, 255, 0.08),
-    0 14px 34px rgba(20, 40, 110, 0.28);
+    0 14px 34px rgba(20, 40, 110, 0.28));
 }
 
 /* Tarjetas: radio 32 (los botones siguen siendo píldora). */
@@ -595,7 +729,7 @@
 .registro,
 .tarjeta,
 .vidrio.vidrio {
-  border-radius: 32px;
+  border-radius: var(--bloque-radio, 32px);
 }
 
 /* Reflejo diagonal. */
@@ -608,7 +742,7 @@
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: linear-gradient(160deg, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0) 40%);
+  background: var(--bloque-reflejo, linear-gradient(160deg, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0) 40%));
   pointer-events: none;
   z-index: 1;
 }
@@ -627,16 +761,16 @@
   display: inline-flex;
   align-items: center;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.18);
-  border: 1px solid rgba(255, 255, 255, 0.35);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  background: var(--bloque-suave, rgba(255, 255, 255, 0.18));
+  border: 1px solid var(--bloque-linea, rgba(255, 255, 255, 0.35));
+  box-shadow: var(--bloque-brillo, inset 0 1px 0 rgba(255, 255, 255, 0.5));
 }
 
 /* Vidrio en relieve (botones, orbes). */
 .relieve {
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.2));
-  border: 1px solid rgba(255, 255, 255, 0.55);
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.8), 0 6px 14px rgba(20, 40, 110, 0.22);
+  background: var(--bloque-relieve, linear-gradient(145deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.2)));
+  border: 1px solid var(--bloque-linea, rgba(255, 255, 255, 0.55));
+  box-shadow: var(--bloque-brillo, inset 0 1px 1px rgba(255, 255, 255, 0.8), 0 6px 14px rgba(20, 40, 110, 0.22));
 }
 
 /* Video de fondo (Flash): solo se apaga el desenfoque decorativo de la
@@ -675,7 +809,7 @@
 }
 
 .registro_titulo {
-  color: #FFFFFF;
+  color: var(--bloque-tinta, #FFFFFF);
   font-family: Poppins, sans-serif;
   font-size: 17px;
   font-weight: 600;
@@ -686,14 +820,15 @@
 .invitado {
   width: 100%;
   max-width: 450px;
-  margin-top: 22px;
-  padding: 46px 22px 22px;
+  /* Avatar de 80 px flotando a la mitad (handoff "Flash Layout" 3a). */
+  margin-top: 40px;
+  padding: 50px 20px 18px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   text-align: center;
-  color: #fff;
+  color: var(--bloque-tinta, #fff);
   font-family: Poppins, sans-serif;
   box-sizing: border-box;
 }
@@ -705,15 +840,16 @@
 
 .invitado .invitado_avatar {
   position: absolute;
-  top: -30px;
+  top: -40px;
   left: 50%;
   transform: translateX(-50%);
-  width: 64px;
-  height: 64px;
+  width: 80px;
+  height: 80px;
   border-radius: 50%;
-  padding: 4px;
+  padding: 0;
   box-sizing: border-box;
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.2));
+  border: var(--avatar-borde, 4px solid rgba(255, 255, 255, 0.6));
+  background: none;
   box-shadow: 0 8px 20px rgba(20, 40, 110, 0.35);
 }
 
@@ -724,7 +860,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 20px;
+  font-size: 26px;
   font-weight: 600;
   color: #fff;
   /* Del color del tema (el handoff usa ámbar): claro arriba, profundo abajo. */
@@ -735,15 +871,14 @@
 }
 
 .invitado_etiqueta {
-  font-size: 13px;
-  letter-spacing: 0.04em;
+  font-size: 15px;
   opacity: 0.85;
 }
 
 .invitado_nombre {
-  font-size: 24px;
-  font-weight: 600;
-  line-height: 1.1;
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.15;
 }
 
 .invitado_acompanantes {
@@ -765,7 +900,7 @@
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.35);
+  background: var(--bloque-linea, rgba(255, 255, 255, 0.35));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -774,11 +909,11 @@
 }
 
 .invitado_no_eres {
-  margin-top: 12px;
+  margin-top: 10px;
   padding: 0;
   border: 0;
   background: none;
-  color: #fff;
+  color: var(--bloque-tinta, #fff);
   font-family: inherit;
   font-size: 13px;
   font-weight: 500;
@@ -909,7 +1044,7 @@
 
 .invitado_avatar_lapiz {
   position: absolute;
-  right: -2px;
+  right: -4px;
   bottom: -2px;
   width: 22px !important;
   height: 22px !important;

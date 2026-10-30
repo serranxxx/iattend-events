@@ -25,7 +25,7 @@ const STEP = 26; // traslape de 18 px dentro de la cápsula
 
 const plural = (n: number, uno: string, varios: string) => `${n} ${n === 1 ? uno : varios}`;
 
-function Avatar({ a, size = AV, brillo, modo = "emoji" }: { a: Asistente; size?: number; brillo?: boolean; modo?: ModoAvatar }) {
+function Avatar({ a, size = AV, brillo, modo = "emoji", tema }: { a: Asistente; size?: number; brillo?: boolean; modo?: ModoAvatar; tema?: string | null }) {
   const chico = size < 30;
   const letras = modo === "initials";
   return (
@@ -34,9 +34,9 @@ function Avatar({ a, size = AV, brillo, modo = "emoji" }: { a: Asistente; size?:
       style={{
         width: size,
         height: size,
-        background: fondoDe(a, modo),
+        background: fondoDe(a, modo, tema),
         fontSize: Math.round(size * (letras ? 0.36 : chico ? 0.6 : 0.55)),
-        boxShadow: brillo ? `0 0 0 3px ${brilloDe(a, modo)}88, 0 0 18px ${brilloDe(a, modo)}` : undefined,
+        boxShadow: brillo ? `0 0 0 3px ${brilloDe(a, modo, tema)}88, 0 0 18px ${brilloDe(a, modo, tema)}` : undefined,
       }}
     >
       {contenidoDe(a, modo)}
@@ -44,12 +44,14 @@ function Avatar({ a, size = AV, brillo, modo = "emoji" }: { a: Asistente; size?:
   );
 }
 
-export function AvatarAsistente(props: { a: Asistente; size?: number; modo?: ModoAvatar }) {
+export function AvatarAsistente(props: { a: Asistente; size?: number; modo?: ModoAvatar; tema?: string | null }) {
   return <Avatar {...props} />;
 }
 
 // `pie`: lo que va al fondo de la tarjeta, de orilla a orilla (la fila del chat).
-export default function Asistentes({ lista, colorTema, modo = "emoji", pie }: { lista: ListaAsistentes; colorTema?: string; modo?: ModoAvatar; pie?: React.ReactNode }) {
+// `sinTitulo`: bajo la etiqueta ASISTENTES de la página (handoff "Flash
+// Layout" 3a) la cabecera solo lleva el chip.
+export default function Asistentes({ lista, colorTema, modo = "emoji", pie, sinTitulo }: { lista: ListaAsistentes; colorTema?: string; modo?: ModoAvatar; pie?: React.ReactNode; sinTitulo?: boolean }) {
   const list = lista.asistentes;
   const n = Math.max(lista.total, list.length);
   const areaRef = useRef<HTMLDivElement>(null);
@@ -174,15 +176,18 @@ export default function Asistentes({ lista, colorTema, modo = "emoji", pie }: { 
     >
       {/* Encabezado como el del itinerario: título y chip de resumen. Todo él
           abre / cierra. */}
-      <button type="button" className={styles.cabecera} style={n > 0 ? undefined : { cursor: "default" }} onClick={() => n > 0 && alternar()} aria-expanded={open}>
-        <span className={styles.titulo}>Asistentes</span>
-        {n > 0 && (
-          <span className={styles.resumen} style={{ transform: `scale(${bump ? 1.08 : 1})` }}>
-            <span className={styles.live_dot} />
-            {plural(n, "asistente", "asistentes")}
-          </span>
-        )}
-      </button>
+      {/* Sin título y sin nadie todavía no hay cabecera: el mensaje va solo, centrado. */}
+      {(!sinTitulo || n > 0) && (
+        <button type="button" className={styles.cabecera} style={n > 0 ? undefined : { cursor: "default" }} onClick={() => n > 0 && alternar()} aria-expanded={open}>
+          {!sinTitulo && <span className={styles.titulo}>Asistentes</span>}
+          {n > 0 && (
+            <span className={styles.resumen} style={{ transform: `scale(${bump ? 1.08 : 1})` }}>
+              <span className={styles.live_dot} />
+              {plural(n, "asistente", "asistentes")}
+            </span>
+          )}
+        </button>
+      )}
 
       {n === 0 && <span className={styles.vacio}>¡Sé el primero en confirmar!</span>}
 
@@ -234,7 +239,7 @@ export default function Asistentes({ lista, colorTema, modo = "emoji", pie }: { 
                   transitionDelay: `${delay}ms`,
                 }}
               >
-                <Avatar a={p} brillo={p.id === newId} modo={modo} />
+                <Avatar a={p} brillo={p.id === newId} modo={modo} tema={colorTema} />
               </div>
             );
           })}
@@ -278,7 +283,7 @@ export default function Asistentes({ lista, colorTema, modo = "emoji", pie }: { 
                 </button>
                 {u.miembros.map((m) => (
                   <div key={m.id} className={styles.detalle_fila}>
-                    <Avatar a={m} size={30} modo={modo} />
+                    <Avatar a={m} size={30} modo={modo} tema={colorTema} />
                     <span className={styles.detalle_nombre}>{m.nombre || "Acompañante"}</span>
                   </div>
                 ))}
@@ -305,7 +310,7 @@ export default function Asistentes({ lista, colorTema, modo = "emoji", pie }: { 
       <div className={styles.collapse} style={{ gridTemplateRows: toastOn ? "1fr" : "0fr" }}>
         <div>
           <div className={styles.toast} style={{ opacity: toastOn ? 1 : 0, transform: `translateY(${toastOn ? 0 : 8}px)` }}>
-            {toast && <Avatar a={toast} size={22} modo={modo} />}
+            {toast && <Avatar a={toast} size={22} modo={modo} tema={colorTema} />}
             <span>
               <b>{toast?.nombre || "Alguien"}</b>
               {toast && titularDe(toast) ? ` confirmó con ${titularDe(toast)!.nombre}` : " acaba de confirmar"}
