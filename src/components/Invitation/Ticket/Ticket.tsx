@@ -46,7 +46,11 @@ const toCoverImageUrl = (src: string | string[] | null | undefined): string | nu
 export function Ticket({ guest, invitation, ui, colors, onClose, id, variant = "overlay", passLabel }: TicketProps) {
   const { primary, accent } = colors;
   const font = invitation.generals.fonts.body?.value ?? "Poppins";
-  const coverImageSrc = toCoverImageUrl(invitation.cover.image.prod);
+  // Foto y título del pase (editor de vite → Pase digital) o los de la portada.
+  const coverImageSrc = toCoverImageUrl(invitation.wallet?.image) || toCoverImageUrl(invitation.cover.image.prod);
+  const tituloPase = String(invitation.wallet?.title ?? "").trim() || invitation.cover.title.text.value;
+  // Apple Wallet es opcional (el organizador lo apaga en Pase digital).
+  const conWallet = invitation.wallet?.enabled !== false;
   const supabase = createClient();
   const wallet = useWalletPass(id);
   const isDock = variant === "dock";
@@ -90,14 +94,14 @@ export function Ticket({ guest, invitation, ui, colors, onClose, id, variant = "
             className={styles.ticket_shadow}
           />
           <div className={styles.ticket_logo}>
-            <img src="/assets/images/nuevo_blanco.png" alt="" style={{ width: isDock ? "64px" : "70px" }} />
+            <img src="/assets/images/iattend_logo_claro.png" alt="I attend" style={{ width: isDock ? "64px" : "70px" }} />
           </div>
 
           {isDock && passLabel && (
             <span className={styles.ticket_pass_label}>{passLabel}</span>
           )}
 
-          {supportsAppleWallet() && (
+          {conWallet && supportsAppleWallet() && (
             <div
               onClick={(e) => { e.stopPropagation(); wallet.addToWallet(guest.id); }}
               className={styles.wallet_btn} style={{
@@ -132,7 +136,7 @@ export function Ticket({ guest, invitation, ui, colors, onClose, id, variant = "
 
           <div className={styles.ticket_col} style={{ flex: 1, minWidth: 0 }}>
             <span style={{ fontSize: isDock ? "16px" : "17px", fontWeight: 600, lineHeight: 1.2 }}>
-              {invitation.cover.title.text.value}
+              {tituloPase}
             </span>
             <div className={styles.ticket_col} style={{ flexDirection: 'row', gap: '8px' }}>
               <span style={{ fontWeight: 600, fontSize: "13px" }}>{formatShortDate(invitation.cover.date.value)}</span>

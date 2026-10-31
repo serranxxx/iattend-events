@@ -714,6 +714,13 @@
   margin-top: 8px;
 }
 
+/* "Lugar principal" (editor, con varias direcciones): mismo vidrio que
+   "Eliminar dirección"; marcado, blanco con texto oscuro. */
+.edit_drawer_principal.edit_drawer_delete--soft[data-on] {
+  background: #FFFFFF !important;
+  color: #1F1B2E;
+}
+
 /* "Eliminar dirección": más discreto, vidrio blanco al 30 % y texto blanco. */
 .edit_drawer_delete--soft {
   background: rgba(255, 255, 255, 0.3) !important;

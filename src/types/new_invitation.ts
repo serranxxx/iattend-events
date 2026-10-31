@@ -91,6 +91,10 @@ export interface ItineraryItem {
   icon_stroke?: number | null;
   id: number | null;
   address?: Address;
+  // Lugar principal (con varias direcciones): el "lugar del evento" del pase
+  // de Apple Wallet. Lo marca el organizador en iattend-vite; lo lee el
+  // backend (services/wallet/datosPase.js). Sin marca, el último con dirección.
+  principal?: boolean | null;
   moments?: MomentItem[];
   music?: string;
 }
@@ -448,6 +452,9 @@ export interface NewInvitation {
   people: PeopleSection;
   quote: QuoteSection;
   itinerary: ItinerarySection;
+  // Pase digital (editor de vite → Pase digital): Apple Wallet opcional y foto
+  // / título propios del pase. Lo usan el pase (Ticket) y el backend.
+  wallet?: { enabled?: boolean | null; title?: string | null; image?: string | null } | null;
   dresscode: DresscodeSection;
   gifts: GiftsSection;
   destinations: DestinationsSection;

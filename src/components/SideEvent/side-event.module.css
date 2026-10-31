@@ -56,6 +56,13 @@
 }
 
 
+/* Carrusel de la portada: cada foto encima de la otra, cambian con un fundido. */
+.carrusel_foto {
+  position: absolute;
+  inset: 0;
+  transition: opacity 0.9s ease;
+}
+
 .blur_cover {
   position: absolute;
   inset: 0;

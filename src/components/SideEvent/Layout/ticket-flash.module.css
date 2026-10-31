@@ -1,0 +1,234 @@
+/* Boleto de un side event / Flash (TicketFlash.tsx): tarjeta oscura con la
+   foto arriba (botón de Apple Wallet y logo) y abajo el QR y los datos,
+   flotando sobre la página desenfocada. El tono sale del color del tema
+   (--tema). */
+
+.capa {
+  position: fixed;
+  inset: 0;
+  z-index: 1250;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: calc(20px + env(safe-area-inset-top, 0px)) 18px calc(20px + env(safe-area-inset-bottom, 0px));
+  box-sizing: border-box;
+  background: color-mix(in srgb, color-mix(in srgb, var(--tema) 40%, #000) 45%, transparent);
+  -webkit-backdrop-filter: blur(16px) saturate(120%);
+  backdrop-filter: blur(16px) saturate(120%);
+  font-family: Poppins, sans-serif;
+  animation: aparece 240ms ease both;
+}
+
+.boleto {
+  position: relative;
+  width: min(100%, 410px);
+  max-height: 100%;
+  overflow: hidden;
+  border-radius: 32px;
+  background: color-mix(in srgb, var(--tema) 30%, #1C1815);
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  color: #fff;
+  animation: entra 420ms cubic-bezier(0.2, 0.9, 0.25, 1) both;
+}
+
+.boleto:focus {
+  outline: none;
+}
+
+/* ── Foto ── */
+.foto {
+  position: relative;
+  aspect-ratio: 410 / 375;
+  background: color-mix(in srgb, var(--tema) 55%, #000);
+}
+
+.foto > img:first-child {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Arriba un poco de sombra (el botón se lee) y abajo se funde con la tarjeta. */
+.foto_sombra {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom,
+      rgba(0, 0, 0, 0.28) 0%,
+      transparent 24%,
+      transparent 58%,
+      color-mix(in srgb, var(--tema) 30%, #1C1815) 100%);
+}
+
+.wallet {
+  all: unset;
+  position: absolute;
+  top: 22px;
+  left: 22px;
+  z-index: 2;
+  cursor: pointer;
+  border-radius: 8px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+  transition: transform 0.15s ease, opacity 0.2s ease;
+}
+
+.wallet:active {
+  transform: scale(0.96);
+}
+
+.wallet:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
+}
+
+.wallet[aria-busy="true"] {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.wallet img {
+  display: block;
+  height: 36px;
+  width: auto;
+}
+
+.logo {
+  position: absolute;
+  left: 18px;
+  bottom: 14px;
+  width: 78px;
+  height: auto;
+  z-index: 1;
+}
+
+.cargando {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+/* ── QR y datos ── */
+.datos {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 6px 20px 22px;
+}
+
+.qr {
+  flex-shrink: 0;
+  width: 150px;
+  aspect-ratio: 1;
+  box-sizing: border-box;
+  padding: 9px;
+  border-radius: 14px;
+  background: #fff;
+  display: flex;
+}
+
+.qr > *,
+.qr canvas,
+.qr svg {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.textos {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.titulo {
+  font-size: 19px;
+  font-weight: 700;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.cuando {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.cuando b {
+  font-weight: 700;
+  color: #fff;
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  margin-top: 2px;
+}
+
+.etiqueta {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.55);
+  line-height: 1.3;
+}
+
+.valor {
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+/* WalletHelpSheet se pinta con position: absolute; aquí cubre la columna. */
+.ayuda {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: min(100%, 450px);
+  transform: translateX(-50%);
+  z-index: 1300;
+}
+
+/* Salida: se desvanece. */
+.saliendo {
+  animation: desaparece 220ms ease both;
+}
+
+.saliendo .boleto {
+  animation: sale 220ms ease both;
+}
+
+@keyframes aparece { from { opacity: 0; } to { opacity: 1; } }
+@keyframes desaparece { from { opacity: 1; } to { opacity: 0; } }
+@keyframes entra {
+  0% { opacity: 0; transform: translateY(24px) scale(0.94); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes sale {
+  from { opacity: 1; transform: scale(1); }
+  to { opacity: 0; transform: translateY(12px) scale(0.96); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .capa, .boleto, .saliendo, .saliendo .boleto {
+    animation: none !important;
+  }
+}
+
+/* Pantallas bajitas (iPhone SE): el QR y la foto se achican. */
+@media (max-height: 640px) {
+  .foto {
+    aspect-ratio: 410 / 300;
+  }
+
+  .qr {
+    width: 124px;
+  }
+}

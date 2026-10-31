@@ -1,4 +1,10 @@
+// Pase digital (editor de vite → Pase digital): Apple Wallet opcional
+// (`enabled: false` = sin botón) y foto / título propios del pase (vacíos =
+// los de la portada). Lo usan el boleto (Layout/TicketFlash) y el backend.
+export type PaseWalletConfig = { enabled?: boolean | null; title?: string | null; image?: string | null } | null;
+
 export type SideEventBody = {
+  wallet?: PaseWalletConfig;
   font: string;
   hour: string;
   // Eventos Flash con varias fechas (ej. 14 y 15 de octubre, cada una con su
@@ -10,6 +16,8 @@ export type SideEventBody = {
   // en eventos guardados antes de este cambio.
   timezone?: string | null;
   image: string;
+  // Carrusel de la portada (Flash): la primera es `image` (helpers/fotosPortada.ts).
+  images?: string[];
   // Eventos Flash: video de fondo (como el Save the Date). Con video, `image`
   // es su cuadro fijo y la imagen del link.
   video?: string | null;
@@ -95,6 +103,9 @@ export type SideEvent = {
   // Solo vista previa del editor ("Ver en vivo"): confirmados reales que ya
   // tiene el editor, para no enseñar el ejemplo si el Flash ya tiene asistentes.
   _asistentes?: { total: number; asistentes: { id: string; nombre: string; iniciales: string; emoji: string | null; perfil: number | null }[] } | null;
+  // Solo vista previa ("Ver en vivo" → Confirmado en el dock de vite): la
+  // página como la ve un invitado que ya confirmó (invitado de ejemplo).
+  _vistaConfirmada?: boolean;
   id: number;
   url_image: string | null;
   created_at: string;

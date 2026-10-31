@@ -32,12 +32,13 @@ import { useChatFlash } from "./Chat/useChatFlash";
 import ConfetiExplosion from "./Layout/ConfetiExplosion";
 import HojaFlash from "./Layout/HojaFlash";
 import NotificacionFormulario from "./Layout/NotificacionFormulario";
-import PaseFlash from "./Layout/PaseFlash";
+import TicketFlash from "./Layout/TicketFlash";
 import { qrPaseSide } from "@/helpers/paseSide";
 import TarjetaLugar, { direccionCompleta } from "./Layout/TarjetaLugar";
 import layout from "./Layout/layout.module.css";
 import { useAnchoFlash } from "./Layout/useAnchoFlash";
 import { ClipboardList, MessageCircle } from "lucide-react";
+import { CAMBIO_CARRUSEL_MS, fotosDePortada } from "@/helpers/fotosPortada";
 
 // Lienzo de los PNG de un Flash: la pieza del editor (iattend-vite, SideCanvas,
 // 390×700) escalada para cubrir la pantalla y centrada, como object-fit:
@@ -72,6 +73,39 @@ const horasDelEvento = (body: SideEvent["body"] | undefined, dia: string | null)
   }
   return [...new Set(horas)].sort((a, b) => a - b);
 };
+
+// Fecha y hora del boleto desde la hora de pared "YYYY-MM-DD HH:mm:00" (sin
+// huso): "NOV 14" y "8:00 pm", como el pase de Apple Wallet.
+const MESES_CORTOS = ["ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC"];
+const fechaCorta = (pared?: string | null) => {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(pared ?? ""));
+  return m ? `${MESES_CORTOS[Number(m[2]) - 1]} ${Number(m[3])}` : "";
+};
+const hora12 = (pared?: string | null) => {
+  const m = /[ T](\d{2}):(\d{2})/.exec(String(pared ?? ""));
+  if (!m) return "";
+  const h = Number(m[1]);
+  return `${h % 12 || 12}:${m[2]} ${h < 12 ? "am" : "pm"}`;
+};
+
+// Bloques que se abren y cierran dentro de la tarjeta del invitado: animan su
+// alto y su opacidad. Mientras se mueven recortan (overflow hidden); ya
+// abiertos no, para no cortar sombras ni la fila de emojis.
+const DESPLIEGUE = {
+  initial: { height: 0, opacity: 0, overflow: "hidden" },
+  animate: { height: "auto", opacity: 1, transitionEnd: { overflow: "visible" } },
+  exit: { height: 0, opacity: 0, overflow: "hidden" },
+  transition: { height: { duration: 0.34, ease: [0.2, 0.9, 0.25, 1] }, opacity: { duration: 0.22 } },
+} as const;
+
+// Invitado de ejemplo de la vista previa "Confirmado" (sin id ni código: no
+// toca datos reales; el chat y el formulario usan su modo vista previa).
+const INVITADO_EJEMPLO = {
+  id: undefined, name: "Invitado de ejemplo", state: "confirmado", password: "",
+  companion_id: null, has_companion: false, emoji: null, profile: null,
+  created_at: "", side_events_id: "", last_action: "", last_action_by: false, last_update_date: "",
+  meal: null, notes: null, phone_number: null, side: null, table: null, tag: null, ticket: false, tier: null, type: null,
+} as SideGuestSubabasePayload;
 
 // "Luis Alberto" → "LA" (avatar de la tarjeta del invitado).
 const iniciales = (nombre?: string | null) =>
@@ -148,6 +182,17 @@ export default function SideEvents({ info, password, preview, registroToken }: i
   const mosaico = esFlash && ancho === "escritorio";
   const escenaRef = useRef<HTMLDivElement>(null);
   const [tamFoto, setTamFoto] = useState<{ w: number; h: number } | null>(null);
+  // Carrusel de la portada (Flash): cambian solas cada CAMBIO_CARRUSEL_MS.
+  const fotos = info?.body.video ? [] : fotosDePortada(info?.body);
+  const [fotoActiva, setFotoActiva] = useState(0);
+  const clavesFotos = fotos.join("|");
+  useEffect(() => {
+    setFotoActiva(0);
+    if (fotos.length < 2) return undefined;
+    const id = setInterval(() => setFotoActiva((i) => (i + 1) % fotos.length), CAMBIO_CARRUSEL_MS);
+    return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clavesFotos]);
   const [marcoFoto, setMarcoFoto] = useState<{ left: number; top: number; width: number; height: number } | null>(null);
   const [draftCompanions, setDraftCompanions] = useState<SideGuestSubabasePayload[]>([]);
   const [draftMainName, setDraftMainName] = useState<string>("");
@@ -184,21 +229,7 @@ export default function SideEvents({ info, password, preview, registroToken }: i
     eventoId: info?.id, codigo: codigoChat, token: registroToken ?? null,
     activo: formActivo && (Boolean(preview) || Boolean(codigoChat) || Boolean(registroToken)), preview,
   });
-  // La ✕ del aviso se recuerda por invitado: no vuelve en cada visita.
-  const claveAviso = info?.id ? `iattend_form_aviso_${info.id}_${registroToken ?? guestInfo?.id ?? "preview"}` : null;
-  const [avisoCerrado, setAvisoCerrado] = useState(false);
-  useEffect(() => {
-    setAvisoCerrado(Boolean(!preview && claveAviso && window.localStorage.getItem(claveAviso)));
-  }, [claveAviso, preview]);
-  const cerrarAviso = () => {
-    setAvisoCerrado(true);
-    if (claveAviso && !preview) window.localStorage.setItem(claveAviso, "1");
-  };
   const formPendiente = formActivo && yaConfirmo && estadoForm.pendiente;
-  const formIniciales = (() => {
-    const f = formActivo ? formPublicado(info!.body!.form) : null;
-    return inicialesDe(f?.hostLabel || f?.title || "") || "✓";
-  })();
 
   interface CSSVars extends React.CSSProperties {
     ["--hover-color"]?: string;
@@ -412,8 +443,32 @@ export default function SideEvents({ info, password, preview, registroToken }: i
     return () => window.clearInterval(id);
   }, [mostrarAsistentes, recargarAsistentes, preview]);
 
+  // Vista previa "Confirmado" (dock de "Ver en vivo" en vite): un invitado de
+  // ejemplo ya confirmado, para ver su tarjeta, "Ver mi pase", el aviso del
+  // formulario, etc. Al apagarlo vuelve la vista sin confirmar.
+  const vistaConfirmada = Boolean(preview && info?._vistaConfirmada);
+  useEffect(() => {
+    if (!preview) return;
+    if (vistaConfirmada) {
+      setGuestInfo(INVITADO_EJEMPLO);
+      setCompanions([]);
+      setPreviewConfirmado(true);
+    } else {
+      setGuestInfo(null);
+      setPreviewConfirmado(false);
+      setHoja(null);
+    }
+  }, [preview, vistaConfirmada]);
+
   // Confeti en explosión desde el botón (ConfetiExplosion).
   const onClick = useCallback(() => setConfeti(Date.now()), []);
+  // Al confirmar (cuando sale el confeti) se abre solo el boleto, después de
+  // la explosión. Al cerrarlo llega, si hay, el aviso del formulario.
+  useEffect(() => {
+    if (!confeti) return;
+    const t = window.setTimeout(() => setHoja((h) => h ?? "pase"), 1300);
+    return () => window.clearTimeout(t);
+  }, [confeti]);
   const finConfeti = useCallback(() => setConfeti(null), []);
 
   // Mide la capa de PNG (del alto de la pantalla) para su lienzo. La portada
@@ -772,17 +827,23 @@ export default function SideEvents({ info, password, preview, registroToken }: i
         {esPublico ? "Registrado como" : "Invitación dirigida a"}
       </span>
       <span className={styles.invitado_nombre}>{guestInfo.name}</span>
-      {editandoAvatar && (
-        <div className={styles.invitado_selector}>
-          <SelectorAvatar nombre={guestInfo.name ?? ""} valor={avatar} onChange={setAvatar} idBase={String(guestInfo.id ?? "")} />
-          <div className={styles.invitado_selector_botones}>
-            <Button type="text" onClick={() => setEditandoAvatar(false)} style={{ color: "var(--bloque-tinta, #FFFFFF)", opacity: 0.8 }}>Cancelar</Button>
-            <Button className={styles.locked_btn} style={{ ...btnStyle, width: "auto", height: "44px", fontSize: "14px", letterSpacing: "1px", paddingInline: "24px" }} loading={guardandoAvatar} onClick={guardarAvatar}>
-              Listo
-            </Button>
-          </div>
-        </div>
-      )}
+      {/* El selector de avatar entra y sale animando su alto (la tarjeta
+          crece / se encoge suave) y "Ver mi pase" hace lo contrario. */}
+      <AnimatePresence initial={false}>
+        {editandoAvatar && (
+          <motion.div key="selector-avatar" {...DESPLIEGUE} style={{ width: "100%", display: "flex", flexDirection: "column" }}>
+            <div className={styles.invitado_selector}>
+              <SelectorAvatar nombre={guestInfo.name ?? ""} valor={avatar} onChange={setAvatar} idBase={String(guestInfo.id ?? "")} />
+              <div className={styles.invitado_selector_botones}>
+                <Button type="text" onClick={() => setEditandoAvatar(false)} style={{ color: "var(--bloque-tinta, #FFFFFF)", opacity: 0.8 }}>Cancelar</Button>
+                <Button className={styles.locked_btn} style={{ ...btnStyle, width: "auto", height: "44px", fontSize: "14px", letterSpacing: "1px", paddingInline: "24px" }} loading={guardandoAvatar} onClick={guardarAvatar}>
+                  Listo
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       {guestInfo.has_companion && companions.some((c) => c.state !== "rechazado") && (
         <div className={styles.invitado_acompanantes}>
           {companions.filter((c) => c.state !== "rechazado").map((c, i) => (
@@ -793,20 +854,19 @@ export default function SideEvents({ info, password, preview, registroToken }: i
           ))}
         </div>
       )}
-      {guestInfo.state === "confirmado" && !editandoAvatar && (
-        <button type="button" className={layout.ver_pase} onClick={() => setHoja("pase")}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-            <path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z" />
-            <path d="M13 5v2M13 17v2M13 11v2" />
-          </svg>
-          Ver mi pase
-        </button>
-      )}
-      {formPendiente && avisoCerrado && (
-        <button type="button" className={layout.falta_form} onClick={() => setHoja("form")}>
-          Te falta el formulario
-        </button>
-      )}
+      <AnimatePresence initial={false}>
+        {guestInfo.state === "confirmado" && !editandoAvatar && (
+          <motion.div key="ver-pase" {...DESPLIEGUE} style={{ width: "100%", display: "flex", flexDirection: "column" }}>
+            <button type="button" className={layout.ver_pase} onClick={() => setHoja("pase")}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z" />
+                <path d="M13 5v2M13 17v2M13 11v2" />
+              </svg>
+              Ver mi pase
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
       {esPublico && (
         <button type="button" onClick={olvidarRegistro} className={styles.invitado_no_eres}>
           ¿No eres {guestInfo.name}?
@@ -927,42 +987,54 @@ export default function SideEvents({ info, password, preview, registroToken }: i
           )}
         </button>
       )}
-      {!mosaico && formPendiente && !avisoCerrado && hoja === null && !chatAbierto && (
+      {/* No se puede cerrar: se queda mientras el formulario esté pendiente. */}
+      {!mosaico && formPendiente && hoja === null && !chatAbierto && (
         <NotificacionFormulario
           // Al volver (ya confirmado de antes) entra casi al momento.
           retrasoMs={confeti ? 900 : 400}
           vars={varsEstilo}
           titulo={formPublicado(info!.body!.form)!.title || "Formulario"}
-          iniciales={formIniciales}
           preguntas={formPreguntas}
           color={info?.body.color}
           onLlenar={() => setHoja("form")}
-          onCerrar={cerrarAviso}
+        />
+      )}
+      {/* Boleto ("Ver mi pase"; se abre solo al confirmar): título del pase
+          (body.wallet) o el del evento, y la imagen del link; Apple Wallet si el
+          organizador lo ofrece. En la vista previa, un invitado de ejemplo. */}
+      {info && (
+        <TicketFlash
+          open={hoja === "pase"}
+          onClose={() => setHoja(null)}
+          titulo={String(info.body?.wallet?.title ?? "").trim() || info.name || "Tu evento"}
+          // Foto del pase (vite → Pase digital) o, sin ella, la imagen del
+          // link (la portada con sus elementos; con video, la que eligió el
+          // organizador).
+          imagen={info.body?.wallet?.image || info.url_image || info.body?.image || null}
+          fecha={fechaCorta(info.body?.hour)}
+          hora={hora12(info.body?.hour)}
+          nombre={guestInfo?.name || "Invitado de ejemplo"}
+          personas={guestInfo ? 1 + companions.filter((c) => c.state === "confirmado").length : 1}
+          folio={estadoForm.folio}
+          qr={guestInfo?.id != null ? qrPaseSide(guestInfo.id) : guestInfo?.password || "side:0"}
+          color={darker(info.body?.color ?? "#3B332D", 0.35) ?? info.body?.color}
+          conWallet={info.body?.wallet?.enabled !== false}
+          eventoId={preview ? null : info.id}
+          invitadoId={guestInfo?.id}
         />
       )}
       <HojaFlash
         vars={varsEstilo}
-        open={hoja !== null}
+        open={hoja === "form"}
         // Al cerrar el formulario (a medias o terminado) se vuelve a leer su
         // estado: el pendiente y el folio del pase.
         onClose={() => { if (hoja === "form" && !preview) estadoForm.recargar(); setHoja(null); }}
         color={info?.body.color}
-        label={hoja === "pase" ? "Tu pase" : "Formulario"}
+        label="Formulario"
         // iPad y Mac: encabezado del panel (el pase ya trae el suyo).
         titulo={hoja === "form" ? formPublicado(info?.body?.form)?.title || "Formulario" : undefined}
         subtitulo={hoja === "form" ? "Menos de un minuto · solo lo ve el organizador" : undefined}
       >
-        {hoja === "pase" && guestInfo && (
-          <PaseFlash
-            nombres={[guestInfo.name ?? "", ...companions.filter((c) => c.state === "confirmado").map((c) => c.name ?? "")].filter(Boolean)}
-            qr={guestInfo.id != null ? qrPaseSide(guestInfo.id) : guestInfo.password ?? ""}
-            folio={estadoForm.folio}
-            codigo={guestInfo.password}
-            eventoId={preview ? null : info?.id}
-            invitadoId={guestInfo.id}
-            color={info?.body.color}
-          />
-        )}
         {hoja === "form" && formActivo && (
           <RegistroCard
             form={info!.body!.form!}
@@ -1004,6 +1076,24 @@ export default function SideEvents({ info, password, preview, registroToken }: i
               preload="auto"
               onLoadedMetadata={(e) => setTamFoto({ w: e.currentTarget.videoWidth, h: e.currentTarget.videoHeight })}
             />
+          ) : fotos.length > 1 ? (
+            // Carrusel (helpers/fotosPortada.ts): las fotos encimadas, cambian
+            // con un fundido; el zoom del scroll va en el contenedor y los
+            // dibujos se anclan a la primera.
+            <div className={styles.hero_bg} data-zoom>
+              {fotos.map((src, i) => (
+                <div key={src + i} className={styles.carrusel_foto} style={{ opacity: i === fotoActiva ? 1 : 0 }}>
+                  <Image
+                    fill
+                    src={src}
+                    alt=""
+                    priority={i === 0}
+                    style={{ objectFit: "cover" }}
+                    onLoad={i === 0 ? (e) => setTamFoto({ w: e.currentTarget.naturalWidth, h: e.currentTarget.naturalHeight }) : undefined}
+                  />
+                </div>
+              ))}
+            </div>
           ) : (
             info?.body.image && <Image className={styles.hero_bg} data-zoom fill src={info?.body.image} alt="" style={{ objectFit: "cover" }} onLoad={(e) => setTamFoto({ w: e.currentTarget.naturalWidth, h: e.currentTarget.naturalHeight })} />
           )}
@@ -1469,8 +1559,28 @@ export default function SideEvents({ info, password, preview, registroToken }: i
                 </div>
               ));
               if (!mosaico || !bloques.length) return bloques;
-              const izquierda = bloques.filter((_, i) => i % 2 === 0);
-              const derecha = bloques.filter((_, i) => i % 2 === 1);
+              // Mosaico por altura: cada grupo, en orden, va a la columna que
+              // lleva menos alto (empate: izquierda). El alto es aproximado,
+              // según lo que trae cada tarjeta (momentos del día más largo,
+              // renglones de las notas…). Así un itinerario largo a la
+              // izquierda manda Ubicación y Asistentes a la derecha.
+              const masMomentos = Math.max(1, ...itinerarioPorDia(body).map((d) => d.momentos.length));
+              const altoTarjeta: Record<string, number> = {
+                itinerary: 150 + 85 * masMomentos,
+                notes: 90 + 30 * Math.max(1, String(body.extras ?? "").split("\n").length + Math.floor(String(body.extras ?? "").length / 60)),
+                map: grupos.some((g) => g.keys.includes("map") && g.keys.includes("weather")) ? 520 : 400,
+                attendees: 260 + (chatActivo ? 80 : 0),
+              };
+              const altos = [0, 0];
+              const izquierda: React.ReactNode[] = [];
+              const derecha: React.ReactNode[] = [];
+              grupos.forEach((g, i) => {
+                const lado = altos[1] < altos[0] ? 1 : 0;
+                // El clima va dentro de la tarjeta del lugar; solo, en su tarjeta grande.
+                const alto = (k: string) => (k === "weather" ? (g.keys.includes("map") ? 0 : 260) : altoTarjeta[k] ?? 200);
+                altos[lado] += 60 + g.keys.reduce((t, k) => t + alto(k), 0);
+                (lado ? derecha : izquierda).push(bloques[i]);
+              });
               return (
                 <div className={`${layout.mosaico} ${derecha.length ? "" : layout.mosaico_uno}`}>
                   <div className={layout.mosaico_col}>{izquierda}</div>

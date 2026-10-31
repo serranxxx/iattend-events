@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useEffect } from "react";
 import WeatherWidget from "../WeatherApi/WeatherWidget";
 import { getEventDateOnly } from "@/helpers/functions";
-import { ImagePlus, Plus } from "lucide-react";
+import { ImagePlus, Plus, Star } from "lucide-react";
 import { TimePicker } from "antd";
 import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
@@ -63,6 +63,23 @@ export default function OpenCard({ invitation, dev, item, editMode = false, inde
 
   // Actividades del momento (item.moments): misma lista que personas/avisos.
   const base = `itinerary.object.${index}`;
+  // Lugar principal (con varias direcciones): el "lugar del evento" del pase
+  // de Apple Wallet. Sin marca, el último con dirección. Misma regla en
+  // iattend-vite (lugarPrincipal.js) y en el backend (wallet/datosPase.js).
+  const momentos = invitation?.itinerary?.object ?? [];
+  const conDireccion = (m?: ItineraryItem) => Boolean(m?.address && (m.address.street || m.address.url));
+  const totalConDireccion = momentos.filter(conDireccion).length;
+  const marcado = momentos.findIndex((m) => m?.principal === true && conDireccion(m));
+  const indicePrincipal = marcado >= 0 ? marcado : momentos.map(conDireccion).lastIndexOf(true);
+  const esPrincipal = indicePrincipal === index;
+  const alternarPrincipal = () => {
+    // Marcado a mano: se quita (vuelve al automático). Si no, solo este.
+    const marcar = item.principal !== true;
+    momentos.forEach((m, i) => {
+      if (i === index) onFieldChange?.(`itinerary.object.${i}.principal`, marcar ? true : null);
+      else if (m?.principal === true && marcar) onFieldChange?.(`itinerary.object.${i}.principal`, null);
+    });
+  };
   const moments: MomentItem[] = item.moments ?? [];
   const list = useEditableList<MomentItem>({
     items: moments,
@@ -152,6 +169,21 @@ export default function OpenCard({ invitation, dev, item, editMode = false, inde
                   src={simpleaddress(item.address.street, item.address.number, item.address.neighborhood, item.address.zip, item.address.city, item.address.state, item.address.country)}
                 />
               </div>
+            )}
+            {/* Con dos o más direcciones: cuál es la principal (pase de Wallet). */}
+            {editMode && totalConDireccion > 1 && (
+              <button
+                type="button"
+                className="edit_drawer_delete edit_drawer_delete--soft edit_drawer_principal"
+                data-on={esPrincipal || undefined}
+                title={esPrincipal && item.principal !== true
+                  ? "Automático: si no eliges uno, es la última dirección del itinerario. Tócalo para dejarlo fijo."
+                  : "El lugar del evento en el pase de Apple Wallet de tus invitados."}
+                onClick={(e) => { e.stopPropagation(); alternarPrincipal(); }}
+              >
+                <Star size={14} style={{ marginRight: 6 }} fill={esPrincipal ? "currentColor" : "none"} />
+                {esPrincipal ? "Lugar principal" : "Marcar como principal"}
+              </button>
             )}
             <button
               type="button"
