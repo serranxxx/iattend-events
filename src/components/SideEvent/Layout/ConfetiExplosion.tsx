@@ -4,7 +4,7 @@ import React, { useEffect, useMemo } from "react";
 import styles from "./layout.module.css";
 
 /*
-  Confeti en explosión al confirmar (handoff "Flash Layout" 3a): 70 piezas
+  Confeti en explosión al confirmar (handoff "Pop Layout" 3a): 70 piezas
   salen de abajo al centro (donde está el botón Asistiré), suben abriéndose y
   caen. Capa sin eventos de puntero; se desmonta sola (~3.8 s). Con
   "reducir movimiento" no se pinta.

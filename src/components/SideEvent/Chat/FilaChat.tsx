@@ -2,7 +2,7 @@
 
 import React from "react";
 import { ChevronRight, Lock, MessageCircle } from "lucide-react";
-import styles from "./chat-flash.module.css";
+import styles from "./chat-pop.module.css";
 
 /*
   Fila "Chat de asistentes" al pie de la tarjeta Asistentes (handoff, vista

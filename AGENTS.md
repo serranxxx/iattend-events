@@ -5,7 +5,7 @@
 > refleja el código real, no una suposición.
 
 ## Qué es este repo
-App Next.js (`i-attend-next`) que sirve tres cosas distintas bajo el mismo dominio: el sitio de marketing (`/about/*`), el visor público de invitaciones/pop-events/side-events que ve el invitado final (RSVP, pase digital, cámara y Photo Wall), y un endpoint de embed (`/host`) que el editor del organizador (`iattend-vite`) monta en un iframe para previsualizar cambios en vivo.
+App Next.js (`i-attend-next`) que sirve tres cosas distintas bajo el mismo dominio: el sitio de marketing (`/about/*`), el visor público de invitaciones/side-events/Pops que ve el invitado final (RSVP, pase digital, cámara y Photo Wall), y un endpoint de embed (`/host`) que el editor del organizador (`iattend-vite`) monta en un iframe para previsualizar cambios en vivo.
 
 ## Stack técnico
 - **Framework:** Next.js 15 (App Router, `next dev --turbopack`)
@@ -16,7 +16,7 @@ App Next.js (`i-attend-next`) que sirve tres cosas distintas bajo el mismo domin
 
 ## Cómo se conecta con el resto de I attend
 - **iattend--backend**: se consume vía `NEXT_PUBLIC_IATTEND_API_URL` solo para el flujo de fotos del Photo Wall (`POST /photos/upload`, `GET /photos/:eventId`, `GET /photos/likes/event/:id`, `POST /photos/:id/like`) desde `CameraView.tsx` y `PhotoWall.tsx`. También existen servicios más antiguos (`src/services/apiInvitation.ts`, `apiGuests.ts`, `apiLogin.ts`) que hablan con el backend vía Axios + JWT en header `token`, pero parecen resabios de una arquitectura anterior — las páginas activas hoy leen Supabase directo.
-- **Supabase**: lectura/escritura directa desde el frontend (no todo pasa por el backend). Tablas/vistas usadas: `invitations`, `guests`, `event_photos`, `invitation_translations`, `pop_events`, `side_events`. Realtime por canal `event_photos_{eventId}` para el Photo Wall. Hay tres variantes de cliente en `src/lib/supabase/`: `client.ts` (browser), `server.ts` (server component, atado a cookies para sesión autenticada) y `public-server.ts` (server, sin sesión — usado en páginas públicas de invitación).
+- **Supabase**: lectura/escritura directa desde el frontend (no todo pasa por el backend). Tablas/vistas usadas: `invitations`, `guests`, `event_photos`, `invitation_translations`, `side_events`. Realtime por canal `event_photos_{eventId}` para el Photo Wall. Hay tres variantes de cliente en `src/lib/supabase/`: `client.ts` (browser), `server.ts` (server component, atado a cookies para sesión autenticada) y `public-server.ts` (server, sin sesión — usado en páginas públicas de invitación).
 - **iattend-vite**: la app del organizador embebe la ruta `/host` de este repo en un iframe y se comunica por `postMessage` (`REMOTE_READY`, `HOST_PROPS`, `REMOTE_HEIGHT`) para previsualizar la invitación mientras se edita, sin ida y vuelta a la base de datos.
 
 ## Estructura de carpetas clave
@@ -25,7 +25,6 @@ src/
   app/
     [invitation_label]/[invitation_name]/page.tsx   ← página pública de una invitación (lee Supabase por label+name)
     event/[id]/photowall/page.tsx                    ← Photo Wall fullscreen (proyector / celular)
-    pop/[pop_id]/  y  pop-event/[quick_event_id]/    ← eventos "pop" (formato ligero, un solo día)
     side-event/[side_event_id]/                      ← eventos satélite de una invitación principal
     host/page.tsx                                    ← embed iframe para el editor (iattend-vite)
     login/page.tsx                                   ← login con Supabase Auth (email/password)
@@ -38,7 +37,7 @@ src/
     Invitation/Ticket/Ticket.tsx                      ← pase digital del invitado
     PhotoWall/PhotoWall.tsx                           ← masonry en tiempo real, con likes (a diferencia de otros
                                                           proyectos I attend, aquí SÍ tiene interacción, no es solo lectura)
-    Pop/, SideEvent/, LandPage/                        ← componentes específicos de cada tipo de página
+    SideEvent/, LandPage/                             ← componentes específicos de cada tipo de página
   context/            ← AppContext/AppProvider (useReducer) — sesión, tema, colores del organizador logueado
   lib/supabase/        ← los tres clientes de Supabase
   lib/translation/      ← pipeline de traducción con DeepL + cache en Supabase
@@ -49,7 +48,7 @@ src/
 ## Convenciones y patrones que hay que respetar
 - Componentes en carpeta propia `ComponentName/ComponentName.tsx` + `componentname.module.css` (la convención de nombre de archivo CSS varía: a veces PascalCase, a veces kebab/snake — revisar el vecino antes de crear uno nuevo)
 - Props tipadas con `interface`/`type` encima del componente; casi todo el árbol de la invitación usa el tipo `NewInvitation` de `src/types/new_invitation.ts`, **no** `src/types/invitation.ts`
-- Las páginas dinámicas (`[invitation_label]/[invitation_name]`, `pop/[pop_id]`, `side-event/[side_event_id]`) usan `generateMetadata` + `export const dynamic = "force-dynamic"` para armar OG tags por evento a partir de Supabase
+- Las páginas dinámicas (`[invitation_label]/[invitation_name]`, `side-event/[side_event_id]`) usan `generateMetadata` + `export const dynamic = "force-dynamic"` para armar OG tags por evento a partir de Supabase
 - Páginas públicas usan `getPublicServerClient()` (sin sesión); todo lo que requiera sesión de organizador usa `createClient()` de `server.ts`
 - Estado de sesión/tema del organizador vive en `AppContext` + `AppProvider` (patrón reducer en `src/context/appReducer.ts`), persistido en `localStorage`
 - El identificador del invitado en el navegador (para fotos, likes) se guarda en `localStorage` como `guest_${invitationID}` — no hay JWT de invitado, es confianza en el cliente
@@ -62,8 +61,6 @@ src/
 | `/about/*` | Landing de marketing (features, FAQs, planes, legal) | `components/LandPage/*` |
 | `/[invitation_label]/[invitation_name]` | Invitación pública de un evento (RSVP, itinerario, regalos, galería) | `components/Invitation/Invitation/Invitation.tsx` |
 | `/event/[id]/photowall` | Photo Wall fullscreen para proyectar o ver desde el celular | `components/PhotoWall/PhotoWall.tsx` |
-| `/pop/[pop_id]` | Vista de un "pop event" (evento ligero de un día) | `components/Pop/PopEvent.tsx` |
-| `/pop-event/[quick_event_id]` | Variante/alias de pop event | `components/Pop/PopEvent.tsx` |
 | `/side-event/[side_event_id]` | Evento satélite asociado a una invitación principal | `components/SideEvent/SideEvent.tsx` |
 | `/host` | Embed iframe para preview en vivo desde el editor del organizador | `components/Invitation/Invitation/Invitation.tsx` (modo `dev`) |
 | `/login` | Login/signup con Supabase Auth | — |

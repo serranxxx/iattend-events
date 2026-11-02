@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import styles from "./efectos.module.css";
 
 /*
-  Efectos animados de un Flash: partículas encima de la portada y los PNG,
+  Efectos animados de un Pop: partículas encima de la portada y los PNG,
   debajo del texto y los botones. Solo CSS (transform y opacity); con
   "reducir movimiento" no se mueve nada. Misma lógica y misma semilla que el
   editor (iattend-vite, modules/SideEvents/EfectosCapa.jsx + efectosData.js):

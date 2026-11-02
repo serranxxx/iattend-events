@@ -178,7 +178,7 @@ export default function ClimaVidrio(props: Props & { antes?: React.ReactNode }) 
   );
 }
 
-// Fila compacta del clima dentro de la tarjeta Lugar (handoff "Flash Layout"
+// Fila compacta del clima dentro de la tarjeta Lugar (handoff "Pop Layout"
 // 3a): ícono, temperatura y condición, y 4 horas desde que empieza el evento.
 export function ClimaFila(props: Props) {
   const c = useClimaEvento(props, 4, true);

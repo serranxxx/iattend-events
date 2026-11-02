@@ -1,7 +1,7 @@
 import { profilesMap } from "@/components/ConfirmCard/profiles";
 
 /*
-  Asistentes de un Flash (side event sin invitación, `body.showAttendees`).
+  Asistentes de un Pop (side event sin invitación, `body.showAttendees`).
   La lista sale de GET /api/side-events/:id/asistentes (iattend--backend,
   router/sideEventPublic.js): solo primer nombre, iniciales y avatar.
   Avatar = emoji y/o color que el invitado eligió al confirmar
@@ -107,7 +107,7 @@ const formalDe = (id: string, tema?: string | null) => {
   return lista[hashDe(id, 3) % lista.length];
 };
 
-// `tema`: color del tema del Flash (body.color), para el modo iniciales.
+// `tema`: color del tema del Pop (body.color), para el modo iniciales.
 export const fondoDe = (a: { id: string; perfil: number | null }, modo: ModoAvatar = "emoji", tema?: string | null) => {
   if (modo === "initials") { const [claro, oscuro] = formalDe(a.id, tema); return `linear-gradient(to bottom, ${claro}, ${oscuro})`; }
   return profilesMap[perfilDe(a)].gradient;
@@ -166,6 +166,17 @@ export const unidadesDe = (lista: Asistente[]): Unidad[] => {
 };
 
 export const LISTA_EJEMPLO: ListaAsistentes = { total: ASISTENTES_EJEMPLO.length, asistentes: ASISTENTES_EJEMPLO, ejemplo: true };
+
+// Solo en la vista previa del organizador ("Ver en vivo"): los confirmados
+// reales primero y, si son pocos, asistentes de ejemplo hasta `minimo`, para
+// que la tarjeta se vea llena (lleva la marca "Ejemplo"). Al invitado nunca.
+export const rellenarConEjemplo = (lista: ListaAsistentes | null, minimo = 9): ListaAsistentes => {
+  const reales = lista?.asistentes ?? [];
+  const faltan = Math.max(0, minimo - reales.length);
+  if (!faltan) return lista ?? { total: 0, asistentes: [] };
+  const relleno = ASISTENTES_EJEMPLO.slice(0, faltan);
+  return { total: (lista?.total ?? reales.length) + relleno.length, asistentes: [...reales, ...relleno], ejemplo: true };
+};
 
 export const cargarAsistentes = async (sideEventId: number | string): Promise<ListaAsistentes | null> => {
   try {

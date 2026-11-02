@@ -136,7 +136,7 @@
   border: 1px solid var(--bloque-linea, rgba(255, 255, 255, 0.35));
 }
 
-/* Fila del clima dentro de la tarjeta Lugar (ClimaFila, handoff "Flash
+/* Fila del clima dentro de la tarjeta Lugar (ClimaFila, handoff "Pop
    Layout" 3a): sin tarjeta propia, sobre el vidrio de Lugar. */
 .fila {
   display: flex;

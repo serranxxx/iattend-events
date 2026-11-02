@@ -8,7 +8,7 @@ import styles from "./layout.module.css";
 import base from "../side-event.module.css";
 
 /*
-  Tarjeta Lugar de un Flash (handoff "Flash Layout" 3a): mapa y clima en una
+  Tarjeta Lugar de un Pop (handoff "Pop Layout" 3a): mapa y clima en una
   sola tarjeta, bajo la etiqueta UBICACIÓN. Encabezado con el nombre del
   lugar y la dirección, el mapa y, si hay ciudad y el clima no está oculto,
   la fila del clima. Ocultar el clima en Capas solo apaga la fila.

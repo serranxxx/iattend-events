@@ -2,15 +2,15 @@
 
 import React, { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { ArrowUp, ChevronDown, Pin, SmilePlus, X } from "lucide-react";
-import { useAnchoFlash, useFocoAtrapado } from "../Layout/useAnchoFlash";
+import { useAnchoPop, useFocoAtrapado } from "../Layout/useAnchoPop";
 import { darker } from "@/helpers/functions";
 import { AvatarAsistente } from "../Asistentes/Asistentes";
 import { oscuroDe, type Asistente, type ModoAvatar } from "../Asistentes/datosAsistentes";
-import type { AutorChat, MensajeChat, ReaccionesChat } from "./useChatFlash";
-import styles from "./chat-flash.module.css";
+import type { AutorChat, MensajeChat, ReaccionesChat } from "./useChatPop";
+import styles from "./chat-pop.module.css";
 
 /*
-  Hoja del chat de asistentes de un Flash (handoff "Pop Event — Chat de
+  Hoja del chat de asistentes de un Pop (handoff "Pop Event — Chat de
   asistentes", opción 1a). Sube sobre el evento; se cierra con la flecha,
   tocando el fondo, arrastrando el asa hacia abajo o con Escape. Mensajes de
   otros con su avatar (y mini-avatares de su pase), los míos en blanco a la
@@ -70,7 +70,7 @@ type Props = {
   colorTema?: string | null;
 };
 
-export default function ChatFlash({ open, onClose, modo, preview, confirmados, asistentes, chat, vars, colorTema }: Props) {
+export default function ChatPop({ open, onClose, modo, preview, confirmados, asistentes, chat, vars, colorTema }: Props) {
   const listRef = useRef<HTMLDivElement>(null);
   const capaRef = useRef<HTMLDivElement>(null);
   const hojaRef = useRef<HTMLDivElement>(null);
@@ -83,9 +83,9 @@ export default function ChatFlash({ open, onClose, modo, preview, confirmados, a
   const cercaDelFondo = useRef(true);
   const arrastreRef = useRef<{ y: number; t: number } | null>(null);
   const cuantos = useRef(chat.mensajes.length);
-  // iPad: hoja centrada de 640 px; Mac: panel lateral (handoff "Evento Flash
+  // iPad: hoja centrada de 640 px; Mac: panel lateral (handoff "Pop
   // en iPad y Mac"). Encabezado con título, subtítulo y ✕; foco atrapado.
-  const ancho = useAnchoFlash();
+  const ancho = useAnchoPop();
   const grande = ancho !== "tel";
   const idTitulo = useId();
   useFocoAtrapado(hojaRef, open && grande);

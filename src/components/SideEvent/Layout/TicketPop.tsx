@@ -5,11 +5,11 @@ import { createPortal } from "react-dom";
 import { QRCode, Spin } from "antd";
 import { supportsAppleWallet, useWalletPass } from "@/components/Invitation/Ticket/useWalletPass";
 import { WalletHelpSheet } from "@/components/Invitation/Ticket/WalletHelpSheet";
-import { useFocoAtrapado } from "./useAnchoFlash";
-import styles from "./ticket-flash.module.css";
+import { useFocoAtrapado } from "./useAnchoPop";
+import styles from "./ticket-pop.module.css";
 
 /*
-  Boleto de un side event / Flash ("Ver mi pase", y se abre solo al
+  Boleto de un side event / Pop ("Ver mi pase", y se abre solo al
   confirmar): flota sobre la página desenfocada, como el pase de la
   invitación (Invitation/Ticket). Arriba la foto del pase con el botón de
   Apple Wallet y el logo de I attend; abajo el QR, el título, la fecha y la
@@ -36,18 +36,21 @@ type Props = {
   qr: string;
   color?: string | null;
   conWallet: boolean;
-  // Sin ellos (vista previa) el botón de Wallet no hace nada.
+  // Sin ellos (vista previa) el botón de Wallet no hace nada. `eventoId` =
+  // código público del evento (o su número con link viejo); `codigo` = el del
+  // invitado (el backend los pide para entregar el pase).
   eventoId?: number | string | null;
   invitadoId?: number | string | null;
+  codigo?: string | null;
 };
 
 const SALIDA_MS = 220;
 
-export default function TicketFlash({ open, onClose, titulo, imagen, fecha, hora, nombre, personas, folio, qr, color, conWallet, eventoId, invitadoId }: Props) {
+export default function TicketPop({ open, onClose, titulo, imagen, fecha, hora, nombre, personas, folio, qr, color, conWallet, eventoId, invitadoId, codigo }: Props) {
   const [montado, setMontado] = useState(open);
   const [saliendo, setSaliendo] = useState(false);
   const tarjetaRef = useRef<HTMLDivElement>(null);
-  const wallet = useWalletPass(undefined, eventoId ?? undefined);
+  const wallet = useWalletPass(undefined, eventoId ?? undefined, codigo);
   const [enApple, setEnApple] = useState(false);
   useEffect(() => { setEnApple(supportsAppleWallet()); }, []);
 

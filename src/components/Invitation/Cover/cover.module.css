@@ -247,7 +247,7 @@
     width: 100%;
 }
 
-/* Borde punteado siempre visible (como los Eventos Flash); sólido con halo
+/* Borde punteado siempre visible (como los Pops); sólido con halo
    al elegir el bloque. El texto editable de adentro no lleva su propio borde. */
 .editBlock {
     position: relative;

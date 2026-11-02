@@ -7,7 +7,7 @@ import { brilloDe, contenidoDe, fondoDe, unidadesDe, type Asistente, type ListaA
 import styles from "./asistentes.module.css";
 
 /*
-  Tarjeta "Asistentes" de un Flash (handoff "Pop Event — Asistentes agrupados
+  Tarjeta "Asistentes" de un Pop (handoff "Pop Event — Asistentes agrupados
   en cápsulas", opción 3a). Cerrada: pila de avatares y la línea de nombres
   agrupada ("Sofía +2, Mateo +1, Andrés…"). Abierta: cada avatar viaja (un
   solo nodo, solo transform) a su lugar en un flujo de unidades: un pase
@@ -49,7 +49,7 @@ export function AvatarAsistente(props: { a: Asistente; size?: number; modo?: Mod
 }
 
 // `pie`: lo que va al fondo de la tarjeta, de orilla a orilla (la fila del chat).
-// `sinTitulo`: bajo la etiqueta ASISTENTES de la página (handoff "Flash
+// `sinTitulo`: bajo la etiqueta ASISTENTES de la página (handoff "Pop
 // Layout" 3a) la cabecera solo lleva el chip.
 export default function Asistentes({ lista, colorTema, modo = "emoji", pie, sinTitulo }: { lista: ListaAsistentes; colorTema?: string; modo?: ModoAvatar; pie?: React.ReactNode; sinTitulo?: boolean }) {
   const list = lista.asistentes;

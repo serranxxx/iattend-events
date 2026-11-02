@@ -1,4 +1,4 @@
-/* Chat de asistentes de un Flash (ChatFlash.tsx, FilaChat.tsx): handoff
+/* Chat de asistentes de un Pop (ChatPop.tsx, FilaChat.tsx): handoff
    "Pop Event — Chat de asistentes, opción 1a · Hoja". Medidas, colores y
    tiempos del handoff; la fila de entrada se ajusta al padding (22 px) de la
    tarjeta Asistentes. */
@@ -38,7 +38,7 @@
 .sheet[data-open="true"] { transform: translateY(var(--arrastre, 0px)); }
 .sheet:focus { outline: none; }
 
-/* iPad y Mac (handoff "Evento Flash en iPad y Mac"): encabezado del panel. */
+/* iPad y Mac (handoff "Pop en iPad y Mac"): encabezado del panel. */
 .header_panel { display: flex; align-items: flex-start; gap: 12px; padding: 22px 22px 14px; }
 .title_panel { font-size: 22px; font-weight: 700; line-height: 1.2; }
 .subtitle_panel { font-size: 13px; opacity: .85; }

@@ -2,9 +2,9 @@ import { NextResponse } from "next/server";
 
 // Pide el .pkpass al backend y lo devuelve con el MIME de Wallet (lo usan
 // /api/wallet/pass y /api/wallet/side-pass).
-export async function reenviarPase(url: string, etiqueta: string) {
+export async function reenviarPase(url: string, etiqueta: string, headers?: Record<string, string>) {
   try {
-    const res = await fetch(url, { cache: "no-store" });
+    const res = await fetch(url, { cache: "no-store", headers });
     if (res.status === 404) {
       return NextResponse.json({ error: "Evento o invitado no encontrado" }, { status: 404 });
     }

@@ -33,7 +33,19 @@ export const moduleBoxExtras = (bg?: Partial<DynamicBackground> | null): React.C
   ...(bg?.texture !== null && bg?.texture !== undefined ? { zIndex: 1 } : {}),
 }) as React.CSSProperties;
 
-export function ModuleBackdrop({ bg }: { bg?: Partial<DynamicBackground> | null }) {
+// `z`: plano de las capas. Por defecto -1 dentro de una caja aislada. Los
+// bloques que dejan sus elementos sobre la textura general (Cita, Itinerario,
+// Dresscode) no aíslan la caja: ahí van en 0 y su contenido, posicionado y
+// después en el DOM, queda encima (ver ELEMENTOS_SOBRE_TEXTURA).
+// Elementos de un bloque (fotos, botones, paletas, tarjetas) encima de la
+// textura general (TextureOverlay, z 0 al final de la invitación) mientras el
+// fondo del bloque y sus textos quedan debajo. Para que funcione, ningún
+// ancestro del elemento hasta la invitación puede crear contexto de apilamiento:
+// la caja del bloque no lleva `isolation` ni z-index (salvo con textura propia,
+// moduleBoxExtras) y los Fade de los textos van con zIndex 0.
+export const ELEMENTOS_SOBRE_TEXTURA: React.CSSProperties = { position: "relative", zIndex: 1 };
+
+export function ModuleBackdrop({ bg, z = -1 }: { bg?: Partial<DynamicBackground> | null; z?: number }) {
   const textures = useContext(ModuleTexturesContext);
   if (!bg) return null;
   const tex = bg.texture !== null && bg.texture !== undefined ? textures.find((t) => t.id === bg.texture) : null;
@@ -43,7 +55,7 @@ export function ModuleBackdrop({ bg }: { bg?: Partial<DynamicBackground> | null 
     inset: 0,
     borderRadius: "inherit",
     pointerEvents: "none",
-    zIndex: -1,
+    zIndex: z,
   };
   return (
     <>

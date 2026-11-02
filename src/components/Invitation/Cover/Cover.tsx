@@ -76,7 +76,7 @@ export const Cover = forwardRef<HTMLDivElement, CoverProps>(function Cover(
   const generals = invitation?.generals;
 
   // Modo edición: título y fecha son bloques que se tocan y se arrastran
-  // (como en los Eventos Flash). Un toque elige el bloque; arrastrarlo lo
+  // (como en los Pops). Un toque elige el bloque; arrastrarlo lo
   // lleva a un cuadrante (título: la retícula 3×3 del panel; fecha: arriba o
   // abajo del título); con el título ya elegido, otro toque entra a escribir.
   type Block = "title" | "date";

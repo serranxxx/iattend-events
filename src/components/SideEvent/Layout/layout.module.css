@@ -1,4 +1,4 @@
-/* Acomodo de la página de un Flash (handoff "Flash Layout" 3a): etiquetas de
+/* Acomodo de la página de un Pop (handoff "Pop Layout" 3a): etiquetas de
    grupo, tarjeta Lugar, aviso del formulario, hoja del pase / formulario y
    confeti. El vidrio sale del color del tema (--blur-color), como las
    tarjetas de side-event.module.css. */
@@ -19,10 +19,10 @@
   text-shadow: var(--etiqueta-sombra, none);
 }
 
-/* ── Grupo y mosaico (handoff "Evento Flash en iPad y Mac", 9b) ──
+/* ── Grupo y mosaico (handoff "Pop en iPad y Mac", 9b) ──
    Cada grupo (etiqueta + tarjetas) va en su envoltura, que en celular y
    tableta no existe para el acomodo (display: contents). En tableta las
-   tarjetas de un Flash crecen a 600 px; en escritorio van en el mosaico de
+   tarjetas de un Pop crecen a 600 px; en escritorio van en el mosaico de
    dos columnas (SideEvent.tsx reparte los grupos). */
 .grupo,
 .mosaico,
@@ -31,7 +31,7 @@
 }
 
 @media (min-width: 600px) {
-  .grupo.grupo_flash > * {
+  .grupo.grupo_pop > * {
     max-width: 600px;
   }
 }
@@ -64,7 +64,7 @@
     gap: 14px;
   }
 
-  .mosaico .grupo.grupo_flash > * {
+  .mosaico .grupo.grupo_pop > * {
     width: 100%;
     max-width: none;
   }
@@ -657,4 +657,112 @@
   .notif, .notif_llenar, .hoja, .hoja_velo, .hoja_contenido {
     animation: none !important;
   }
+}
+
+/* ── Agregar al calendario (CalendarioPop.tsx): lista por día con casillas ── */
+.calendario {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 4px 4px 8px;
+  color: var(--bloque-tinta, #fff);
+  font-family: Poppins, sans-serif;
+}
+
+.calendario_cabeza {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.calendario_titulo {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.calendario_todas {
+  border: none;
+  background: none;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  opacity: 0.8;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.calendario_sub {
+  margin-top: -4px;
+  font-size: 13px;
+  opacity: 0.75;
+}
+
+.calendario_dia {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.calendario_dia_titulo {
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+.calendario_item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 48px;
+  padding: 8px 14px;
+  border: 1px solid var(--bloque-linea, rgba(255, 255, 255, 0.18));
+  border-radius: 16px;
+  background: var(--bloque-suave, rgba(255, 255, 255, 0.08));
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 150ms ease, opacity 150ms ease;
+}
+
+.calendario_item:not([data-on]) {
+  opacity: 0.6;
+}
+
+.calendario_check {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  border: 1.5px solid currentColor;
+}
+
+.calendario_item[data-on] .calendario_check {
+  background: var(--boton-fondo, #fff);
+  border-color: var(--boton-fondo, #fff);
+  color: var(--boton-tinta, #1F1B2E);
+}
+
+.calendario_nombre {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.calendario_hora {
+  flex: none;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.8;
 }

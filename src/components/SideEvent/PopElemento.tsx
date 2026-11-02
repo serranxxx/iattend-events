@@ -3,18 +3,18 @@
 import React from "react";
 import { Heart } from "lucide-react";
 import type { Generals } from "@/types/new_invitation";
-import type { FlashSticker } from "@/types/side_event";
+import type { PopSticker } from "@/types/side_event";
 import { Separador } from "../Invitation/Separator/Separator";
 import { iconsItinerary } from "@/helpers/icons";
 import { LAYER_ICONS } from "../Invitation/SectionLayer/SectionLayer";
 import Vector from "../Vector/Vector";
-import styles from "./flash-elemento.module.css";
+import styles from "./pop-elemento.module.css";
 import Dibujo from "./Dibujo";
 
-// Elemento de la portada de un Flash que no es imagen (`body.stickers[n].kind`):
+// Elemento de la portada de un Pop que no es imagen (`body.stickers[n].kind`):
 // ícono, forma, texto, línea o decoración. Mismo modelo y mismo dibujo que los
 // elementos de la invitación (SectionLayer). Contraparte en el editor:
-// iattend-vite/src/modules/SideEvents/FlashElemento.jsx. El lienzo de los PNG
+// iattend-vite/src/modules/SideEvents/PopElemento.jsx. El lienzo de los PNG
 // (.stickers_lienzo) es `container-type: inline-size`: los textos miden en cqw
 // y escalan igual que una imagen. Sin color propio va en blanco.
 
@@ -36,7 +36,7 @@ const SHAPE_PATHS: Record<string, React.ReactNode> = {
 const dashFor = (style: string | null | undefined, sw: number) =>
   style === "dashed" ? `${sw * 3} ${sw * 2}` : style === "dotted" ? `0 ${sw * 2}` : undefined;
 
-export default function FlashElemento({ s, titleFont, bodyFont = "Poppins" }: { s: FlashSticker; titleFont?: string; bodyFont?: string }) {
+export default function PopElemento({ s, titleFont, bodyFont = "Poppins" }: { s: PopSticker; titleFont?: string; bodyFont?: string }) {
   const color = s.color && s.color !== "transparent" ? s.color : DEFAULT_COLOR;
 
   // Dibujo a mano (herramienta Dibujar del editor).

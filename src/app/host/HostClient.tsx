@@ -91,6 +91,10 @@ export default function HostClient({ textures, giftBrands }: Props) {
   const [lang, setLang] = useState<string | null>(null);
   // Modo edición del editor de iattend-vite (ver Invitation.tsx).
   const [editMode, setEditMode] = useState(false);
+  // "Ver en vivo" → Confirmado del editor (HOST_PROPS.vistaConfirmada).
+  const [vistaConfirmada, setVistaConfirmada] = useState(false);
+  // Plan de la invitación (solo "Ver en vivo" del editor; HOST_PROPS.plan).
+  const [plan, setPlan] = useState<string | null>(null);
   const [selectedSection, setSelectedSection] = useState<string | null>(null);
   // El editor de escritorio muestra su barra de texto al elegir un texto: sin
   // las "T" de la pieza (textBar).
@@ -142,8 +146,14 @@ export default function HostClient({ textures, giftBrands }: Props) {
         setFontOverride((payload.fontOverride as FontOverride[]) ?? null);
         setLang((payload.lang as string) ?? null);
         setEditMode(Boolean(payload.editMode));
+        setVistaConfirmada(Boolean(payload.vistaConfirmada));
+        setPlan((payload.plan as string) ?? null);
         setSelectedSection((payload.selectedSection as string) ?? null);
         setTextBar(Boolean(payload.textBar));
+        // Editor del celular: botones de edición a la medida del dedo
+        // (html[data-edit-movil] en styles/modules.css).
+        if (payload.editMovil) document.documentElement.dataset.editMovil = "";
+        else delete document.documentElement.dataset.editMovil;
       }
       // El organizador tocó el tablero del editor, fuera de la pieza: los
       // bloques elegidos (título, fecha…) se sueltan.
@@ -342,8 +352,8 @@ export default function HostClient({ textures, giftBrands }: Props) {
   }, [editMode, hostOrigin]);
 
   // Texto con el foco (escribiendo): el editor recibe dónde quedó dentro de
-  // la pieza para subirla si el teclado de pantalla (iPad) lo tapa. null al
-  // soltar el foco.
+  // la pieza (y su tamaño de letra) para subirla si el teclado de pantalla
+  // (iPad) lo tapa o, en el celular, acercarla y centrarla. null al soltar.
   useEffect(() => {
     if (!editMode || !hostOrigin) return;
     const editable = (t: EventTarget | null) => {
@@ -353,7 +363,10 @@ export default function HostClient({ textures, giftBrands }: Props) {
     const post = (el: HTMLElement | null) => {
       const r = el?.getBoundingClientRect();
       const rect = r ? { x: r.left, y: r.top, w: r.width, h: r.height } : null;
-      window.parent?.postMessage({ type: "REMOTE_TEXT_FOCUS", payload: { rect } }, hostOrigin);
+      // fontSize: el editor del celular acerca la pieza hasta que el texto se
+      // vea de al menos 16 px (vite Editor/useZoomTexto.js).
+      const fontSize = el ? parseFloat(getComputedStyle(el).fontSize) || 16 : null;
+      window.parent?.postMessage({ type: "REMOTE_TEXT_FOCUS", payload: { rect, fontSize } }, hostOrigin);
     };
     const onIn = (e: FocusEvent) => { const el = editable(e.target); if (el) post(el); };
     const onOut = (e: FocusEvent) => { if (editable(e.target) && !editable(e.relatedTarget)) post(null); };
@@ -421,6 +434,8 @@ export default function HostClient({ textures, giftBrands }: Props) {
         onFieldChange={handleFieldChange}
         onFieldTool={handleFieldTool}
         onClearField={handleClearField}
+        vistaConfirmada={vistaConfirmada}
+        {...(plan ? { plan } : {})}
       />
     </div>
   ) : null;

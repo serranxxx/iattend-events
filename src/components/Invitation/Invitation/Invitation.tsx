@@ -71,6 +71,9 @@ type invProps = {
   // Se soltó la parte elegida de la portada (título/fecha) sin elegir otra
   // cosa: el editor solo esconde sus herramientas, no cambia de módulo.
   onClearField?: () => void;
+  // Solo vista previa del editor (dev): "Ver en vivo" → Confirmado. Usa un
+  // invitado de ejemplo ya confirmado (sin id ni código: no toca datos).
+  vistaConfirmada?: boolean;
 };
 
 // Módulos con herramientas de fondo y separador sobre la pieza (modo edición).
@@ -98,7 +101,16 @@ const MODULE_NAME: Record<"es" | "en", Record<number, string>> = {
 
 
 
-export default function Invitation({ password, invitationID, ui, lang, availableLanguages, invitation, loader, type, mongoID, dev, plan, phone_number, scrollToSection, scrollKey, onSectionChange, textures = [], textureOverride = null, giftBrands = [], editMode = false, textBar = false, selectedSection = null, onSelectSection, onFieldChange, onFieldTool, onClearField }: invProps) {
+// Invitado de ejemplo de "Ver en vivo" → Confirmado (sin id ni código: no
+// toca datos reales; refreshGuest y confirmar no encuentran nada que cambiar).
+const INVITADO_EJEMPLO = {
+  invitation_id: "", password: "", phone_number: "", name: "Invitado de ejemplo", tier: "A", tag: "",
+  table: null, state: "confirmado", last_action: "confirmado", notes: "", meal: null, companion_id: null,
+  ticket: true, has_companion: false, last_action_by: "guest", created_at: "", last_update_date: "",
+  side: null, type: null, invitation_sent_at: null, reminder_count: 0, last_reminder_at: null, special_needs: null,
+} as unknown as GuestSubabasePayload;
+
+export default function Invitation({ password, invitationID, ui, lang, availableLanguages, invitation, loader, type, mongoID, dev, plan, phone_number, scrollToSection, scrollKey, onSectionChange, textures = [], textureOverride = null, giftBrands = [], editMode = false, textBar = false, selectedSection = null, onSelectSection, onFieldChange, onFieldTool, onClearField, vistaConfirmada = false }: invProps) {
   const coverRef = useRef<HTMLDivElement>(null);
   const greetingRef = useRef<HTMLDivElement>(null);
   const peopleRef = useRef<HTMLDivElement>(null);
@@ -588,6 +600,14 @@ export default function Invitation({ password, invitationID, ui, lang, available
     }
   }
 
+  // "Ver en vivo" → Confirmado (solo la vista previa del editor): la
+  // invitación como la ve un invitado que ya confirmó (barra / dock de
+  // confirmado, saludo con su nombre, su confirmación en el panel).
+  useEffect(() => {
+    if (!dev) return;
+    setGuestInfo(vistaConfirmada ? INVITADO_EJEMPLO : null);
+  }, [dev, vistaConfirmada]);
+
   const refreshGuest = async () => {
 
     try {
@@ -783,7 +803,7 @@ export default function Invitation({ password, invitationID, ui, lang, available
           />
         </div>
       )}
-      {/* Mismo footer que los Eventos Flash / side events (FooterCompact),
+      {/* Mismo footer que los Pops / side events (FooterCompact),
           sin fondo propio (encima de la invitación y bajo su textura) y con el
           color de texto del tema en vez de blanco. */}
       <div
@@ -1031,7 +1051,9 @@ export default function Invitation({ password, invitationID, ui, lang, available
 
           <div style={{ flex: 1, overflowY: "auto", padding: "0 20px 20px" }}>
             {(guestInfo || type === "open") && (
-              <Confirm invitationID={invitationID} ui={ui} invitation={invitation} guestInfo={guestInfo} refreshGuest={refreshGuest} />
+              // key: al cambiar entre "Sin confirmar" y "Confirmado" en la vista
+              // previa, Confirm se arma otra vez con el invitado nuevo.
+              <Confirm key={guestInfo?.state ?? "abierta"} invitationID={invitationID} ui={ui} invitation={invitation} guestInfo={guestInfo} refreshGuest={refreshGuest} />
             )}
           </div>
         </div>

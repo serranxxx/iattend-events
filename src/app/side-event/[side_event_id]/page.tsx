@@ -28,6 +28,38 @@ type PageProps = {
 
 
 // --------------------
+// Buscar el side event del link
+// --------------------
+// El link lleva el código público del evento (`public_code`, 10 letras y
+// números al azar: no se puede adivinar el de otro evento). Un número solo
+// abre los eventos que ya existían antes del código (`legacy_link_enabled`,
+// para no romper links que ya se mandaron) y mientras su organizador no lo
+// apague. Migración: iattend--backend/migrations/2026-11-01b_side_events_public_code.sql.
+//
+// Se lee con la RPC `side_event_publico` (aplica esa regla en la base y no
+// trae correo, dueño ni créditos), para que la anon key pueda dejar de leer
+// la tabla `side_events` completa. Mientras la RPC no exista (PGRST202), se
+// lee la tabla como antes (y sin las columnas del código, el número abre).
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function buscarSideEvent(supabase: any, param: string) {
+  let clave = param.trim();
+  try { clave = decodeURIComponent(clave).trim(); } catch { /* se queda como llegó */ }
+  if (!clave) return { data: null, error: null };
+
+  const rpc = await supabase.rpc("side_event_publico", { p_clave: clave });
+  if (!rpc.error) return { data: rpc.data ?? null, error: null };
+  if (rpc.error.code !== "PGRST202") return { data: null, error: rpc.error };
+
+  const esNumero = /^\d+$/.test(clave);
+  const { data, error } = esNumero
+    ? await supabase.from("side_events").select("*").eq("id", clave).maybeSingle()
+    : await supabase.from("side_events").select("*").eq("public_code", clave.toLowerCase()).maybeSingle();
+  if (error || !data) return { data: null, error };
+  if (esNumero && data.legacy_link_enabled === false) return { data: null, error: null };
+  return { data, error: null };
+}
+
+// --------------------
 // Metadata dinámica
 // --------------------
 export async function generateMetadata({ params }: { params: Promise<RouteParams> }): Promise<Metadata> {
@@ -35,9 +67,7 @@ export async function generateMetadata({ params }: { params: Promise<RouteParams
 
   const supabase = await createClient();
 
-  const sideID = decodeURIComponent(side_event_id);
-
-  const { data } = await supabase.from("side_events").select("*").eq("id", sideID).maybeSingle();
+  const { data } = await buscarSideEvent(supabase, side_event_id);
 
   if (!data) {
     return {
@@ -89,9 +119,7 @@ export default async function InvitationDynamicPage({ params, searchParams }: Pa
 
   const supabase = await getPublicServerClient();
 
-  const sideID = decodeURIComponent(side_event_id);
-
-  const { data, error } = await supabase.from("side_events").select("*").eq("id", sideID).maybeSingle();
+  const { data, error } = await buscarSideEvent(supabase, side_event_id);
 
 
   if (error) {

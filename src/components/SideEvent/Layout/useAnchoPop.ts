@@ -3,20 +3,20 @@
 import { useEffect, useRef, useState, type RefObject } from "react";
 
 /*
-  Puntos de quiebre de un Flash en pantallas grandes (handoff "Evento Flash en
+  Puntos de quiebre de un Pop en pantallas grandes (handoff "Pop en
   iPad y Mac", 9b): < 600 la columna del celular, 600–1023 la tableta (una
   columna, hoja inferior centrada) y ≥ 1024 el escritorio (mosaico de dos
   columnas, panel lateral). Arranca en "tel" (igual que el render del
   servidor) y se corrige al montar.
 */
 
-export type AnchoFlash = "tel" | "tableta" | "escritorio";
+export type AnchoPop = "tel" | "tableta" | "escritorio";
 
 const TABLETA = "(min-width: 600px)";
 const ESCRITORIO = "(min-width: 1024px)";
 
-export function useAnchoFlash(): AnchoFlash {
-  const [ancho, setAncho] = useState<AnchoFlash>("tel");
+export function useAnchoPop(): AnchoPop {
+  const [ancho, setAncho] = useState<AnchoPop>("tel");
   useEffect(() => {
     const t = window.matchMedia(TABLETA);
     const e = window.matchMedia(ESCRITORIO);

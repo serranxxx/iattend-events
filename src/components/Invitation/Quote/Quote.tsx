@@ -208,8 +208,9 @@ export const Quote = forwardRef<HTMLDivElement, quoteProps>(function Quote({ dev
             position: "relative",
             // Imagen o color de fondo, no los dos: con imagen el color no se pinta.
             backgroundColor: content?.dynamic_background?.active && !content.image.active ? moduleBg : "transparent",
-            // Textura propia del bloque, detrás del contenido (ModuleBackdrop).
-            isolation: "isolate",
+            // Sin `isolation`: la imagen (FadeIn, z 1) queda sobre la textura de
+            // la invitación y el fondo del bloque debajo (ELEMENTOS_SOBRE_TEXTURA).
+            // Con textura propia el bloque sube entero (moduleBoxExtras).
             // Relleno arriba / abajo propio del bloque (dynamic_background.padding_y).
             ...moduleBoxExtras(content?.dynamic_background),
             borderRadius: content?.dynamic_background?.border_radius,

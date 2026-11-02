@@ -2,7 +2,7 @@ import type React from "react";
 import type { SideEventBody } from "@/types/side_event";
 
 /*
-  Tarjetas de un side event / Flash debajo de la portada (Asistentes,
+  Tarjetas de un side event / Pop debajo de la portada (Asistentes,
   Itinerario, Cómo llegar, Notas, Clima): orden y cuáles se ocultan, como las
   acomoda el panel Capas del editor. Contraparte:
   iattend-vite/src/modules/SideEvents/tarjetasSide.js (mismas reglas).
@@ -16,11 +16,11 @@ import type { SideEventBody } from "@/types/side_event";
 export type TarjetaSide = "registration" | "attendees" | "itinerary" | "map" | "notes" | "weather";
 
 // Registro (formulario) sigue en la lista por su "oculto", pero ya no va en
-// el scroll: llega como aviso al confirmar (handoff "Flash Layout" 3a).
+// el scroll: llega como aviso al confirmar (handoff "Pop Layout" 3a).
 export const ORDEN_TARJETAS: TarjetaSide[] = ["registration", "itinerary", "map", "notes", "attendees", "weather"];
 
-const SOLO_FLASH = new Set<TarjetaSide>(["registration", "attendees", "itinerary"]);
-const aplica = (key: TarjetaSide, esFlash: boolean) => esFlash || !SOLO_FLASH.has(key);
+const SOLO_POP = new Set<TarjetaSide>(["registration", "attendees", "itinerary"]);
+const aplica = (key: TarjetaSide, esPop: boolean) => esPop || !SOLO_POP.has(key);
 
 const ocultaDe = (body: SideEventBody | undefined, key: TarjetaSide) => {
   if (key === "registration") return !body?.form?.enabled;
@@ -29,15 +29,15 @@ const ocultaDe = (body: SideEventBody | undefined, key: TarjetaSide) => {
   return Boolean((body?.cards ?? []).find((c) => c.key === key)?.hidden);
 };
 
-export const tarjetasDe = (body: SideEventBody | undefined, esFlash: boolean) => {
+export const tarjetasDe = (body: SideEventBody | undefined, esPop: boolean) => {
   const guardadas = (Array.isArray(body?.cards) ? body.cards : [])
     .map((c) => c.key as TarjetaSide)
     .filter((k) => ORDEN_TARJETAS.includes(k));
   const orden = [...new Set([...guardadas, ...ORDEN_TARJETAS])];
-  return orden.filter((k) => aplica(k, esFlash)).map((key) => ({ key, hidden: ocultaDe(body, key) }));
+  return orden.filter((k) => aplica(k, esPop)).map((key) => ({ key, hidden: ocultaDe(body, key) }));
 };
 
-// Grupos de la página (handoff "Flash Layout" 3a), cada uno con su etiqueta
+// Grupos de la página (handoff "Pop Layout" 3a), cada uno con su etiqueta
 // centrada. Recibe las llaves que de verdad se pintan, en orden; el grupo sale
 // donde aparece su primera tarjeta. Gemela: agruparTarjetas en iattend-vite.
 export type GrupoTarjetas = "info" | "lugar" | "gente";

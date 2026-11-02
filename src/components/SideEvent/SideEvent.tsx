@@ -1,7 +1,7 @@
 "use client";
 
 import { SideEvent } from "@/types/side_event";
-import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import styles from "./side-event.module.css";
 import Image from "next/image";
 import { Button, Input, message } from "antd";
@@ -15,36 +15,38 @@ import { ItinerarioWidget } from "./ItinerarioWidget";
 import { AnimatePresence, motion } from "motion/react";
 import SongPlayer from "@/components/Invitation/SongPlayer/SongPlayer";
 import Efectos from "./Efectos";
-import FlashElemento from "./FlashElemento";
+import PopElemento from "./PopElemento";
 import { fontExtras } from "@/components/Invitation/fontExtras";
 import ClimaVidrio from "./ClimaVidrio";
 import Asistentes from "./Asistentes/Asistentes";
 import SelectorAvatar, { type AvatarElegido } from "./Asistentes/SelectorAvatar";
-import { avatarAlAzar, cargarAsistentes, contenidoDe, emojiDe, fondoDe, inicialesDe, LISTA_EJEMPLO, modoAvatar, perfilDe, type ListaAsistentes } from "./Asistentes/datosAsistentes";
+import { avatarAlAzar, cargarAsistentes, contenidoDe, emojiDe, fondoDe, inicialesDe, modoAvatar, rellenarConEjemplo, perfilDe, type ListaAsistentes } from "./Asistentes/datosAsistentes";
 import { estiloDe, tintaDeNotas, variablesDeEstilo } from "@/helpers/estilosBloque";
 import { agruparTarjetas, estiloNotas, ETIQUETA_DE_GRUPO, portadaOculta, tarjetasDe, type GrupoTarjetas } from "@/helpers/tarjetasSide";
-import ChatFlash from "./Chat/ChatFlash";
+import ChatPop from "./Chat/ChatPop";
 import RegistroCard from "./Registro/RegistroCard";
 import { formPublicado, formVisible } from "./Registro/datosRegistro";
 import { useEstadoRegistro } from "./Registro/useEstadoRegistro";
 import FilaChat from "./Chat/FilaChat";
-import { useChatFlash } from "./Chat/useChatFlash";
+import { useChatPop } from "./Chat/useChatPop";
 import ConfetiExplosion from "./Layout/ConfetiExplosion";
-import HojaFlash from "./Layout/HojaFlash";
+import HojaPop from "./Layout/HojaPop";
+import { ElegirCalendario, entradasDeCalendario } from "./Layout/CalendarioPop";
+import { AddToCalendar } from "@/components/AddToCalendar/AddToCalendar";
 import NotificacionFormulario from "./Layout/NotificacionFormulario";
-import TicketFlash from "./Layout/TicketFlash";
+import TicketPop from "./Layout/TicketPop";
 import { qrPaseSide } from "@/helpers/paseSide";
 import TarjetaLugar, { direccionCompleta } from "./Layout/TarjetaLugar";
 import layout from "./Layout/layout.module.css";
-import { useAnchoFlash } from "./Layout/useAnchoFlash";
+import { useAnchoPop } from "./Layout/useAnchoPop";
 import { ClipboardList, MessageCircle } from "lucide-react";
-import { CAMBIO_CARRUSEL_MS, fotosDePortada } from "@/helpers/fotosPortada";
+import { ajusteDe, CAMBIO_CARRUSEL_MS, cubrir, desenfoqueDe, estiloAjuste, esVideo, mediaDePortada, variablesDesenfoque } from "@/helpers/fotosPortada";
 
-// Lienzo de los PNG de un Flash: la pieza del editor (iattend-vite, SideCanvas,
+// Lienzo de los PNG de un Pop: la pieza del editor (iattend-vite, SideCanvas,
 // 390×700) escalada para cubrir la pantalla y centrada, como object-fit:
 // cover. Así los PNG conservan su tamaño respecto a la pantalla aunque el
 // teléfono sea más alargado (se recorta un poco a los lados). Misma regla que
-// lienzoCover en iattend-vite/src/modules/SideEvents/stickersFlashData.js.
+// lienzoCover en iattend-vite/src/modules/SideEvents/stickersPopData.js.
 const PIEZA_ANCHO = 390;
 const PIEZA_ALTO = 700;
 // `sizes` de un PNG que ocupa w% del lienzo. El lienzo mide lo de la columna
@@ -149,6 +151,11 @@ export default function SideEvents({ info, password, preview, registroToken }: i
   const [regAcompanantes, setRegAcompanantes] = useState<string[]>([]);
   const [regEnviando, setRegEnviando] = useState(false);
   const claveRegistro = info?.id ? `iattend_side_event_${info.id}` : null;
+  // Cómo se nombra el evento ante el backend (asistentes, chat, formulario,
+  // confirmación pública, pase): su código público, no el número, que se
+  // puede adivinar (iattend--backend helpers/sideEventClave.js). Sin código
+  // (antes de la migración) va el número.
+  const claveApi = info?.public_code || info?.id;
   // Fondo de la página y barra de Safari: el color de la invitación al 80%.
   // El fundido de abajo de la portada termina en este mismo color, para que
   // no quede línea. Mismo valor en el editor.
@@ -157,7 +164,7 @@ export default function SideEvents({ info, password, preview, registroToken }: i
   const estiloBloque = estiloDe(info?.body);
   const varsEstilo = variablesDeEstilo(estiloBloque, info?.body?.color);
   const colorFondoPagina = darker(info?.body.color ?? "#000000", 0.8) ?? info?.body.color;
-  // Capa de los PNG de un Flash (para medir su lienzo).
+  // Capa de los PNG de un Pop (para medir su lienzo).
   const capaStickersRef = useRef<HTMLDivElement>(null);
   // La página hace scroll dentro de este contenedor (de la pantalla visible
   // exacta), no en la ventana: así en iOS 26 Safari nada sube detrás de la
@@ -172,32 +179,70 @@ export default function SideEvents({ info, password, preview, registroToken }: i
   // alta que la pantalla), así lo que se calcó sobre la foto cuadra aunque la
   // foto y el lienzo de los PNG se recorten distinto. Igual en el editor.
   const heroRef = useRef<HTMLDivElement>(null);
-  // iPad y Mac (handoff "Evento Flash en iPad y Mac", 9b): la foto de la
+  // iPad y Mac (handoff "Pop en iPad y Mac", 9b): la foto de la
   // portada a pantalla completa, los elementos en la pieza del editor
   // (357 × 631) centrada, y debajo las tarjetas (una columna en tableta,
   // mosaico de dos en escritorio). En celular no cambia nada.
-  const esFlash = Boolean(info && !info.invitation_id);
-  const ancho = useAnchoFlash();
-  const escena = esFlash && ancho !== "tel";
-  const mosaico = esFlash && ancho === "escritorio";
+  const esPop = Boolean(info && !info.invitation_id);
+  const ancho = useAnchoPop();
+  const escena = esPop && ancho !== "tel";
+  const mosaico = esPop && ancho === "escritorio";
   const escenaRef = useRef<HTMLDivElement>(null);
   const [tamFoto, setTamFoto] = useState<{ w: number; h: number } | null>(null);
-  // Carrusel de la portada (Flash): cambian solas cada CAMBIO_CARRUSEL_MS.
-  const fotos = info?.body.video ? [] : fotosDePortada(info?.body);
+  // Portada: fotos y videos (helpers/fotosPortada.ts). Con varios, carrusel:
+  // cada foto dura CAMBIO_CARRUSEL_MS y cada video se reproduce completo.
+  const fotos = info?.body.video ? [] : mediaDePortada(info?.body);
   const [fotoActiva, setFotoActiva] = useState(0);
   const clavesFotos = fotos.join("|");
+  const videosCarrusel = useRef<Record<string, HTMLVideoElement | null>>({});
   useEffect(() => {
     setFotoActiva(0);
-    if (fotos.length < 2) return undefined;
-    const id = setInterval(() => setFotoActiva((i) => (i + 1) % fotos.length), CAMBIO_CARRUSEL_MS);
-    return () => clearInterval(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clavesFotos]);
+  useEffect(() => {
+    if (fotos.length < 2) return undefined;
+    const actual = fotos[fotoActiva];
+    // El video que le toca empieza desde el principio; los demás se pausan.
+    Object.entries(videosCarrusel.current).forEach(([src, el]) => {
+      if (!el) return;
+      if (src === actual) {
+        el.currentTime = 0;
+        el.play().catch(() => {});
+      } else el.pause();
+    });
+    const siguiente = () => setFotoActiva((i) => (i + 1) % fotos.length);
+    const video = esVideo(actual) ? videosCarrusel.current[actual] : null;
+    if (video) {
+      // Al terminar; si no carga, a los 30 s como mucho.
+      const t = window.setTimeout(siguiente, video.duration ? video.duration * 1000 + 400 : 30000);
+      video.addEventListener("ended", siguiente);
+      video.addEventListener("error", siguiente);
+      return () => {
+        window.clearTimeout(t);
+        video.removeEventListener("ended", siguiente);
+        video.removeEventListener("error", siguiente);
+      };
+    }
+    const t = window.setTimeout(siguiente, CAMBIO_CARRUSEL_MS);
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clavesFotos, fotoActiva]);
+  // Zoom y encuadre de lo primero de la portada (ahí se anclan los dibujos).
+  // Encuadre de cada foto / video de la portada (fotosPortada.ts).
+  const ajusteEn = (src: string | null | undefined) => ajusteDe(info?.body, src);
+  const ajusteFoto = ajusteEn(info?.body.video || fotos[0] || info?.body.image);
   const [marcoFoto, setMarcoFoto] = useState<{ left: number; top: number; width: number; height: number } | null>(null);
+  // Tamaño natural y recuadro de cada foto / video del carrusel (para los
+  // dibujos anclados a una: `fotoSrc`).
+  const [tamanosFoto, setTamanosFoto] = useState<Record<string, { w: number; h: number }>>({});
+  const [marcosFoto, setMarcosFoto] = useState<Record<string, { left: number; top: number; width: number; height: number }>>({});
+  const medirFoto = (src: string, w: number, h: number) => {
+    if (!w || !h) return;
+    setTamanosFoto((t) => (t[src]?.w === w && t[src]?.h === h ? t : { ...t, [src]: { w, h } }));
+  };
   const [draftCompanions, setDraftCompanions] = useState<SideGuestSubabasePayload[]>([]);
   const [draftMainName, setDraftMainName] = useState<string>("");
   const [draftMainRejected, setDraftMainRejected] = useState<boolean>(false);
-  // Asistentes (solo Flash, opcional): la lista y el avatar que elige quien
+  // Asistentes (solo Pop, opcional): la lista y el avatar que elige quien
   // confirma. En la vista previa del organizador, sin confirmados, un ejemplo.
   const mostrarAsistentes = Boolean(info && !info.invitation_id && info.body?.showAttendees);
   const [listaAsistentes, setListaAsistentes] = useState<ListaAsistentes | null>(null);
@@ -206,18 +251,21 @@ export default function SideEvents({ info, password, preview, registroToken }: i
   // confirmado puede tocar su avatar para cambiarlo (no se le pide al confirmar).
   const modo = modoAvatar(info?.body?.attendeesStyle);
   const [editandoAvatar, setEditandoAvatar] = useState(false);
+  // Ya respondió (confirmó o declinó) y quiere cambiar de opinión: vuelven
+  // los botones Asistiré / No asistiré (con Cancelar).
+  const [cambiandoRespuesta, setCambiandoRespuesta] = useState(false);
   const [guardandoAvatar, setGuardandoAvatar] = useState(false);
   // Chat de asistentes (opcional, con Asistentes visible): solo confirmados.
   const chatActivo = mostrarAsistentes && Boolean(info?.body?.chat?.enabled);
   const codigoChat = guestInfo?.state === "confirmado" ? guestInfo.password : null;
-  const chat = useChatFlash({ eventoId: info?.id, codigo: codigoChat, activo: chatActivo, preview });
+  const chat = useChatPop({ eventoId: info?.id, clave: claveApi, codigo: codigoChat, activo: chatActivo, preview, delEditor: info?._chat ?? null });
   const [chatAbierto, setChatAbierto] = useState(false);
   const marcarVistoChat = chat.marcarVisto;
   const cerrarChat = useCallback(() => { setChatAbierto(false); marcarVistoChat(); }, [marcarVistoChat]);
 
-  // Acomodo 3a (handoff "Flash Layout"): el pase y el formulario salen del
+  // Acomodo 3a (handoff "Pop Layout"): el pase y el formulario salen del
   // scroll y se abren en una hoja; el formulario llega como aviso al confirmar.
-  const [hoja, setHoja] = useState<null | "pase" | "form">(null);
+  const [hoja, setHoja] = useState<null | "pase" | "form" | "calendario">(null);
   const [confeti, setConfeti] = useState<number | null>(null);
   // En la vista previa, "Asistiré" no guarda nada: solo enseña el confeti y el aviso.
   const [previewConfirmado, setPreviewConfirmado] = useState(false);
@@ -226,10 +274,20 @@ export default function SideEvents({ info, password, preview, registroToken }: i
   const formPreguntas = formActivo ? formVisible(formPublicado(info!.body!.form)!).sections.reduce((n, sec) => n + sec.fields.length, 0) : 0;
   const yaConfirmo = guestInfo?.state === "confirmado" || Boolean(registroToken) || (preview && previewConfirmado);
   const estadoForm = useEstadoRegistro({
-    eventoId: info?.id, codigo: codigoChat, token: registroToken ?? null,
+    eventoId: claveApi, codigo: codigoChat, token: registroToken ?? null,
     activo: formActivo && (Boolean(preview) || Boolean(codigoChat) || Boolean(registroToken)), preview,
   });
   const formPendiente = formActivo && yaConfirmo && estadoForm.pendiente;
+  // Lo que el invitado confirmado puede agregar a su calendario (CalendarioPop).
+  const entradasCalendario = useMemo(() => entradasDeCalendario(info), [info]);
+  // Pase activo: el organizador no apagó el Pase digital (vite → body.wallet).
+  // Sin él no hay "Ver mi pase" y "Agregar al calendario" es el botón principal.
+  const paseActivo = info?.body?.wallet?.enabled !== false;
+  // Formulario obligatorio (body.form.required): mientras le falte, la hoja
+  // se abre sola y no se puede cerrar; la página queda detrás del velo.
+  const formObligatorio = formPendiente && info?.body?.form?.required === true;
+  // Se abrió por ser obligatorio: al cerrarlo ya respondido llega el pase.
+  const abiertoPorObligatorio = useRef(false);
 
   interface CSSVars extends React.CSSProperties {
     ["--hover-color"]?: string;
@@ -423,19 +481,21 @@ export default function SideEvents({ info, password, preview, registroToken }: i
   };
 
   // Vista previa: el editor manda los confirmados reales que ya tiene.
-  const asistentesDelEditor = preview && info?._asistentes?.total ? info._asistentes : null;
+  // Vista previa: los confirmados reales que manda el editor (aunque sean 0;
+  // ya no hay asistentes de ejemplo).
+  const asistentesDelEditor = preview && info?._asistentes ? info._asistentes : null;
   const recargarAsistentes = useCallback(async () => {
     if (!mostrarAsistentes || !info?.id) return;
-    if (asistentesDelEditor) { setListaAsistentes(asistentesDelEditor); return; }
-    const lista = await cargarAsistentes(info.id);
-    // Vista previa: sin confirmados (o con el interruptor sin guardar) se ve el ejemplo.
-    if (preview) setListaAsistentes(lista && lista.total > 0 ? lista : LISTA_EJEMPLO);
+    // Vista previa: los reales del editor completados con ejemplos (que se vea lleno).
+    if (asistentesDelEditor) { setListaAsistentes(rellenarConEjemplo(asistentesDelEditor)); return; }
+    const lista = await cargarAsistentes(claveApi ?? info.id);
+    if (preview) setListaAsistentes(rellenarConEjemplo(lista));
     else if (lista) setListaAsistentes(lista);
-  }, [mostrarAsistentes, info?.id, preview, asistentesDelEditor]);
+  }, [mostrarAsistentes, info?.id, claveApi, preview, asistentesDelEditor]);
 
   useEffect(() => {
     if (!mostrarAsistentes) { setListaAsistentes(null); return; }
-    if (preview) setListaAsistentes((prev) => prev ?? asistentesDelEditor ?? LISTA_EJEMPLO);
+    if (preview) setListaAsistentes((prev) => prev ?? rellenarConEjemplo(asistentesDelEditor));
     recargarAsistentes();
     if (preview) return;
     // Quien tiene la página abierta ve llegar a los demás.
@@ -466,9 +526,22 @@ export default function SideEvents({ info, password, preview, registroToken }: i
   // la explosión. Al cerrarlo llega, si hay, el aviso del formulario.
   useEffect(() => {
     if (!confeti) return;
+    // Sin pase activo (Pase digital apagado) no se abre nada.
+    if (info?.body?.wallet?.enabled === false) return;
     const t = window.setTimeout(() => setHoja((h) => h ?? "pase"), 1300);
     return () => window.clearTimeout(t);
-  }, [confeti]);
+  }, [confeti, info?.body?.wallet?.enabled]);
+  // Formulario obligatorio pendiente: se abre solo (después del confeti al
+  // confirmar; casi al momento si ya había confirmado) en lugar del pase.
+  useEffect(() => {
+    if (!formObligatorio || hoja === "form") return;
+    const t = window.setTimeout(() => {
+      abiertoPorObligatorio.current = true;
+      setChatAbierto(false);
+      setHoja("form");
+    }, confeti ? 1300 : 400);
+    return () => window.clearTimeout(t);
+  }, [formObligatorio, hoja, confeti]);
   const finConfeti = useCallback(() => setConfeti(null), []);
 
   // Mide la capa de PNG (del alto de la pantalla) para su lienzo. La portada
@@ -484,19 +557,26 @@ export default function SideEvents({ info, password, preview, registroToken }: i
       // el ancho, centrada) y la capa es la columna centrada.
       const hero = heroRef.current;
       const columna = capa.parentElement;
+      // Lo que se resta para pasar del recuadro de la portada al de la capa.
+      if (hero && columna) {
+        const dx = escena ? columna.offsetLeft : (hero.offsetWidth - capa.offsetWidth) / 2;
+        const dy = escena ? columna.offsetTop : 0;
+        const marcos: Record<string, { left: number; top: number; width: number; height: number }> = {};
+        Object.entries(tamanosFoto).forEach(([src, tam]) => {
+          const m = cubrir(tam, hero.offsetWidth, hero.offsetHeight, ajusteEn(src));
+          marcos[src] = { ...m, left: m.left - dx, top: m.top - dy };
+        });
+        setMarcosFoto(marcos);
+      }
       if (escena && hero && columna && tamFoto) {
         // iPad / Mac: la foto cubre toda la ventana y la capa es la pieza
         // centrada (a lo ancho y a lo alto).
-        const escala = Math.max(hero.offsetWidth / tamFoto.w, hero.offsetHeight / tamFoto.h);
-        const width = tamFoto.w * escala;
-        const height = tamFoto.h * escala;
-        setMarcoFoto({ left: (hero.offsetWidth - width) / 2 - columna.offsetLeft, top: (hero.offsetHeight - height) / 2 - columna.offsetTop, width, height });
+        const m = cubrir(tamFoto, hero.offsetWidth, hero.offsetHeight, ajusteFoto);
+        setMarcoFoto({ ...m, left: m.left - columna.offsetLeft, top: m.top - columna.offsetTop });
       } else if (hero && tamFoto) {
-        const escala = Math.max(hero.offsetWidth / tamFoto.w, hero.offsetHeight / tamFoto.h);
-        const width = tamFoto.w * escala;
-        const height = tamFoto.h * escala;
+        const m = cubrir(tamFoto, hero.offsetWidth, hero.offsetHeight, ajusteFoto);
         const izquierdaCapa = (hero.offsetWidth - capa.offsetWidth) / 2;
-        setMarcoFoto({ left: (hero.offsetWidth - width) / 2 - izquierdaCapa, top: (hero.offsetHeight - height) / 2, width, height });
+        setMarcoFoto({ ...m, left: m.left - izquierdaCapa });
       }
     };
     medir();
@@ -511,7 +591,8 @@ export default function SideEvents({ info, password, preview, registroToken }: i
       window.removeEventListener("resize", medir);
       ro.disconnect();
     };
-  }, [validated, confirmStep, info, tamFoto, escena]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [validated, confirmStep, info, tamFoto, escena, JSON.stringify(ajusteFoto), tamanosFoto]);
 
   const handleConfirmAttendance = () => {
     if (!guestInfo) {
@@ -520,10 +601,19 @@ export default function SideEvents({ info, password, preview, registroToken }: i
       return;
     }
 
+    // Ya confirmado y cambiando de opinión: con acompañantes, vuelve a elegir
+    // quiénes vienen; solo, no hay nada que cambiar.
     if (guestInfo.state === 'confirmado') {
-      updateGuestStatus('creado');
+      if (guestInfo.has_companion && companions.length > 0) {
+        setDraftMainName(guestInfo.name ?? "");
+        setDraftMainRejected(false);
+        setDraftCompanions(companions);
+        setConfirmStep(true);
+      }
+      setCambiandoRespuesta(false);
       return;
     }
+    setCambiandoRespuesta(false);
 
     if (guestInfo.has_companion && companions.length > 0) {
       setDraftMainName(guestInfo.name ?? "");
@@ -535,6 +625,22 @@ export default function SideEvents({ info, password, preview, registroToken }: i
 
     updateGuestStatus('confirmado');
     onClick(); // si esto cierra modal, avanza paso, etc.
+  };
+
+  // "No asistiré" (también al cambiar de opinión): declina al titular y a
+  // sus acompañantes.
+  const declinarPase = async () => {
+    setCambiandoRespuesta(false);
+    if (!guestInfo) return;
+    if (guestInfo.has_companion && companions.length > 0) {
+      const { data } = await supabase
+        .from("side_events_guests")
+        .update({ state: "rechazado" })
+        .in("id", companions.map((c) => c.id))
+        .select();
+      if (data) setCompanions(data as SideGuestSubabasePayload[]);
+    }
+    await updateGuestStatus("rechazado");
   };
 
   // El invitado confirmado cambia su emoji / color desde su tarjeta.
@@ -572,7 +678,7 @@ export default function SideEvents({ info, password, preview, registroToken }: i
     }
     setRegEnviando(true);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_IATTEND_API_URL}/side-events/${info.id}/confirmacion-publica`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_IATTEND_API_URL}/side-events/${claveApi}/confirmacion-publica`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -827,6 +933,19 @@ export default function SideEvents({ info, password, preview, registroToken }: i
         {esPublico ? "Registrado como" : "Invitación dirigida a"}
       </span>
       <span className={styles.invitado_nombre}>{guestInfo.name}</span>
+      {/* Su respuesta, en una píldora (también mientras la cambia). */}
+      {(guestInfo.state === "confirmado" || guestInfo.state === "rechazado") && (
+        <span className={styles.invitado_estado} data-estado={guestInfo.state}>
+          <span className={styles.invitado_estado_icono} aria-hidden>
+            {guestInfo.state === "confirmado" ? (
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+            ) : (
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
+            )}
+          </span>
+          {guestInfo.state === "confirmado" ? "Asistencia confirmada" : "No asistirás"}
+        </span>
+      )}
       {/* El selector de avatar entra y sale animando su alto (la tarjeta
           crece / se encoge suave) y "Ver mi pase" hace lo contrario. */}
       <AnimatePresence initial={false}>
@@ -857,26 +976,67 @@ export default function SideEvents({ info, password, preview, registroToken }: i
       <AnimatePresence initial={false}>
         {guestInfo.state === "confirmado" && !editandoAvatar && (
           <motion.div key="ver-pase" {...DESPLIEGUE} style={{ width: "100%", display: "flex", flexDirection: "column" }}>
-            <button type="button" className={layout.ver_pase} onClick={() => setHoja("pase")}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                <path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z" />
-                <path d="M13 5v2M13 17v2M13 11v2" />
-              </svg>
-              Ver mi pase
-            </button>
+            {paseActivo && (
+              <button type="button" className={layout.ver_pase} onClick={() => setHoja("pase")}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z" />
+                  <path d="M13 5v2M13 17v2M13 11v2" />
+                </svg>
+                Ver mi pase
+              </button>
+            )}
+            {/* Agregar al calendario: con una sola cosa, el menú de siempre;
+                con varias (momentos o días), la hoja para elegir cuáles. */}
+            {entradasCalendario.length === 1 ? (
+              <AddToCalendar
+                {...entradasCalendario[0]}
+                primary="var(--boton-tinta, #1F1B2E)"
+                accent="var(--boton-fondo, #fff)"
+                placement="top"
+                buttonClassName={paseActivo ? styles.invitado_calendario : layout.ver_pase}
+                buttonStyle={paseActivo
+                  ? { background: "transparent", color: "var(--bloque-tinta, #fff)", minHeight: 44, height: 44, fontSize: 15, fontWeight: 700, letterSpacing: 0, marginTop: 6, borderRadius: 99, boxShadow: "none" }
+                  : { background: "var(--boton-fondo, #fff)", color: "var(--boton-tinta, #1F1B2E)", minHeight: 50, height: 50, fontSize: 14, fontWeight: 700, letterSpacing: 0, borderRadius: 99, border: "var(--boton-borde, none)" }}
+              />
+            ) : entradasCalendario.length > 1 ? (
+              <button type="button" className={paseActivo ? styles.invitado_calendario : layout.ver_pase} onClick={() => setHoja("calendario")}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <path d="M8 2v4M16 2v4M3 10h18M21 13V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h8" />
+                  <path d="M19 16v6M16 19h6" />
+                </svg>
+                Agregar al calendario
+              </button>
+            ) : null}
           </motion.div>
         )}
       </AnimatePresence>
-      {esPublico && (
-        <button type="button" onClick={olvidarRegistro} className={styles.invitado_no_eres}>
-          ¿No eres {guestInfo.name}?
-        </button>
-      )}
+      {/* Pie: "Cambiar mi respuesta" (vuelven los botones de asistencia) y,
+          en el registro público, "¿No eres …?". */}
+      {(() => {
+        const puedeCambiar = (guestInfo.state === "confirmado" || guestInfo.state === "rechazado") && !editandoAvatar && !cambiandoRespuesta && !preview;
+        if (!puedeCambiar && !esPublico) return null;
+        return (
+          <div className={styles.invitado_pie}>
+            {puedeCambiar && (
+              <button type="button" className={styles.invitado_no_eres} onClick={() => { setCambiandoRespuesta(true); paginaRef.current?.scrollTo({ top: 0, behavior: "smooth" }); }}>
+                Cambiar mi respuesta
+              </button>
+            )}
+            {puedeCambiar && esPublico && <span className={styles.invitado_pie_punto} aria-hidden>·</span>}
+            {esPublico && (
+              <button type="button" onClick={olvidarRegistro} className={styles.invitado_no_eres}>
+                ¿No eres {guestInfo.name}?
+              </button>
+            )}
+          </div>
+        );
+      })()}
     </motion.div>
   ) : null;
 
   // Dibujo anclado a la foto (sin foto medida todavía, va en el lienzo).
-  const enFoto = (st: NonNullable<SideEvent["body"]["stickers"]>[number]) => st.kind === "dibujo" && Boolean(st.foto) && Boolean(marcoFoto);
+  // Sin `fotoSrc`: anclado a la primera foto (se ve siempre).
+  const enFoto = (st: NonNullable<SideEvent["body"]["stickers"]>[number]) => st.kind === "dibujo" && Boolean(st.foto) && !st.fotoSrc && Boolean(marcoFoto);
   // Los elementos de la portada en un recuadro (lienzo de los PNG o foto).
   const pintarStickers = (lista: NonNullable<SideEvent["body"]["stickers"]>) => lista.map((st) => {
                 const giro = `translate(-50%, -50%) rotate(${st.rot ?? 0}deg)${st.flipX || st.flipY ? ` scale(${st.flipX ? -1 : 1}, ${st.flipY ? -1 : 1})` : ""}`;
@@ -888,7 +1048,7 @@ export default function SideEvents({ info, password, preview, registroToken }: i
                       className={`${styles.sticker} ${styles.elemento}`}
                       style={{ left: `${st.x}%`, top: `${st.y}%`, width: `${st.w}%`, transform: giro, opacity: st.opacity ?? 1 }}
                     >
-                      <FlashElemento s={st} titleFont={info?.body.title?.font ?? "Poppins"} />
+                      <PopElemento s={st} titleFont={info?.body.title?.font ?? "Poppins"} />
                     </div>
                   );
                 }
@@ -936,7 +1096,7 @@ export default function SideEvents({ info, password, preview, registroToken }: i
     <>
       {contextHolder}
       {chatActivo && (
-        <ChatFlash
+        <ChatPop
           open={chatAbierto}
           onClose={cerrarChat}
           modo={modo}
@@ -1003,7 +1163,7 @@ export default function SideEvents({ info, password, preview, registroToken }: i
           (body.wallet) o el del evento, y la imagen del link; Apple Wallet si el
           organizador lo ofrece. En la vista previa, un invitado de ejemplo. */}
       {info && (
-        <TicketFlash
+        <TicketPop
           open={hoja === "pase"}
           onClose={() => setHoja(null)}
           titulo={String(info.body?.wallet?.title ?? "").trim() || info.name || "Tu evento"}
@@ -1019,16 +1179,29 @@ export default function SideEvents({ info, password, preview, registroToken }: i
           qr={guestInfo?.id != null ? qrPaseSide(guestInfo.id) : guestInfo?.password || "side:0"}
           color={darker(info.body?.color ?? "#3B332D", 0.35) ?? info.body?.color}
           conWallet={info.body?.wallet?.enabled !== false}
-          eventoId={preview ? null : info.id}
+          eventoId={preview ? null : claveApi}
           invitadoId={guestInfo?.id}
+          codigo={guestInfo?.password ?? null}
         />
       )}
-      <HojaFlash
+      <HojaPop vars={varsEstilo} open={hoja === "calendario"} onClose={() => setHoja(null)} color={info?.body.color} label="Agregar al calendario">
+        {hoja === "calendario" && (
+          <ElegirCalendario entradas={entradasCalendario} titulo={info?.name ?? "Evento"} onListo={() => setHoja(null)} />
+        )}
+      </HojaPop>
+      <HojaPop
         vars={varsEstilo}
         open={hoja === "form"}
         // Al cerrar el formulario (a medias o terminado) se vuelve a leer su
         // estado: el pendiente y el folio del pase.
-        onClose={() => { if (hoja === "form" && !preview) estadoForm.recargar(); setHoja(null); }}
+        onClose={() => {
+          if (hoja === "form" && !preview) estadoForm.recargar();
+          // Ya respondido el obligatorio: sigue el pase (como al confirmar).
+          const siguiente = hoja === "form" && abiertoPorObligatorio.current && paseActivo ? "pase" : null;
+          abiertoPorObligatorio.current = false;
+          setHoja(siguiente);
+        }}
+        obligatoria={hoja === "form" && formObligatorio}
         color={info?.body.color}
         label="Formulario"
         // iPad y Mac: encabezado del panel (el pase ya trae el suyo).
@@ -1039,6 +1212,7 @@ export default function SideEvents({ info, password, preview, registroToken }: i
           <RegistroCard
             form={info!.body!.form!}
             eventoId={info!.id}
+            clave={claveApi}
             codigo={codigoChat}
             token={registroToken ?? null}
             preview={preview}
@@ -1046,8 +1220,8 @@ export default function SideEvents({ info, password, preview, registroToken }: i
             onTerminado={() => { if (preview) estadoForm.terminar(); else estadoForm.recargar(); }}
           />
         )}
-      </HojaFlash>
-      {/* Canción de un Flash: el mismo reproductor compacto del Save the Date
+      </HojaPop>
+      {/* Canción de un Pop: el mismo reproductor compacto del Save the Date
           (disco arriba a la izquierda; gira mientras suena). */}
       {info?.body.song && (
         <SongPlayer song={info.body.song} accent="#FFFFFF" secondary="#FFFFFF" dev={false} compact />
@@ -1056,48 +1230,76 @@ export default function SideEvents({ info, password, preview, registroToken }: i
           recalculaban en cada cuadro del video y lo trababan. */}
       <div
         ref={paginaRef}
-        className={`${styles.side_event_main_cont} ${info?.body.video ? styles.con_video : ""} ${esFlash ? styles.flash : ""}`}
+        className={`${styles.side_event_main_cont} ${info?.body.video ? styles.con_video : ""} ${esPop ? styles.pop : ""}`}
         // Lo que se asome detrás de la portada (p. ej. bajo la barra de Safari)
         // es el color del tema oscurecido, no el gris de arranque.
         style={info?.body.color ? { backgroundColor: darker(info.body.color, 0.8) ?? undefined, backgroundImage: "none", "--tema": info.body.color } as React.CSSProperties : undefined}
       >
         <div ref={heroRef} className={styles.hero}>
-          {/* Flash con video de fondo: en bucle y sin sonido; la imagen es su cuadro fijo. */}
+          {/* Pop con video de fondo: en bucle y sin sonido; la imagen es su cuadro fijo. */}
+          {/* La foto sola y el video van dentro de .hero_bg (el zoom del
+              scroll, en línea) con su ajuste (zoom y encuadre) propio. */}
           {info?.body.video ? (
-            <video
-              className={styles.hero_bg}
-              data-zoom
-              src={info.body.video}
-              poster={info.body.image || undefined}
-              autoPlay
-              muted
-              loop
-              playsInline
-              preload="auto"
-              onLoadedMetadata={(e) => setTamFoto({ w: e.currentTarget.videoWidth, h: e.currentTarget.videoHeight })}
-            />
+            <div className={styles.hero_bg} data-zoom>
+              <video
+                className={styles.carrusel_foto}
+                style={{ width: "100%", height: "100%", objectFit: "cover", ...estiloAjuste(ajusteFoto) }}
+                src={info.body.video}
+                poster={info.body.image || undefined}
+                autoPlay
+                muted
+                loop
+                playsInline
+                preload="auto"
+                onLoadedMetadata={(e) => setTamFoto({ w: e.currentTarget.videoWidth, h: e.currentTarget.videoHeight })}
+              />
+            </div>
           ) : fotos.length > 1 ? (
-            // Carrusel (helpers/fotosPortada.ts): las fotos encimadas, cambian
-            // con un fundido; el zoom del scroll va en el contenedor y los
-            // dibujos se anclan a la primera.
+            // Carrusel (helpers/fotosPortada.ts): fotos y videos encimados,
+            // cambian con un fundido; el zoom del scroll va en el contenedor y
+            // los dibujos se anclan a la primera.
             <div className={styles.hero_bg} data-zoom>
               {fotos.map((src, i) => (
                 <div key={src + i} className={styles.carrusel_foto} style={{ opacity: i === fotoActiva ? 1 : 0 }}>
-                  <Image
-                    fill
-                    src={src}
-                    alt=""
-                    priority={i === 0}
-                    style={{ objectFit: "cover" }}
-                    onLoad={i === 0 ? (e) => setTamFoto({ w: e.currentTarget.naturalWidth, h: e.currentTarget.naturalHeight }) : undefined}
-                  />
+                  {esVideo(src) ? (
+                    <video
+                      ref={(el) => {
+                        videosCarrusel.current[src] = el;
+                      }}
+                      src={src}
+                      muted
+                      playsInline
+                      preload="auto"
+                      style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", ...estiloAjuste(ajusteEn(src)) }}
+                      onLoadedMetadata={(e) => {
+                        medirFoto(src, e.currentTarget.videoWidth, e.currentTarget.videoHeight);
+                        if (i === 0) setTamFoto({ w: e.currentTarget.videoWidth, h: e.currentTarget.videoHeight });
+                      }}
+                    />
+                  ) : (
+                    <Image
+                      fill
+                      src={src}
+                      alt=""
+                      priority={i === 0}
+                      style={{ objectFit: "cover", ...estiloAjuste(ajusteEn(src)) }}
+                      onLoad={(e) => {
+                        medirFoto(src, e.currentTarget.naturalWidth, e.currentTarget.naturalHeight);
+                        if (i === 0) setTamFoto({ w: e.currentTarget.naturalWidth, h: e.currentTarget.naturalHeight });
+                      }}
+                    />
+                  )}
                 </div>
               ))}
             </div>
           ) : (
-            info?.body.image && <Image className={styles.hero_bg} data-zoom fill src={info?.body.image} alt="" style={{ objectFit: "cover" }} onLoad={(e) => setTamFoto({ w: e.currentTarget.naturalWidth, h: e.currentTarget.naturalHeight })} />
+            info?.body.image && (
+              <div className={styles.hero_bg} data-zoom>
+                <Image fill src={info.body.image} alt="" style={{ objectFit: "cover", ...estiloAjuste(ajusteFoto) }} onLoad={(e) => setTamFoto({ w: e.currentTarget.naturalWidth, h: e.currentTarget.naturalHeight })} />
+              </div>
+            )
           )}
-          <div className={styles.blur_cover}></div>
+          {desenfoqueDe(info?.body).amount > 0 && <div className={styles.blur_cover} style={variablesDesenfoque(info?.body)}></div>}
           <div className={styles.shadow}></div>
         </div>
 
@@ -1113,7 +1315,7 @@ export default function SideEvents({ info, password, preview, registroToken }: i
             elementos van en la pieza del editor (357 × 631) escalada al alto
             de la pantalla y centrada, sin recuadro visible. */}
         <div className={styles.columna_fija}>
-        {/* PNG de un Flash sobre la portada: capa del alto de la pantalla,
+        {/* PNG de un Pop sobre la portada: capa del alto de la pantalla,
             sin recorte (la portada ocupa toda la pantalla y los botones flotan
             encima). Van detrás del título, la fecha y el lugar. */}
         {/* Los ocultos (`hidden`) los dejó el organizador guardados sin mostrar. */}
@@ -1131,7 +1333,7 @@ export default function SideEvents({ info, password, preview, registroToken }: i
                   pesaba ~1 MB; así ~100 KB). Van en la primera pantalla, con
                   prioridad. width/height solo dan la proporción inicial: el
                   alto real sale de la imagen (height: auto). */}
-              {pintarStickers((info?.body.stickers ?? []).filter((st) => !st.hidden && !enFoto(st)))}
+              {pintarStickers((info?.body.stickers ?? []).filter((st) => !st.hidden && !enFoto(st) && !st.tarjeta && !st.fotoSrc))}
             </div>
             {/* Dibujos anclados a la foto, en su recuadro. */}
             {marcoFoto && (
@@ -1139,6 +1341,16 @@ export default function SideEvents({ info, password, preview, registroToken }: i
                 {pintarStickers((info?.body.stickers ?? []).filter((st) => !st.hidden && enFoto(st)))}
               </div>
             )}
+            {/* Anclados a una foto / video del carrusel: se ven con ella. */}
+            {fotos.length > 1 && fotos.map((src, i) => {
+              const lista = (info?.body.stickers ?? []).filter((st) => !st.hidden && st.kind === "dibujo" && st.fotoSrc === src);
+              if (!lista.length || !marcosFoto[src]) return null;
+              return (
+                <div key={src + i} className={styles.stickers_lienzo} style={{ ...marcosFoto[src], opacity: i === fotoActiva ? 1 : 0, transition: "opacity 0.9s ease" }}>
+                  {pintarStickers(lista)}
+                </div>
+              );
+            })}
           </div>
         )}
 
@@ -1185,7 +1397,7 @@ export default function SideEvents({ info, password, preview, registroToken }: i
                 scroll todo esto y lo demás (itinerario, cómo llegar, notas…)
                 sube encima de la portada fija. El editor (iattend-vite,
                 SideCanvas) acomoda la pieza igual. */}
-            <div className={`${styles.primera_pantalla} ${!confirmStep && !registro && (guestInfo?.state === "confirmado" || registroToken) ? styles.primera_confirmado : ""}`}>
+            <div className={`${styles.primera_pantalla} ${!confirmStep && !registro && !cambiandoRespuesta && (guestInfo?.state === "confirmado" || registroToken) ? styles.primera_confirmado : ""}`}>
               {/* Título, fecha y lugar se pueden ocultar desde Capas (coverHidden). */}
               {!portadaOculta(info?.body, "title") && <span
                 className={styles.titulo_portada}
@@ -1223,7 +1435,7 @@ export default function SideEvents({ info, password, preview, registroToken }: i
                   ...(sombraDeTexto(info?.body.details_shadow) ? { "--sombra-detalles": sombraDeTexto(info?.body.details_shadow) } : {}),
                 } as React.CSSProperties}
               >
-                {/* Un Flash puede tener varias fechas: una por renglón. */}
+                {/* Un Pop puede tener varias fechas: una por renglón. */}
                 {!portadaOculta(info?.body, "date") && lineasDeFechas(info?.body, { state: info?.body.address?.state, timezone: info?.body.timezone }).map((linea) => (
                   <span key={linea}>{linea}</span>
                 ))}
@@ -1431,7 +1643,7 @@ export default function SideEvents({ info, password, preview, registroToken }: i
                     Cancelar
                   </Button>
                 </motion.div>
-              ) : guestInfo?.state === 'confirmado' || registroToken ? null : (
+              ) : (guestInfo?.state === 'confirmado' || guestInfo?.state === 'rechazado' || registroToken) && !cambiandoRespuesta ? null : (
                 // Ya confirmó (o llega con su link de registro, que ya prueba que
                 // confirmó): sin botones de asistencia; su tarjeta
                 // de invitado (abajo) ya lo dice.
@@ -1444,24 +1656,23 @@ export default function SideEvents({ info, password, preview, registroToken }: i
                   className={styles.buttons_cont}
                   ref={botonesRef}
                 >
-                  {
-                    guestInfo?.state !== 'rechazado' &&
-                    <>
-                    <Button onClick={handleConfirmAttendance} style={{ height: 'var(--alto-botones, 80px)', borderRadius: '99px 0px 0px 99px' }} icon={<LuCircleCheck size={20} strokeWidth={1.6} style={{ opacity: "0.8" }} />} type="text" className={styles.side_buttons}>
-                      Asistiré
-                    </Button>
-                    <span className={styles.botones_divisor} aria-hidden />
-                    </>
-                  }
-                  {
-                    <Button onClick={() => (!guestInfo && esPublico ? setRegistro("rechazado") : preview && !guestInfo ? setPreviewConfirmado(false) : updateGuestStatus(guestInfo?.state === 'rechazado' ? 'creado' : 'rechazado'))} style={{ height: 'var(--alto-botones, 80px)', borderRadius: guestInfo?.state === 'rechazado' ? '99px' : '0px 99px 99px 0px' }} icon={guestInfo?.state !== 'rechazado' && <LuCircleX size={20} strokeWidth={1.6} style={{ opacity: "0.8" }} />} type="text" className={styles.side_buttons}>
-                      {guestInfo?.state === 'rechazado' ? 'Asistencia declinada' : 'No asistiré'}
-                    </Button>
-                  }
+                  <Button onClick={handleConfirmAttendance} style={{ height: 'var(--alto-botones, 80px)', borderRadius: '99px 0px 0px 99px' }} icon={<LuCircleCheck size={20} strokeWidth={1.6} style={{ opacity: "0.8" }} />} type="text" className={styles.side_buttons}>
+                    Asistiré
+                  </Button>
+                  <span className={styles.botones_divisor} aria-hidden />
+                  <Button onClick={() => (!guestInfo && esPublico ? setRegistro("rechazado") : preview && !guestInfo ? setPreviewConfirmado(false) : declinarPase())} style={{ height: 'var(--alto-botones, 80px)', borderRadius: '0px 99px 99px 0px' }} icon={<LuCircleX size={20} strokeWidth={1.6} style={{ opacity: "0.8" }} />} type="text" className={styles.side_buttons}>
+                    No asistiré
+                  </Button>
 
                 </motion.div>
               )}
               </AnimatePresence>
+              {/* Cambiando de opinión: volver a como estaba. */}
+              {cambiandoRespuesta && !confirmStep && (
+                <button type="button" className={styles.invitado_no_eres} style={{ marginTop: 12 }} onClick={() => setCambiandoRespuesta(false)}>
+                  Cancelar
+                </button>
+              )}
             </div>
 
             {/* Tarjeta del invitado. Privada y dirigida a alguien que aún no
@@ -1474,7 +1685,7 @@ export default function SideEvents({ info, password, preview, registroToken }: i
             {/* Tarjetas debajo de la portada, en el orden y sin las ocultas del
                 panel Capas del editor (helpers/tarjetasSide.ts), agrupadas bajo
                 su etiqueta (INFORMACIÓN · UBICACIÓN · ASISTENTES, handoff
-                "Flash Layout" 3a). Cada una conserva sus condiciones
+                "Pop Layout" 3a). Cada una conserva sus condiciones
                 (dirección completa, ciudad, etc.); una etiqueta solo sale si
                 su grupo tiene algo. El formulario ya no va aquí: llega como
                 aviso y se abre en la hoja. */}
@@ -1496,18 +1707,33 @@ export default function SideEvents({ info, password, preview, registroToken }: i
                 attendees: mostrarAsistentes && Boolean(listaAsistentes),
               };
               const grupos = agruparTarjetas(tarjetasDe(body, !info?.invitation_id).filter((c) => !c.hidden && hay[c.key]).map((c) => c.key));
+              // Dibujos hechos encima de una tarjeta en el editor (`tarjeta`):
+              // la tarjeta va en una envoltura del mismo tamaño y ellos encima,
+              // en % de la tarjeta, así suben con ella. Sin dibujos, tal cual.
+              const conDibujos = (key: string, tarjeta: React.ReactNode) => {
+                const dibujos = (body.stickers ?? []).filter((st) => st.kind === "dibujo" && !st.hidden && st.tarjeta === key);
+                if (!dibujos.length) return tarjeta;
+                return (
+                  <div key={key} className={styles.tarjeta_con_dibujos}>
+                    {tarjeta}
+                    <div aria-hidden className={styles.stickers_lienzo} style={{ inset: 0, zIndex: 2, pointerEvents: "none" }}>
+                      {pintarStickers(dibujos)}
+                    </div>
+                  </div>
+                );
+              };
               const etiqueta = (g: GrupoTarjetas) => <span className={layout.etiqueta}>{ETIQUETA_DE_GRUPO[g]}</span>;
               // Cada grupo en su envoltura (display: contents en celular y
               // tableta). En escritorio, mosaico de dos columnas: los grupos
               // impares a la izquierda y los pares a la derecha, sin huecos.
               const bloques = grupos.map(({ id, keys }) => (
-                <div key={id} className={`${layout.grupo} ${esFlash ? layout.grupo_flash : ""}`}>
+                <div key={id} className={`${layout.grupo} ${esPop ? layout.grupo_pop : ""}`}>
                   {/* Solo el clima (sin mapa): su tarjeta grande, y la etiqueta
                       solo si hay pronóstico que enseñar. */}
                   {id === "lugar" && !keys.includes("map") ? (
                     clima && <ClimaVidrio {...clima} antes={etiqueta(id)} />
                   ) : etiqueta(id)}
-                  {keys.map((key) => (
+                  {keys.map((key) => conDibujos(key, (
                     <React.Fragment key={key}>
                       {key === "itinerary" && <ItinerarioWidget body={body} sinTitulo />}
                       {key === "notes" && (
@@ -1555,7 +1781,7 @@ export default function SideEvents({ info, password, preview, registroToken }: i
                         />
                       )}
                     </React.Fragment>
-                  ))}
+                  )))}
                 </div>
               ));
               if (!mosaico || !bloques.length) return bloques;

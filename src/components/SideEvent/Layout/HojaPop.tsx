@@ -1,17 +1,18 @@
 "use client";
 
-import React, { useEffect, useId, useRef, useState } from "react";
+import React, { useCallback, useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import styles from "./layout.module.css";
-import { useAnchoFlash, useFocoAtrapado } from "./useAnchoFlash";
+import { useAnchoPop, useFocoAtrapado } from "./useAnchoPop";
 
 /*
-  Hoja inferior de un Flash (handoff "Flash Layout" 3a): el pase y el
+  Hoja inferior de un Pop (handoff "Pop Layout" 3a): el pase y el
   formulario se abren aquí, fuera del scroll. Velo que se funde, hoja que
   sube con rebote y contenido que entra después; al cerrar se invierte.
-  Tocar el velo o el asa cierra.
-  iPad y Mac (handoff "Evento Flash en iPad y Mac"): en tableta es una hoja
+  Tocar el velo o el asa cierra (no con `obligatoria`: un formulario
+  obligatorio sin responder).
+  iPad y Mac (handoff "Pop en iPad y Mac"): en tableta es una hoja
   centrada de 640 px (el asa se arrastra para cerrar) y en escritorio un panel
   lateral a la derecha; los dos con encabezado (título, subtítulo y ✕), foco
   atrapado y Esc.
@@ -28,17 +29,21 @@ type Props = {
   // Encabezado en iPad y Mac.
   titulo?: string;
   subtitulo?: string;
+  // Formulario obligatorio sin responder: no se puede cerrar (ni el velo, ni
+  // el asa, ni la ✕, ni Esc) hasta que el invitado lo conteste.
+  obligatoria?: boolean;
   children: React.ReactNode;
 };
 
 const SALIDA_MS = 250;
 
-export default function HojaFlash({ open, onClose, color, vars, label, titulo, subtitulo, children }: Props) {
+export default function HojaPop({ open, onClose: cerrar, color, vars, label, titulo, subtitulo, obligatoria = false, children }: Props) {
+  const onClose = useCallback(() => { if (!obligatoria) cerrar(); }, [obligatoria, cerrar]);
   // Se queda montada mientras termina la animación de salida.
   const [montada, setMontada] = useState(open);
   const [saliendo, setSaliendo] = useState(false);
   const [contenido, setContenido] = useState<React.ReactNode>(children);
-  const ancho = useAnchoFlash();
+  const ancho = useAnchoPop();
   const grande = ancho !== "tel";
   const idTitulo = useId();
   const hojaRef = useRef<HTMLDivElement>(null);
@@ -107,7 +112,7 @@ export default function HojaFlash({ open, onClose, color, vars, label, titulo, s
         tabIndex={-1}
         style={arrastre ? { translate: `0 ${arrastre}px`, transition: "none" } : undefined}
       >
-        {ancho !== "escritorio" && (
+        {ancho !== "escritorio" && !obligatoria && (
           <button
             type="button"
             className={styles.hoja_asa}
@@ -127,9 +132,11 @@ export default function HojaFlash({ open, onClose, color, vars, label, titulo, s
               {titulo && <span id={idTitulo} className={styles.hoja_titulo}>{titulo}</span>}
               {subtitulo && <span className={styles.hoja_subtitulo}>{subtitulo}</span>}
             </div>
-            <button type="button" className={styles.hoja_cerrar} onClick={onClose} aria-label="Cerrar">
-              <X size={18} strokeWidth={2.2} />
-            </button>
+            {!obligatoria && (
+              <button type="button" className={styles.hoja_cerrar} onClick={onClose} aria-label="Cerrar">
+                <X size={18} strokeWidth={2.2} />
+              </button>
+            )}
           </div>
         )}
         <div className={styles.hoja_contenido}>{contenido}</div>

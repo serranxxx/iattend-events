@@ -184,7 +184,7 @@ export function formatEventDateTime(
   return formatWallClock(raw);
 }
 
-// Fechas de un side event: la lista de un Flash con varias fechas
+// Fechas de un side event: la lista de un Pop con varias fechas
 // (`body.dates`) o la única (`body.hour`). Contraparte de `fechasDelEvento`
 // en iattend-vite (src/helpers/assets/eventDateTime.js).
 export function fechasDelEvento(body: { hour?: string | null; dates?: string[] | null } | null | undefined): string[] {
@@ -236,7 +236,7 @@ export function lineasDeFechas(
   });
 }
 
-// Mini itinerario de un Flash, en el orden en que el organizador lo acomodó. Con varias fechas se
+// Mini itinerario de un Pop, en el orden en que el organizador lo acomodó. Con varias fechas se
 // agrupa por día ("jue. 26 de noviembre"); con una, un solo grupo sin título
 // (con su día).
 // Los momentos sin nombre no se muestran. Contraparte de `itinerarioPorDia`

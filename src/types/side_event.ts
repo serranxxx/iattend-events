@@ -1,13 +1,13 @@
 // Pase digital (editor de vite → Pase digital): Apple Wallet opcional
 // (`enabled: false` = sin botón) y foto / título propios del pase (vacíos =
-// los de la portada). Lo usan el boleto (Layout/TicketFlash) y el backend.
+// los de la portada). Lo usan el boleto (Layout/TicketPop) y el backend.
 export type PaseWalletConfig = { enabled?: boolean | null; title?: string | null; image?: string | null } | null;
 
 export type SideEventBody = {
   wallet?: PaseWalletConfig;
   font: string;
   hour: string;
-  // Eventos Flash con varias fechas (ej. 14 y 15 de octubre, cada una con su
+  // Pops con varias fechas (ej. 14 y 15 de octubre, cada una con su
   // hora): horas de pared ordenadas; `hour` siempre es la primera. Ausente
   // cuando hay una sola fecha.
   dates?: string[] | null;
@@ -16,20 +16,27 @@ export type SideEventBody = {
   // en eventos guardados antes de este cambio.
   timezone?: string | null;
   image: string;
-  // Carrusel de la portada (Flash): la primera es `image` (helpers/fotosPortada.ts).
+  // Carrusel de la portada (Pop): la primera es `image` (helpers/fotosPortada.ts).
   images?: string[];
-  // Eventos Flash: video de fondo (como el Save the Date). Con video, `image`
+  // Ajuste de la foto de fondo (o del video): zoom y encuadre en %
+  // (helpers/fotosPortada.ts → ajusteDe).
+  imageFrame?: { src?: string | null; z?: number; x?: number; y?: number } | null;
+  // El de cada foto o video de la portada, por su url.
+  imageFrames?: Record<string, { z?: number; x?: number; y?: number }> | null;
+  // Desenfoque de la portada hacia abajo (px y % donde empieza; helpers/fotosPortada.ts).
+  coverBlur?: { amount?: number; start?: number } | null;
+  // Pops: video de fondo (como el Save the Date). Con video, `image`
   // es su cuadro fijo y la imagen del link.
   video?: string | null;
   // true: los PNG pueden pasar sobre los botones de confirmar sin recortarse.
   stickers_zona_libre?: boolean | null;
-  // PNG sobre la portada de un Flash: x/y centro en % del ancho y del alto de
+  // PNG sobre la portada de un Pop: x/y centro en % del ancho y del alto de
   // la pantalla, w en % del ancho, rot en grados. Van detrás del título, la
   // fecha y el lugar (z es legado, ya no se usa). Se mueven con la página.
   // Además de PNG (sin `kind` o "sticker", con `url`), elementos del panel
   // Elementos del editor: mismo modelo que los de la invitación (LayerItem).
-  stickers?: FlashSticker[] | null;
-  // Mini itinerario de un Flash: icon es el índice del catálogo del
+  stickers?: PopSticker[] | null;
+  // Mini itinerario de un Pop: icon es el índice del catálogo del
   // itinerario (helpers/icons); date solo si el evento tiene varias fechas.
   // desc: detalle opcional del momento (≤ 60), debajo del nombre en el itinerario.
   itinerary?: { id: string; name: string; time: string | null; icon: number | string | null; date?: string | null; place?: string | null; desc?: string | null }[] | null;
@@ -51,10 +58,10 @@ export type SideEventBody = {
     transform?: "none" | "uppercase" | "lowercase" | null;
     letterSpacing?: number | null;
   };
-  // Canción de un Flash (mismo formato que la del Save the Date; la toca
+  // Canción de un Pop (mismo formato que la del Save the Date; la toca
   // SongPlayer). Ausente = sin canción.
   song?: { id: string; source?: "spotify" | "upload"; name: string; artist: string; albumArt?: string; previewUrl?: string | null } | null;
-  // Efecto animado de un Flash (components/SideEvent/Efectos.tsx).
+  // Efecto animado de un Pop (components/SideEvent/Efectos.tsx).
   effect?: { type: "sparkles" | "confetti" | "bubbles" | "snow" | "petals"; intensity?: number; color?: "theme" | "white" | "gold" | "multi" } | null;
   // Velo del color del tema sobre la portada y los PNG (detrás del texto),
   // 0–100. Ausente o 0 = sin velo.
@@ -69,7 +76,7 @@ export type SideEventBody = {
   // del día) o "always" (siempre; antes, el de hoy). Oculto = hideWeather.
   // Ver SideEvent/ClimaVidrio.tsx.
   weatherMode?: "auto" | "always" | null;
-  // Solo Flash: cuadro "Asistentes" con quienes confirmaron (y el selector de
+  // Solo Pop: cuadro "Asistentes" con quienes confirmaron (y el selector de
   // emoji / color al confirmar). Opcional, apagado por omisión.
   showAttendees?: boolean | null;
   // Avatares de Asistentes: "emoji" (por omisión, colores alegres; el
@@ -78,7 +85,7 @@ export type SideEventBody = {
   // Chat de asistentes (solo con Asistentes visible): prendido y mensaje
   // fijado del organizador. Ver iattend--backend router/sideEventChat.js.
   chat?: { enabled?: boolean | null; pinned?: { text: string; updated_at?: string } | null } | null;
-  // Formulario (solo Flash): el que el organizador eligió de "Mis
+  // Formulario (solo Pop): el que el organizador eligió de "Mis
   // formularios" (snapshot + reglas). Ver SideEvent/Registro/datosRegistro.ts.
   form?: import("@/components/SideEvent/Registro/datosRegistro").FormRegistro | null;
   // Orden y ocultos de las tarjetas de abajo (panel Capas del editor;
@@ -86,7 +93,7 @@ export type SideEventBody = {
   cards?: { key: string; hidden?: boolean | null }[] | null;
   coverHidden?: { title?: boolean | null; date?: boolean | null; place?: boolean | null } | null;
   // Estilo del texto de Notas (barra de texto del editor, como el título).
-  // Estilo de bloques de un Flash (panel Diseño, helpers/estilosBloque.ts). Sin él, "vidrio".
+  // Estilo de bloques de un Pop (panel Diseño, helpers/estilosBloque.ts). Sin él, "vidrio".
   blockStyle?: "vidrio" | "hielo" | "noche" | "papel" | "tema" | "sticker" | "contorno" | null;
   notes_style?: {
     font?: string | null; size?: number | null; weight?: number | null; line_height?: number | null;
@@ -100,9 +107,17 @@ export type SideEventBody = {
 };
 
 export type SideEvent = {
+  // Código del link público (side-event/<código>) y si el link viejo con el
+  // número sigue abriendo (solo eventos de antes del código). Ver
+  // app/side-event/[side_event_id]/page.tsx.
+  public_code?: string | null;
+  legacy_link_enabled?: boolean;
   // Solo vista previa del editor ("Ver en vivo"): confirmados reales que ya
-  // tiene el editor, para no enseñar el ejemplo si el Flash ya tiene asistentes.
+  // tiene el editor, para no enseñar el ejemplo si el Pop ya tiene asistentes.
   _asistentes?: { total: number; asistentes: { id: string; nombre: string; iniciales: string; emoji: string | null; perfil: number | null }[] } | null;
+  // Solo en la vista previa del editor: los mensajes reales del chat (los de
+  // moderación, el más reciente primero).
+  _chat?: { id: string; autor: string; autorId: string; emoji: string | null; perfil: number | null; text: string; created_at: string }[] | null;
   // Solo vista previa ("Ver en vivo" → Confirmado en el dock de vite): la
   // página como la ve un invitado que ya confirmó (invitado de ejemplo).
   _vistaConfirmada?: boolean;
@@ -129,65 +144,9 @@ export type SideAddress = {
 };
 
 
-export type popTheme = {
-  button: number,
-  animation: number,
-  palette: {
-    actions: string,
-    primary: string,
-    secondary: string,
-    glass: number
-  },
-  background: { type: string, media: string }[],
-  theme: string,
-};
-
-export type popContent = {
-  text: {
-    color: string,
-    family: string,
-  },
-  extra: {
-    info: string,
-    custom_question: {
-      type: string,
-      options: string[],
-      question: string
-    },
-  }
-  title: {
-    size: number,
-    color: string,
-    family: string,
-    weight: number,
-    opacity: number,
-    line_height: number,
-    value: string | null
-  },
-  information: {
-    date: string,
-    type: string,
-    address: SideAddress,
-    timezone?: string | null
-  }
-};
-
-
-export type popEventBody = {
-  theme: popTheme,
-  content: popContent
-};
-
-export type PopEvent = {
-  id: number;
-  created_at: string;
-  user_id: string;
-  body: popEventBody;
-};
-
-// Elemento de la portada de un Flash (body.stickers). Ver
-// components/SideEvent/FlashElemento.tsx.
-export interface FlashSticker {
+// Elemento de la portada de un Pop (body.stickers). Ver
+// components/SideEvent/PopElemento.tsx.
+export interface PopSticker {
   id: string;
   kind?: "sticker" | "icon" | "text" | "line" | "separator" | "shape" | "dibujo" | null;
   // Dibujo a mano (herramienta Dibujar del editor, components/SideEvent/Dibujo.tsx):
@@ -200,6 +159,12 @@ export interface FlashSticker {
   erase?: { points: [number, number][]; size: number }[] | null;
   // Dibujo anclado a la foto de fondo: x / y / w en % de la foto como se ve.
   foto?: boolean | null;
+  // Con varias fotos / videos en la portada: anclado a esa (url), solo se ve
+  // cuando le toca en el carrusel. Sin él, a la primera (y se ve siempre).
+  fotoSrc?: string | null;
+  // Dibujo hecho encima de una tarjeta de la página (clave de body.cards:
+  // itinerary, notes, map, weather, attendees): x / y / w en % de la tarjeta.
+  tarjeta?: string | null;
   url?: string;
   icon?: string;
   src?: string;

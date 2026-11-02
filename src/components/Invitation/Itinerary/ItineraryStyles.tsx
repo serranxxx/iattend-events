@@ -35,6 +35,9 @@ export type StyledItineraryProps = {
   // botones de todos los estilos van de este color.
   surface: string;
   onSurface: string;
+  // Sombra de lo que va del color `surface` (tarjetas, chips, botones,
+  // marcos): la misma del botón "Detalles" del zigzag.
+  sombra?: string;
   colors: Colors;
   sans: string;
   serif: string;
@@ -79,7 +82,7 @@ function Cover({ src, fallback, style }: { src: string; fallback: React.ReactNod
 }
 
 export function StyledItinerary(p: StyledItineraryProps) {
-  const { styleId, items, ink, surface, onSurface, colors, sans, serif, cta, editMode, listRef, row, showDelete, onDelete, onOpen, iconSlot, renderIcon, addButton } = p;
+  const { styleId, items, ink, surface, onSurface, sombra, colors, sans, serif, cta, editMode, listRef, row, showDelete, onDelete, onOpen, iconSlot, renderIcon, addButton } = p;
   const soft = alpha(ink, 0.65);
   // Relleno detrás de un ícono; una imagen (ilustración) no lleva: se ve
   // directo sobre la tarjeta.
@@ -98,7 +101,7 @@ export function StyledItinerary(p: StyledItineraryProps) {
     const esVector = elegido && String(item.icon).startsWith("svg:") && esUrlDeVector(String(item.icon).slice(4).split(SEPARADOR_COLOR)[0]);
     const size = Math.round(Math.min(Number(box.width) || 96, Number(box.height) || 96) * (mode === "art" && esVector ? 0.62 : 0.4));
     const glyph = (
-      <div style={{ ...box, display: "grid", placeItems: "center", background: surface, overflow: "hidden" }}>
+      <div style={{ ...box, display: "grid", placeItems: "center", background: surface, boxShadow: sombra, overflow: "hidden" }}>
         {renderIcon(item.icon, size || 28, iconColor)}
       </div>
     );
@@ -107,7 +110,7 @@ export function StyledItinerary(p: StyledItineraryProps) {
     const imgNode = src
       // El marco (círculo de 1h, recuadro de 1b…) va del color de las
       // tarjetas; la ilustración entra con aire para no cortarse.
-      ? <div style={{ ...box, overflow: "hidden", background: surface, boxSizing: "border-box", padding: src === art ? "12%" : 0 }}><Cover src={src} fallback={glyph} style={src === art ? { objectFit: "contain" } : undefined} /></div>
+      ? <div style={{ ...box, overflow: "hidden", background: surface, boxShadow: sombra, boxSizing: "border-box", padding: src === art ? "12%" : 0 }}><Cover src={src} fallback={glyph} style={src === art ? { objectFit: "contain" } : undefined} /></div>
       : glyph;
     if (mode === "map") {
       const addr = addressText(item.address);
@@ -147,7 +150,7 @@ export function StyledItinerary(p: StyledItineraryProps) {
             <span style={{ position: "absolute", left: 7, top: 8, bottom: 8, width: 1, background: line }} />
             {items.map((it, i) => (
               <div key={i} {...row(i, { position: "relative", display: "flex", gap: 14, alignItems: "flex-start" })}>
-                <span style={{ position: "absolute", left: -28, top: 4, width: 15, height: 15, borderRadius: "50%", background: surface, border: `2px solid ${ink}`, boxSizing: "border-box" }} />
+                <span style={{ position: "absolute", left: -28, top: 4, width: 15, height: 15, borderRadius: "50%", background: surface, boxShadow: sombra, border: `2px solid ${ink}`, boxSizing: "border-box" }} />
                 {iconSlot(i, visual(it, "art", { width: 64, height: 64, borderRadius: 14, flex: "none" }))}
                 <div style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 0 }}>
                   <span style={{ fontFamily: sans, fontSize: 12, fontWeight: 600, letterSpacing: 1, color: colors.actions }}>{it.time}</span>
@@ -181,7 +184,7 @@ export function StyledItinerary(p: StyledItineraryProps) {
                     {iconSlot(i, <span style={{ display: "inline-flex", width: 24, height: 24 }}>{renderIcon(it.icon, 22, colors.actions)}</span>)}
                     <span style={{ fontFamily: serif, fontSize: 22, fontWeight: 600 }}>{it.name}</span>
                     <span style={{ fontFamily: sans, fontSize: 12.5, lineHeight: 1.35, color: soft }}>{it.subtext}</span>
-                    <Cta i={i} icon="right" style={{ marginTop: 6, alignSelf: "flex-start", height: 30, padding: "0 14px", borderRadius: 99, background: surface, color: onSurface, fontSize: 12, fontWeight: 500 }} />
+                    <Cta i={i} icon="right" style={{ marginTop: 6, alignSelf: "flex-start", height: 30, padding: "0 14px", borderRadius: 99, background: surface, boxShadow: sombra, color: onSurface, fontSize: 12, fontWeight: 500 }} />
                     {del(i)}
                   </div>
                 </div>
@@ -199,7 +202,7 @@ export function StyledItinerary(p: StyledItineraryProps) {
           <div ref={listRef} style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
             {items.map((it, i) => (
               <div key={i} {...row(i, { width: "100%", display: "flex", flexDirection: "column", alignItems: "center" })}>
-                <div style={{ width: "100%", boxSizing: "border-box", background: surface, borderRadius: 20, padding: 18, display: "flex", alignItems: "center", gap: 14, boxShadow: "0 6px 16px rgba(0, 0, 0, 0.08)", color: onSurface }}>
+                <div style={{ width: "100%", boxSizing: "border-box", background: surface, borderRadius: 20, padding: 18, display: "flex", alignItems: "center", gap: 14, boxShadow: sombra ?? "0 6px 16px rgba(0, 0, 0, 0.08)", color: onSurface }}>
                   {iconSlot(i, <div style={{ width: 52, height: 52, flex: "none", borderRadius: "50%", background: fill(it.icon, onSurface), display: "grid", placeItems: "center" }}>{renderIcon(it.icon, 22, surface)}</div>)}
                   <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 1 }}>
                     <span style={{ fontFamily: sans, fontSize: 16, fontWeight: 600 }}>{it.name}</span>
@@ -230,7 +233,7 @@ export function StyledItinerary(p: StyledItineraryProps) {
                     <span style={{ width: 21, height: 21, borderRadius: "50%", background: ink, border: `5px solid ${surface}`, boxShadow: `0 0 0 1px ${ink}`, boxSizing: "border-box" }} />
                     <span style={{ fontFamily: sans, fontSize: 13, fontWeight: 600 }}>{it.time}</span>
                   </div>
-                  <div style={{ borderRadius: 18, background: surface, padding: 14, display: "flex", flexDirection: "column", gap: 6, color: onSurface }}>
+                  <div style={{ borderRadius: 18, background: surface, boxShadow: sombra, padding: 14, display: "flex", flexDirection: "column", gap: 6, color: onSurface }}>
                     {iconSlot(i, visual(it, "photo", { width: 172, height: 96, borderRadius: 12 }))}
                     <span style={{ fontFamily: sans, fontSize: 16, fontWeight: 500 }}>{it.name}</span>
                     <span style={{ fontFamily: sans, fontSize: 12.5, opacity: 0.65, lineHeight: 1.35, minHeight: 34 }}>{it.subtext}</span>
@@ -275,7 +278,7 @@ export function StyledItinerary(p: StyledItineraryProps) {
             <span style={{ position: "absolute", left: 23, top: 24, bottom: 24, width: 1, background: line }} />
             {items.map((it, i) => (
               <div key={i} {...row(i, { position: "relative", display: "flex", gap: 16, alignItems: "center" })}>
-                {iconSlot(i, <div style={{ width: 48, height: 48, flex: "none", borderRadius: "50%", background: fill(it.icon, surface), display: "grid", placeItems: "center", boxSizing: "border-box" }}>{renderIcon(it.icon, 20, onSurface)}</div>)}
+                {iconSlot(i, <div style={{ width: 48, height: 48, flex: "none", borderRadius: "50%", background: fill(it.icon, surface), boxShadow: isImageIcon(it.icon) ? undefined : sombra, display: "grid", placeItems: "center", boxSizing: "border-box" }}>{renderIcon(it.icon, 20, onSurface)}</div>)}
                 <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 1 }}>
                   <span style={{ fontFamily: sans, fontSize: 16, fontWeight: 500 }}>{it.name}</span>
                   <span style={{ fontFamily: sans, fontSize: 12.5, color: soft }}>{it.subtext}</span>
@@ -283,7 +286,7 @@ export function StyledItinerary(p: StyledItineraryProps) {
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
                   <span style={{ fontFamily: sans, fontSize: 13, fontWeight: 600, whiteSpace: "nowrap" }}>{it.time}</span>
-                  <Cta i={i} icon="none" style={{ height: 26, padding: "0 10px", borderRadius: 99, background: surface, color: onSurface, fontSize: 11, fontWeight: 600, whiteSpace: "nowrap" }} />
+                  <Cta i={i} icon="none" style={{ height: 26, padding: "0 10px", borderRadius: 99, background: surface, boxShadow: sombra, color: onSurface, fontSize: 11, fontWeight: 600, whiteSpace: "nowrap" }} />
                 </div>
               </div>
             ))}
@@ -355,7 +358,7 @@ export function StyledItinerary(p: StyledItineraryProps) {
                 <span style={{ fontFamily: sans, fontSize: 12, fontWeight: 600, letterSpacing: 1 }}>{it.time}</span>
                 <span style={{ fontFamily: serif, fontSize: 19, fontWeight: 600, lineHeight: 1 }}>{it.name}</span>
                 <span style={{ fontFamily: sans, fontSize: 11, lineHeight: 1.3, minHeight: 43, color: soft }}>{it.subtext}</span>
-                <Cta i={i} icon="none" style={{ height: 28, padding: "0 10px", borderRadius: 99, background: surface, color: onSurface, fontSize: 10.5, fontWeight: 600, whiteSpace: "nowrap" }} />
+                <Cta i={i} icon="none" style={{ height: 28, padding: "0 10px", borderRadius: 99, background: surface, boxShadow: sombra, color: onSurface, fontSize: 10.5, fontWeight: 600, whiteSpace: "nowrap" }} />
                 {del(i)}
               </div>
             ))}
@@ -374,8 +377,8 @@ export function StyledItinerary(p: StyledItineraryProps) {
             <span style={{ position: "absolute", left: "50%", top: 0, bottom: 0, width: 1, background: line }} />
             {items.map((it, i) => (
               <div key={i} {...row(i, { position: "relative", display: "flex", flexDirection: "column", alignItems: "center", gap: 8 })}>
-                <span style={{ height: 28, padding: "0 14px", borderRadius: 99, background: surface, color: onSurface, display: "inline-flex", alignItems: "center", fontFamily: sans, fontSize: 12.5, fontWeight: 600 }}>{it.time}</span>
-                <div style={{ width: "100%", boxSizing: "border-box", borderRadius: 20, background: alpha(surface, 0.55), backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", border: `1px solid ${alpha(surface, 0.8)}`, padding: "14px 16px", display: "flex", alignItems: "center", gap: 12, color: onSurface }}>
+                <span style={{ height: 28, padding: "0 14px", borderRadius: 99, background: surface, boxShadow: sombra, color: onSurface, display: "inline-flex", alignItems: "center", fontFamily: sans, fontSize: 12.5, fontWeight: 600 }}>{it.time}</span>
+                <div style={{ width: "100%", boxSizing: "border-box", borderRadius: 20, background: alpha(surface, 0.55), boxShadow: sombra, backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", border: `1px solid ${alpha(surface, 0.8)}`, padding: "14px 16px", display: "flex", alignItems: "center", gap: 12, color: onSurface }}>
                   {iconSlot(i, <span style={{ display: "inline-flex" }}>{renderIcon(it.icon, 22, onSurface)}</span>)}
                   <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
                     <span style={{ fontFamily: sans, fontSize: 15, fontWeight: 600 }}>{it.name}</span>
@@ -397,7 +400,7 @@ export function StyledItinerary(p: StyledItineraryProps) {
         <div style={base}>
           <div ref={listRef} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             {items.map((it, i) => (
-              <div key={i} {...row(i, { background: surface, borderRadius: 20, overflow: "hidden", display: "flex", flexDirection: "column", color: onSurface })}>
+              <div key={i} {...row(i, { background: surface, boxShadow: sombra, borderRadius: 20, overflow: "hidden", display: "flex", flexDirection: "column", color: onSurface })}>
                 <div
                   style={{ position: "relative", cursor: "pointer" }}
                   data-edit-row-delete={!editMode || undefined}

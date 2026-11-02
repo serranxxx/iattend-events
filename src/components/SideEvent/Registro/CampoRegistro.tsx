@@ -4,7 +4,7 @@ import { AlertCircle, Check } from "lucide-react";
 import type { Campo } from "./datosRegistro";
 import styles from "./registro.module.css";
 
-// Una pregunta del formulario de un Flash: texto (corto, número, WhatsApp,
+// Una pregunta del formulario de un Pop: texto (corto, número, WhatsApp,
 // correo), párrafo, fecha, una opción, varias, sí/no y casilla de
 // autorización, con su ayuda y su error.
 

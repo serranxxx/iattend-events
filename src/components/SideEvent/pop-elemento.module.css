@@ -1,6 +1,6 @@
-/* Elementos de la portada de un Flash (ver FlashElemento.tsx). Mismas medidas
+/* Elementos de la portada de un Pop (ver PopElemento.tsx). Mismas medidas
    que SectionLayer (section-layer.module.css). Contraparte en el editor:
-   iattend-vite/src/modules/SideEvents/FlashElemento.module.css. */
+   iattend-vite/src/modules/SideEvents/PopElemento.module.css. */
 
 .icon {
     display: block;

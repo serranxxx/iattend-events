@@ -1,6 +1,6 @@
-/* Tarjeta "Registro" de un Flash (RegistroCard.tsx): handoff "Pop Event —
+/* Tarjeta "Registro" de un Pop (RegistroCard.tsx): handoff "Pop Event —
    Registro de asistentes, paso a paso" (opción 2a). El vidrio, el radio y el
-   padding son los de las demás tarjetas del Flash (Asistentes, Itinerario). */
+   padding son los de las demás tarjetas del Pop (Asistentes, Itinerario). */
 .card {
   position: relative; width: 100%; max-width: 450px; border-radius: var(--bloque-radio, 32px); overflow: hidden; box-sizing: border-box;
   padding: 22px; display: flex; flex-direction: column; gap: 14px;

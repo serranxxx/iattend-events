@@ -1070,3 +1070,17 @@
 .edit_icon_btn:hover {
   outline-color: rgba(201, 184, 240, 0.9);
 }
+
+/* Editor del celular (vite EditorMovilShell → HOST_PROPS.editMovil):
+   "Cambiar fondo" a la medida del dedo (44 px). */
+html[data-edit-movil] .edit_center_btn {
+  height: 44px;
+  padding: 0 20px 0 15px;
+  gap: 9px;
+  font-size: 15px;
+}
+
+html[data-edit-movil] .edit_center_btn svg {
+  width: 18px;
+  height: 18px;
+}

@@ -6,8 +6,8 @@ import { ClipboardList } from "lucide-react";
 import styles from "./layout.module.css";
 
 /*
-  El formulario de un Flash llega como notificación al confirmar (handoff
-  "Flash Layout" 3a): fija arriba, entra con rebote y "Llenar" late tres
+  El formulario de un Pop llega como notificación al confirmar (handoff
+  "Pop Layout" 3a): fija arriba, entra con rebote y "Llenar" late tres
   veces. "Llenar" abre el formulario en la hoja. No se puede cerrar: se
   queda mientras el formulario esté pendiente. Se ve como los widgets de la
   página (estilo de bloques; sin él, el vidrio teñido) y el cuadro lleva el

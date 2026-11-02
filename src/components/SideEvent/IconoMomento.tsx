@@ -4,7 +4,7 @@ import { DynamicIcon, type IconName } from "lucide-react/dynamic";
 import { getItineraryIcon, type ItineraryIconId } from "@/helpers/icons";
 
 /*
-  Ícono de un momento del itinerario de un Flash. Dos catálogos:
+  Ícono de un momento del itinerario de un Pop. Dos catálogos:
   · número: los clásicos del itinerario de la invitación (helpers/icons).
   · "lucide:<nombre>": cualquier ícono de Lucide, cargado bajo demanda.
   Contraparte de IconoMomento en iattend-vite (modules/SideEvents).

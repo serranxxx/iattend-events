@@ -3,8 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 
 /*
-  ¿Al invitado le falta el formulario de un Flash? Para el aviso que llega al
-  confirmar y el "Te falta el formulario" de su tarjeta (handoff "Flash
+  ¿Al invitado le falta el formulario de un Pop? Para el aviso que llega al
+  confirmar y el "Te falta el formulario" de su tarjeta (handoff "Pop
   Layout" 3a). Pendiente = alguien de su pase todavía no lo responde ni lo
   dejó para después con su link. Con el formulario cerrado no se insiste.
   También da el folio del titular (para su pase). Mismo endpoint que

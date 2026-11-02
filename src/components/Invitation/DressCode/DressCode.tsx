@@ -1,7 +1,7 @@
 "use client";
 
 import { InvitationUIBundle, NewInvitation, dressLinkUrl } from "@/types/new_invitation";
-import { ModuleBackdrop, hasModuleBg, moduleBoxExtras } from "../ModuleBackdrop";
+import { ELEMENTOS_SOBRE_TEXTURA, ModuleBackdrop, hasModuleBg, moduleBoxExtras } from "../ModuleBackdrop";
 import Image from "next/image";
 import React, { forwardRef, useState } from "react";
 import styles from "./dresscode.module.css";
@@ -278,8 +278,9 @@ export const DressCode = forwardRef<HTMLDivElement, DresscodeProps>(function Gre
         style={{
           position: "relative",
           backgroundColor: content?.dynamic_background?.active ? moduleBg : "transparent",
-            // Imagen y textura propias del bloque van detrás (ModuleBackdrop).
-            isolation: "isolate",
+            // Sin `isolation`: paleta, fotos y botones quedan sobre la textura de
+            // la invitación y el fondo, título y descripción del bloque debajo
+            // (ELEMENTOS_SOBRE_TEXTURA). Imagen y textura propias: ModuleBackdrop z 0.
             // Relleno arriba / abajo propio del bloque (dynamic_background.padding_y).
             ...moduleBoxExtras(content?.dynamic_background),
           borderRadius: content?.dynamic_background?.border_radius,
@@ -287,11 +288,11 @@ export const DressCode = forwardRef<HTMLDivElement, DresscodeProps>(function Gre
           boxShadow: hasModuleBg(content?.dynamic_background) ? content?.dynamic_background?.shadow ? '0px 0px 12px rgba(0,0,0,0.4)' : '0px 0px 0px rgba(0,0,0,0)' : '0px 0px 0px rgba(0,0,0,0)',
           padding: hasContent ? undefined : 0,
         }}>
-          <ModuleBackdrop bg={content?.dynamic_background} />
+          <ModuleBackdrop bg={content?.dynamic_background} z={0} />
 
         {(hasContent || editMode) && (
-        <div className="g_module_info_container">
-          <FadeLeft>
+        <div className="g_module_info_container" style={{ position: "relative" }}>
+          <FadeLeft zIndex={0}>
             <EditableText
               path="dresscode.title"
               value={content.title ?? ""}
@@ -310,7 +311,7 @@ export const DressCode = forwardRef<HTMLDivElement, DresscodeProps>(function Gre
             />
           </FadeLeft>
 
-          <FadeLeft>
+          <FadeLeft zIndex={0}>
             <EditableText
               path="dresscode.description"
               value={content?.description ?? ""}
@@ -394,6 +395,7 @@ export const DressCode = forwardRef<HTMLDivElement, DresscodeProps>(function Gre
                 icon={<Plus size={14} />}
                 onClick={(e) => e.stopPropagation()}
                 style={{
+                  ...ELEMENTOS_SOBRE_TEXTURA,
                   backgroundColor: content?.dynamic_background?.active ? (content?.inverted ? primary : secondary) : primary,
                   color: accent,
                   boxShadow: "0 0 6px 0 rgba(0, 0, 0, 0.25)",
@@ -409,7 +411,7 @@ export const DressCode = forwardRef<HTMLDivElement, DresscodeProps>(function Gre
               popover encima con todas en fila (agregar, ordenar, borrar). Sin
               imágenes, un recuadro con "Agregar imágenes" abre lo mismo. */}
           {editMode && !(content.images_active && (images_src ?? []).length > 0) && (
-            <div className="edit_drawer_empty_box" style={{ minHeight: 200 }}>
+            <div className="edit_drawer_empty_box" style={{ minHeight: 200, ...ELEMENTOS_SOBRE_TEXTURA }}>
               <Button
                 data-edit-hit
                 icon={<Plus size={14} />}
@@ -482,6 +484,7 @@ export const DressCode = forwardRef<HTMLDivElement, DresscodeProps>(function Gre
                 else setOpenLink(0);
               }}
               style={{
+                ...ELEMENTOS_SOBRE_TEXTURA,
                 backgroundColor: content?.dynamic_background?.active ? (content?.inverted ? primary : secondary) : primary,
                 color: accent,
                 boxShadow: "0 0 6px 0 rgba(0, 0, 0, 0.25)",
@@ -492,7 +495,7 @@ export const DressCode = forwardRef<HTMLDivElement, DresscodeProps>(function Gre
             </Button>
           )}
           {content?.links_active && (
-            <div className={dev ? "dresscode-links-dev" : "dresscode-links"}>
+            <div className={dev ? "dresscode-links-dev" : "dresscode-links"} style={ELEMENTOS_SOBRE_TEXTURA}>
               {content.links &&
                 content.links.map((link, index) => styled && buttonStyle !== "B1" ? (
                   <FadeIn key={index}>

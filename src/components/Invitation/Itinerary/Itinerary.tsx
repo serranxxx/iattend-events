@@ -1,5 +1,5 @@
 import { InvitationUIBundle, NewInvitation } from "@/types/new_invitation";
-import { ModuleBackdrop, hasModuleBg, moduleBoxExtras } from "../ModuleBackdrop";
+import { ELEMENTOS_SOBRE_TEXTURA, ModuleBackdrop, hasModuleBg, moduleBoxExtras } from "../ModuleBackdrop";
 import React, { forwardRef } from "react";
 import styles from "./itinerary.module.css";
 import Card from "./Card/Card";
@@ -109,8 +109,9 @@ export const Itinerary = forwardRef<HTMLDivElement, quoteProps>(function Greetin
           style={{
             position: "relative",
             backgroundColor: content?.dynamic_background?.active ? moduleBg : "transparent",
-            // Imagen y textura propias del bloque van detrás (ModuleBackdrop).
-            isolation: "isolate",
+            // Sin `isolation`: los momentos quedan sobre la textura de la
+            // invitación y el fondo y el título del bloque debajo
+            // (ELEMENTOS_SOBRE_TEXTURA). Imagen y textura propias: ModuleBackdrop z 0.
             // Relleno arriba / abajo propio del bloque (dynamic_background.padding_y).
             ...moduleBoxExtras(content?.dynamic_background),
             borderRadius: content?.dynamic_background?.border_radius,
@@ -119,10 +120,10 @@ export const Itinerary = forwardRef<HTMLDivElement, quoteProps>(function Greetin
             minWidth: hasContent ? '85%' : undefined,
             padding: hasContent ? undefined : 0,
           }}>
-          <ModuleBackdrop bg={content?.dynamic_background} />
+          <ModuleBackdrop bg={content?.dynamic_background} z={0} />
 
           {(hasContent || editMode) && (
-          <div className="g_module_info_container">
+          <div className="g_module_info_container" style={{ position: "relative" }}>
             <span
               // data-aos={!dev && generals.texture == null ? "fade-right" : undefined}
               className="g_module_title"
@@ -138,6 +139,7 @@ export const Itinerary = forwardRef<HTMLDivElement, quoteProps>(function Greetin
             <div
               // data-aos={!dev && generals.texture == null ? "fade-right" : undefined}
               className={styles.itinerary_cards_container}
+              style={ELEMENTOS_SOBRE_TEXTURA}
             >
               {
                 invitationID === "80d0c716-86e4-4c90-9e6d-9133d970d769"

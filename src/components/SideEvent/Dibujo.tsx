@@ -1,10 +1,10 @@
 "use client";
 
 import React, { useId } from "react";
-import type { FlashSticker } from "@/types/side_event";
+import type { PopSticker } from "@/types/side_event";
 
 /*
-  Dibujo a mano de un Flash (herramienta Dibujar del editor, handoff
+  Dibujo a mano de un Pop (herramienta Dibujar del editor, handoff
   "Herramienta Dibujar (pincel)"): un elemento de la portada con
   `kind: "dibujo"`, pintado en SVG para que se vea nítido en cualquier
   pantalla. Mismo dibujo que el editor:
@@ -19,7 +19,7 @@ const PINCEL: Record<string, Pincel> = {
   marcador: { k: 1.8, cap: "square" },
   resaltador: { k: 3, cap: "butt" },
   lapiz: { k: 0.55, cap: "round", grano: true },
-  neon: { k: 0.9, cap: "round", brillo: true },
+  neon: { k: 1.3, cap: "round", brillo: true },
 };
 
 // Curvas cuadráticas por los puntos medios (el suavizado del pincel).
@@ -35,11 +35,20 @@ const pathDe = (pts?: [number, number][] | null) => {
   return `${d}L${f(l[0])} ${f(l[1])}`;
 };
 
+// Un color hacia el blanco (`t` 0–1): el tubo del neón.
+const aclarar = (hex: string, t: number) => {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex);
+  if (!m) return "#FFFFFF";
+  const n = parseInt(m[1], 16);
+  const c = (v: number) => Math.round(v + (255 - v) * t).toString(16).padStart(2, "0");
+  return `#${c(n >> 16)}${c((n >> 8) & 255)}${c(n & 255)}`;
+};
+
 // Lápiz: 4 pasadas con un temblor fijo (±0.9 px) para dar grano.
 const temblor = (pts: [number, number][], k: number): [number, number][] =>
   pts.map(([x, y], i) => [x + Math.sin(i * 1.7 + k * 2.1) * 0.9, y + Math.cos(i * 1.3 + k) * 0.9]);
 
-export default function Dibujo({ s }: { s: FlashSticker }) {
+export default function Dibujo({ s }: { s: PopSticker }) {
   const id = useId().replace(/:/g, "");
   const p = PINCEL[s.brush ?? "pluma"] ?? PINCEL.pluma;
   const vbW = s.vbW ?? 1;
@@ -52,12 +61,13 @@ export default function Dibujo({ s }: { s: FlashSticker }) {
   const comun = { fill: "none", strokeLinecap: p.cap, strokeLinejoin: "round" as const };
   const borrado = (s.erase ?? []).length > 0;
 
+  // Neón: tubo casi blanco con la orilla del color y un halo amplio del color.
   const cuerpo = p.brillo ? (
     <>
-      <path d={d} {...comun} stroke={color} strokeWidth={ancho} filter={`url(#b${id})`} />
-      <path d={d} {...comun} stroke={color} strokeWidth={ancho} filter={`url(#b${id})`} />
-      <path d={d} {...comun} stroke={color} strokeWidth={ancho} />
-      <path d={d} {...comun} stroke="#FFFFFF" strokeWidth={Math.max(1.5, size * 0.3)} />
+      <path d={d} {...comun} stroke={color} strokeWidth={ancho * 2.2} opacity={0.85} filter={`url(#b${id})`} />
+      <path d={d} {...comun} stroke={color} strokeWidth={ancho * 1.3} filter={`url(#c${id})`} />
+      <path d={d} {...comun} stroke={aclarar(color, 0.45)} strokeWidth={ancho} />
+      <path d={d} {...comun} stroke={aclarar(color, 0.9)} strokeWidth={ancho * 0.66} filter={`url(#n${id})`} />
     </>
   ) : p.grano ? (
     [0, 1, 2, 3].map((k) => <path key={k} d={pathDe(temblor(puntos, k))} {...comun} stroke={color} strokeWidth={ancho} opacity={0.45} />)
@@ -70,9 +80,17 @@ export default function Dibujo({ s }: { s: FlashSticker }) {
       <svg viewBox={`0 0 ${vbW} ${vbH}`} width="100%" height="100%" overflow="visible" style={{ display: "block", overflow: "visible" }}>
         <defs>
           {p.brillo && (
-            <filter id={`b${id}`} filterUnits="userSpaceOnUse" x={-vbW} y={-vbH} width={vbW * 3} height={vbH * 3}>
-              <feGaussianBlur stdDeviation={size * 1.1} />
-            </filter>
+            <>
+              <filter id={`b${id}`} filterUnits="userSpaceOnUse" x={-vbW} y={-vbH} width={vbW * 3} height={vbH * 3}>
+                <feGaussianBlur stdDeviation={ancho * 1.5} />
+              </filter>
+              <filter id={`c${id}`} filterUnits="userSpaceOnUse" x={-vbW} y={-vbH} width={vbW * 3} height={vbH * 3}>
+                <feGaussianBlur stdDeviation={ancho * 0.45} />
+              </filter>
+              <filter id={`n${id}`} filterUnits="userSpaceOnUse" x={-vbW} y={-vbH} width={vbW * 3} height={vbH * 3}>
+                <feGaussianBlur stdDeviation={ancho * 0.08} />
+              </filter>
+            </>
           )}
           {borrado && (
             <mask id={`m${id}`} maskUnits="userSpaceOnUse" x={-vbW} y={-vbH} width={vbW * 3} height={vbH * 3}>

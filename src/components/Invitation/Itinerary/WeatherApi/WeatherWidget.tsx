@@ -45,7 +45,7 @@ type CardProps = {
   // buscar ese día dentro del forecast en vez de asumir "hoy". Si no se
   // pasa, se conserva el comportamiento anterior (día actual).
   eventDate?: string | null;
-  // Eventos Flash: el widget se muestra siempre. Mientras el pronóstico no
+  // Pops: el widget se muestra siempre. Mientras el pronóstico no
   // alcanza la fecha del evento, enseña el clima de hoy en vez del aviso
   // "Pronóstico aún no disponible"; cuando la alcanza, el del día del evento.
   siempre?: boolean;

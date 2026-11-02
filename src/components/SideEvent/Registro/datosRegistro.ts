@@ -1,7 +1,7 @@
 /*
-  Formulario de un Flash (body.form). El organizador lo arma desde cero en el
+  Formulario de un Pop (body.form). El organizador lo arma desde cero en el
   editor de iattend-vite (modules/SideEvents/Formularios/) y lo guarda en "Mis
-  formularios"; al Flash llega como snapshot congelado (body.form.snapshot)
+  formularios"; al Pop llega como snapshot congelado (body.form.snapshot)
   junto a sus reglas. Mismas reglas y mensajes que el backend (iattend--backend
   router/sideEventForm.js).
 */
@@ -26,8 +26,8 @@ export type FormRegistro = {
   formId?: string;
   snapshot?: { title: string; intro: string; sections: Seccion[]; version?: string } | null;
   title: string; intro: string;
-  // Reglas del Flash.
-  scope?: "grupo" | "persona"; allowLater?: boolean; accepting?: boolean; privacyUrl?: string;
+  // Reglas del Pop.
+  scope?: "grupo" | "persona"; allowLater?: boolean; required?: boolean; accepting?: boolean; privacyUrl?: string;
   folioPrefix?: string; version?: string;
   // Formularios viejos de plantilla (antes del snapshot).
   hostLabel?: string; hostInitials?: string; allowCopyAddress?: boolean;
@@ -41,7 +41,7 @@ export type Miembro = {
 
 export type Respuestas = Record<string, unknown>;
 
-// body.form tal como se pinta: el snapshot con las reglas del Flash (o un formulario viejo de plantilla).
+// body.form tal como se pinta: el snapshot con las reglas del Pop (o un formulario viejo de plantilla).
 export const formPublicado = (form?: Partial<FormRegistro> | null): FormRegistro | null => {
   if (!form) return null;
   const base = form.snapshot ? { ...form, ...form.snapshot } : form;

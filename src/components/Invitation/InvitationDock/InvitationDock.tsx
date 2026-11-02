@@ -339,7 +339,7 @@ export default function InvitationDock({
     };
 
     // Invitación pública (candado abierto en el editor): se da de alta por el
-    // backend, que valida que de verdad sea pública (como los Flash:
+    // backend, que valida que de verdad sea pública (como los Pops:
     // POST /api/invitations/:id/confirmacion-publica). Si la ruta todavía no
     // existe (backend sin publicar) o no responde, sigue el guardado directo
     // de antes, para que las invitaciones abiertas no dejen de confirmar.

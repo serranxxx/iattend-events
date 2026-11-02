@@ -101,6 +101,9 @@ export default function Card({ ui, invitation, dev, editMode = false, onAddMomen
   const surface = content?.dynamic_background?.active ? (content.inverted ? primary : secondary) : secondary;
   // Sobre secondary el texto va en primary; sobre primary, en accent.
   const onSurface = surface === primary ? accent : primary;
+  // Sombra del botón "Detalles" (con textura): también la llevan las
+  // tarjetas, chips, botones y marcos del color `surface` de los otros estilos.
+  const sombra = generals.texture !== null ? "0 0 6px 0 rgba(0, 0, 0, 0.25)" : undefined;
   const renderIconColored = (icon: number | string | null, size: number, color: string) => {
     if (isImageIcon(icon)) {
       // eslint-disable-next-line @next/next/no-img-element
@@ -145,6 +148,7 @@ export default function Card({ ui, invitation, dev, editMode = false, onAddMomen
           ink={ink}
           surface={surface}
           onSurface={onSurface}
+          sombra={sombra}
           colors={{ primary, secondary, accent, actions: actions ?? accent }}
           sans={body.font ?? "inherit"}
           serif={generals.fonts.titles?.typeFace ?? body.font ?? "serif"}
@@ -255,7 +259,7 @@ export default function Card({ ui, invitation, dev, editMode = false, onAddMomen
                         style={{
                           backgroundColor: content?.dynamic_background?.active ? (content.inverted ? primary : secondary) : secondary,
                           color: content?.dynamic_background?.active ? (content.inverted ? accent : accent) : content.inverted ? primary : accent,
-                          boxShadow: generals.texture !== null ? "0 0 6px 0 rgba(0, 0, 0, 0.25)" : undefined,
+                          boxShadow: sombra,
                         }}
                         // onClick={() => setActiveSteps([...(activeSteps ?? []), item])}
                         icon={<MdArrowOutward />}

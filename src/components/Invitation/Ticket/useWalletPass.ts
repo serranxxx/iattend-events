@@ -36,11 +36,14 @@ const safariUrl = (url: string) =>
 /**
  * Lógica de "Agregar a Apple Wallet" compartida entre el pase suelto
  * (`Ticket`), el carrusel de pases del dock y el pase de un side event /
- * Flash (`PaseFlash`, con `sideEventId`: pide /api/wallet/side-pass).
+ * Pop (`PasePop`, con `sideEventId`: pide /api/wallet/side-pass).
  * `passUrl` distinto de null significa que hay que mostrar la hoja de
  * respaldo (`WalletHelpSheet`).
  */
-export function useWalletPass(invitationId?: string, sideEventId?: number | string) {
+// Side event / Pop: `sideEventId` es el código público del evento (o su
+// número con link viejo) y `codigo` el del invitado: el backend pide los dos
+// para entregar el pase (con solo números se podía bajar el de cualquiera).
+export function useWalletPass(invitationId?: string, sideEventId?: number | string, codigo?: string | null) {
   const [addingToWallet, setAddingToWallet] = useState(false);
   const [passUrl, setPassUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -57,6 +60,7 @@ export function useWalletPass(invitationId?: string, sideEventId?: number | stri
       const url = new URL("/api/wallet/side-pass", window.location.origin);
       url.searchParams.set("event", String(sideEventId));
       url.searchParams.set("guest", String(guestId));
+      if (codigo) url.searchParams.set("codigo", codigo);
       return url.toString();
     }
     const url = new URL("/api/wallet/pass", window.location.origin);

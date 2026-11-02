@@ -8,7 +8,7 @@ import { EMOJIS_AVATAR, PERFILES_AVATAR, inicialesDe } from "./datosAsistentes";
 import styles from "./selector-avatar.module.css";
 
 /*
-  Al confirmar un Flash con "Asistentes" prendido: cómo quiere aparecer el
+  Al confirmar un Pop con "Asistentes" prendido: cómo quiere aparecer el
   invitado: un emoji y un color. Llega con unos ya elegidos (al azar o los
   suyos) y los puede cambiar; nunca salen letras.
 */

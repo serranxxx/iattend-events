@@ -313,7 +313,7 @@ export default function CameraView({ invitation, invitationID, guestInfo, ui, on
         </div>
       )}
 
-      {uploadSuccess && <div className={styles.successFlash} />}
+      {uploadSuccess && <div className={styles.successPop} />}
 
       {/* --- Top bar --- */}
       <div className={styles.topBar}>

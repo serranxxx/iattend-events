@@ -12,7 +12,7 @@ import {
 import styles from "./registro.module.css";
 
 /*
-  Tarjeta "Formulario" de un Flash (handoff "Pop Event — Registro de
+  Tarjeta "Formulario" de un Pop (handoff "Pop Event — Registro de
   asistentes, paso a paso" 2a, con los formularios propios del organizador:
   body.form.snapshot). Una pregunta por pantalla con barra por sección; con
   "Cada persona" el titular responde también por sus acompañantes (o les deja
@@ -33,18 +33,21 @@ const unir = (n: string[]) => (n.length > 1 ? `${n.slice(0, -1).join(", ")} y ${
 
 type Props = {
   form: FormRegistro;
+  // Número del evento (borrador en localStorage) y su clave para el backend
+  // (código público, o el número con link viejo).
   eventoId: number | string;
+  clave?: number | string;
   codigo?: string | null;
   token?: string | null;
   preview?: boolean;
-  // Dentro de la hoja de la página (handoff "Flash Layout" 3a): sin vidrio
+  // Dentro de la hoja de la página (handoff "Pop Layout" 3a): sin vidrio
   // propio, la hoja ya lo tiene.
   enHoja?: boolean;
   // Avisa cuando ya no le falta nada (todo respondido o dejado con link).
   onTerminado?: () => void;
 };
 
-export default function RegistroCard({ form: formCompleto, eventoId, codigo, token, preview, enHoja, onTerminado }: Props) {
+export default function RegistroCard({ form: formCompleto, eventoId, clave, codigo, token, preview, enHoja, onTerminado }: Props) {
   const form = useMemo(() => formVisible(formPublicado(formCompleto) ?? formCompleto), [formCompleto]);
   const cerrado = form.accepting === false;
   const borradorKey = `iattend_registro_${eventoId}_${token ?? codigo ?? "preview"}`;
@@ -78,7 +81,7 @@ export default function RegistroCard({ form: formCompleto, eventoId, codigo, tok
       return;
     }
     try {
-      const res = await fetch(`${API}/side-events/${eventoId}/registro`, { headers, cache: "no-store" });
+      const res = await fetch(`${API}/side-events/${clave ?? eventoId}/registro`, { headers, cache: "no-store" });
       const data = await res.json();
       if (!res.ok || !data.ok) { setFase("intro"); setMiembros([]); return; }
       const ms: Miembro[] = data.miembros;
@@ -110,7 +113,7 @@ export default function RegistroCard({ form: formCompleto, eventoId, codigo, tok
     } catch {
       setFase("intro");
     }
-  }, [preview, eventoId, headers, form, borradorKey]);
+  }, [preview, eventoId, clave, headers, form, borradorKey]);
 
   useEffect(() => { cargar(); }, [cargar]);
 
@@ -154,7 +157,7 @@ export default function RegistroCard({ form: formCompleto, eventoId, codigo, tok
     if (!preview) {
       setEnviando(true);
       try {
-        const res = await fetch(`${API}/side-events/${eventoId}/registro/${miembros[member].id}`, {
+        const res = await fetch(`${API}/side-events/${clave ?? eventoId}/registro/${miembros[member].id}`, {
           method: "POST", headers, body: JSON.stringify({ answers: completas[member] }),
         });
         const data = await res.json();
@@ -199,7 +202,7 @@ export default function RegistroCard({ form: formCompleto, eventoId, codigo, tok
     let tk: string | null = "ejemplo";
     if (!preview) {
       try {
-        const res = await fetch(`${API}/side-events/${eventoId}/registro/${miembros[m].id}/despues`, { method: "POST", headers });
+        const res = await fetch(`${API}/side-events/${clave ?? eventoId}/registro/${miembros[m].id}/despues`, { method: "POST", headers });
         const data = await res.json();
         if (!res.ok || !data.ok) { setErrorServidor(data?.msg || "No se pudo crear el link"); return; }
         tk = data.token;
@@ -216,7 +219,10 @@ export default function RegistroCard({ form: formCompleto, eventoId, codigo, tok
 
   const copiarLink = async (m: Miembro) => {
     if (!m.token) return;
-    const url = `${window.location.origin}/side-event/${eventoId}?registro=${m.token}`;
+    // La misma ruta con la que llegó el invitado (el código público del
+    // evento, o su número si es un link viejo que sigue abierto).
+    const ruta = window.location.pathname.startsWith("/side-event/") ? window.location.pathname : `/side-event/${clave ?? eventoId}`;
+    const url = `${window.location.origin}${ruta}?registro=${m.token}`;
     try {
       const compartir = Boolean(navigator.share);
       if (compartir) await navigator.share({ title: form.title, text: `${m.nombre}, responde el formulario aquí:`, url });
