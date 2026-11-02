@@ -8,7 +8,6 @@ import { Button, Input, message } from "antd";
 import { LuCircleCheck, LuCircleX } from "react-icons/lu";
 import { FooterCompact } from "../FooterCompact/FooterCompact";
 import { FaLock } from "react-icons/fa";
-import { createClient } from "@/lib/supabase/client";
 import {  SideGuestSubabasePayload } from "@/types/guests";
 import { darker, getEventDateOnly, itinerarioPorDia, lineasDeFechas, sombraDeTexto, colorDeVelo } from "@/helpers/functions";
 import { ItinerarioWidget } from "./ItinerarioWidget";
@@ -136,7 +135,6 @@ type invProps = {
 export default function SideEvents({ info, password, preview, registroToken }: invProps) {
   const [validated, setValidated] = useState<boolean>(false);
   const [guestCode, setGuestCode] = useState<string>("");
-  const supabase = createClient();
   const [messageApi, contextHolder] = message.useMessage();
   const [guestInfo, setGuestInfo] = useState<SideGuestSubabasePayload | null>(null);
   const [companions, setCompanions] = useState<SideGuestSubabasePayload[]>([]);
@@ -352,132 +350,82 @@ export default function SideEvents({ info, password, preview, registroToken }: i
     });
   };
 
-  const onValidateUser = async (code: string) => {
+  // El invitado y lo que responde pasan por el backend (iattend--backend
+  // router/sideEventInvitado.js) con el código público del evento y el suyo:
+  // la anon key ya no lee ni escribe side_events_guests.
+  const API_INVITADO = `${process.env.NEXT_PUBLIC_IATTEND_API_URL}/side-events/${claveApi}`;
+  type RespuestaInvitado = { invitado: SideGuestSubabasePayload; acompanantes: SideGuestSubabasePayload[] };
 
+  // null = el código no existe en este evento; undefined = falló la red.
+  const pedirInvitado = async (code: string): Promise<RespuestaInvitado | null | undefined> => {
     try {
-      const { data, error } = await supabase
-        .from("side_events_guests")
-        .select("*")
-        .eq("password", code)
-        .eq("side_events_id", info?.id)
-        .maybeSingle();
-
-      if (error) {
-        console.log(error, 'not found')
-        return
-      }
-
-      if (!data) {
-        messageApi.error(`Código incorrecto`);
-        return
-      }
-
-      if (data?.has_companion) {
-        const { data: companionsData, error: companionsError } = await supabase
-          .from("side_events_guests")
-          .select("*")
-          .eq("companion_id", data.id);
-
-        if (companionsError) {
-          console.log(companionsError, 'not found')
-        }
-
-        setCompanions(companionsData ?? [])
-      } else {
-        setCompanions([])
-      }
-
-      setValidated(true);
-      setGuestInfo(data)
-
-
+      const res = await fetch(`${API_INVITADO}/invitado`, { headers: { "x-codigo-invitado": code }, cache: "no-store" });
+      if (res.status === 404) return null;
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data?.ok) { console.log(data?.msg ?? res.status, "not found"); return undefined; }
+      return { invitado: data.invitado, acompanantes: data.acompanantes ?? [] };
     } catch (error) {
-      console.log(error)
+      console.log(error);
+      return undefined;
     }
+  };
+
+  const guardarRespuesta = async (cuerpo: { estado: string; nombre?: string; acompanantes?: { id?: number | string; estado: string; nombre?: string }[] }): Promise<RespuestaInvitado | null> => {
+    if (!guestInfo?.password) return null;
+    try {
+      const res = await fetch(`${API_INVITADO}/respuesta`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-codigo-invitado": guestInfo.password },
+        body: JSON.stringify(cuerpo),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data?.ok) { console.log(data?.msg ?? res.status, "error updating status"); return null; }
+      return { invitado: data.invitado, acompanantes: data.acompanantes ?? [] };
+    } catch (error) {
+      console.log(error);
+      return null;
+    }
+  };
+
+  const onValidateUser = async (code: string) => {
+    const r = await pedirInvitado(code);
+    if (r === undefined) return;
+    if (!r) {
+      messageApi.error(`Código incorrecto`);
+      return;
+    }
+    setCompanions(r.acompanantes);
+    setValidated(true);
+    setGuestInfo(r.invitado);
   };
 
   // `recordado`: el código salió del localStorage de un evento público. Si ya
   // no existe (el organizador borró al invitado) se olvida sin avisar y queda
   // la invitación para registrarse otra vez.
   const onMagicLogin = async (code: string, recordado = false) => {
-
-    // console.log('getting guest ----')
-    try {
-      const { data, error } = await supabase
-        .from("side_events_guests")
-        .select("*")
-        .eq("password", code)
-        .eq("side_events_id", info?.id)
-        .maybeSingle();
-
-      if (error) {
-        console.log(error, 'not found')
-        return
+    const r = await pedirInvitado(code);
+    if (r === undefined) return;
+    if (!r) {
+      if (recordado) {
+        if (claveRegistro) window.localStorage.removeItem(claveRegistro);
+        return;
       }
-
-      if (!data) {
-        if (recordado) {
-          if (claveRegistro) window.localStorage.removeItem(claveRegistro);
-          return;
-        }
-        messageApi.error(`Código incorrecto`);
-        return
-      }
-
-      if (data?.has_companion) {
-        const { data: companionsData, error: companionsError } = await supabase
-          .from("side_events_guests")
-          .select("*")
-          .eq("companion_id", data.id);
-
-        if (companionsError) {
-          console.log(companionsError, 'not found')
-        }
-
-        setCompanions(companionsData ?? [])
-      } else {
-        setCompanions([])
-      }
-
-      setValidated(true);
-      setGuestInfo(data)
+      messageApi.error(`Código incorrecto`);
+      return;
     }
-    catch (error) {
-      console.log(error)
-    }
-  }
+    setCompanions(r.acompanantes);
+    setValidated(true);
+    setGuestInfo(r.invitado);
+  };
 
   const updateGuestStatus = async (state: string) => {
-    try {
-      const { data, error } = await supabase
-        .from("side_events_guests")
-        .update({ state })
-        .eq("password", guestInfo?.password)
-        .eq("side_events_id", info?.id)
-        .select()
-        .maybeSingle();
-
-      if (error) {
-        console.log(error, "error updating status");
-        messageApi.error("No se pudo actualizar el estado");
-        return;
-      }
-
-      if (!data) {
-        messageApi.error("Invitado no encontrado");
-        return;
-      }
-
-      console.log(data)
-
-      // Si quieres hacer algo después de actualizar
-      setGuestInfo(data)
-      recargarAsistentes();
-      // messageApi.success("Estado actualizado");
-
-    } catch (error) {
-      console.log(error);
+    const r = await guardarRespuesta({ estado: state });
+    if (!r) {
+      messageApi.error("No se pudo actualizar el estado");
+      return;
     }
+    setGuestInfo(r.invitado);
+    recargarAsistentes();
   };
 
   // Vista previa: el editor manda los confirmados reales que ya tiene.
@@ -632,15 +580,17 @@ export default function SideEvents({ info, password, preview, registroToken }: i
   const declinarPase = async () => {
     setCambiandoRespuesta(false);
     if (!guestInfo) return;
-    if (guestInfo.has_companion && companions.length > 0) {
-      const { data } = await supabase
-        .from("side_events_guests")
-        .update({ state: "rechazado" })
-        .in("id", companions.map((c) => c.id))
-        .select();
-      if (data) setCompanions(data as SideGuestSubabasePayload[]);
+    const r = await guardarRespuesta({
+      estado: "rechazado",
+      acompanantes: guestInfo.has_companion ? companions.map((c) => ({ id: c.id, estado: "rechazado" })) : [],
+    });
+    if (!r) {
+      messageApi.error("No se pudo actualizar el estado");
+      return;
     }
-    await updateGuestStatus("rechazado");
+    setCompanions(r.acompanantes);
+    setGuestInfo(r.invitado);
+    recargarAsistentes();
   };
 
   // El invitado confirmado cambia su emoji / color desde su tarjeta.
@@ -653,15 +603,20 @@ export default function SideEvents({ info, password, preview, registroToken }: i
   const guardarAvatar = async () => {
     if (!guestInfo || guardandoAvatar) return;
     setGuardandoAvatar(true);
-    const { data, error } = await supabase
-      .from("side_events_guests")
-      .update({ emoji: avatar.emoji, profile: avatar.perfil })
-      .eq("password", guestInfo.password)
-      .eq("side_events_id", info?.id)
-      .select()
-      .maybeSingle();
+    let data: SideGuestSubabasePayload | null = null;
+    try {
+      const res = await fetch(`${API_INVITADO}/avatar`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-codigo-invitado": guestInfo.password ?? "" },
+        body: JSON.stringify({ emoji: avatar.emoji, perfil: avatar.perfil }),
+      });
+      const r = await res.json().catch(() => null);
+      if (res.ok && r?.ok) data = r.invitado;
+    } catch (error) {
+      console.log(error);
+    }
     setGuardandoAvatar(false);
-    if (error || !data) {
+    if (!data) {
       messageApi.error("No se pudo guardar tu avatar");
       return;
     }
@@ -730,58 +685,27 @@ export default function SideEvents({ info, password, preview, registroToken }: i
 
   const confirmWithCompanions = async () => {
     if (!guestInfo) return;
-
-    try {
-      const results = await Promise.all(
-        draftCompanions.map((c) => {
-          const hasName = Boolean(c.name && c.name.trim() !== "");
-          const finalName = hasName ? c.name : `Acompañante de ${draftMainName || guestInfo.name}`;
-          const finalState = c.state === "rechazado" ? "rechazado" : "confirmado";
-          return supabase
-            .from("side_events_guests")
-            .update({ name: finalName, state: finalState })
-            .eq("id", c.id)
-            .select()
-            .maybeSingle();
-        })
-      );
-
-      const failed = results.find((r) => r.error);
-      if (failed?.error) {
-        console.log(failed.error, "error updating companions");
-        messageApi.error("No se pudo actualizar a tus acompañantes");
-        return;
-      }
-
-      const updatedCompanions = results
-        .map((r) => r.data)
-        .filter((d): d is SideGuestSubabasePayload => Boolean(d));
-
-      const { data, error } = await supabase
-        .from("side_events_guests")
-        .update({
-          state: draftMainRejected ? "rechazado" : "confirmado",
-          name: draftMainName,
-        })
-        .eq("password", guestInfo.password)
-        .eq("side_events_id", info?.id)
-        .select()
-        .maybeSingle();
-
-      if (error || !data) {
-        console.log(error, "error updating status");
-        messageApi.error("No se pudo actualizar el estado");
-        return;
-      }
-
-      setCompanions(updatedCompanions);
-      setGuestInfo(data);
-      setConfirmStep(false);
-      onClick();
-      recargarAsistentes();
-    } catch (error) {
-      console.log(error);
+    const r = await guardarRespuesta({
+      estado: draftMainRejected ? "rechazado" : "confirmado",
+      nombre: draftMainName,
+      acompanantes: draftCompanions.map((c) => {
+        const hasName = Boolean(c.name && c.name.trim() !== "");
+        return {
+          id: c.id,
+          estado: c.state === "rechazado" ? "rechazado" : "confirmado",
+          nombre: hasName ? (c.name as string) : `Acompañante de ${draftMainName || guestInfo.name}`,
+        };
+      }),
+    });
+    if (!r) {
+      messageApi.error("No se pudo actualizar a tus acompañantes");
+      return;
     }
+    setCompanions(r.acompanantes);
+    setGuestInfo(r.invitado);
+    setConfirmStep(false);
+    onClick();
+    recargarAsistentes();
   };
 
 
