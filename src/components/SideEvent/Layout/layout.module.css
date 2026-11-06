@@ -17,6 +17,23 @@
   opacity: 0.85;
   /* Va sobre la foto: con estilos que no son vidrio, una sombra la separa. */
   text-shadow: var(--etiqueta-sombra, none);
+  position: relative;
+  z-index: 1;
+}
+
+/* Estilo Recorte: una cinta adhesiva bajo la etiqueta que se pega al borde de
+   arriba de la tarjeta. Los demás estilos la dejan transparente. */
+.etiqueta::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -22px;
+  width: 92px;
+  height: 20px;
+  transform: translateX(-50%) rotate(-2deg);
+  background: var(--etiqueta-cinta, transparent);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  pointer-events: none;
 }
 
 /* ── Grupo y mosaico (handoff "Pop en iPad y Mac", 9b) ──

@@ -194,7 +194,7 @@
   /* Cápsula de 80 px con dos mitades (handoff "Pop Layout" 3a). */
   height: 80px;
   overflow: hidden;
-  border-radius: 999px;
+  border-radius: var(--botones-radio, 999px);
   background-color: var(--blur-color--dark);
   backdrop-filter: blur(20px);
   border: 1px solid #FFFFFF40;

@@ -14,9 +14,9 @@ import type React from "react";
   Gemela: iattend-vite/src/modules/SideEvents/estilosBloque.js.
 */
 
-export type EstiloBloque = "vidrio" | "hielo" | "noche" | "papel" | "tema" | "sticker" | "contorno";
+export type EstiloBloque = "vidrio" | "hielo" | "noche" | "papel" | "tema" | "sticker" | "contorno" | "recorte";
 
-export const ESTILOS_BLOQUE: EstiloBloque[] = ["vidrio", "hielo", "noche", "papel", "tema", "sticker", "contorno"];
+export const ESTILOS_BLOQUE: EstiloBloque[] = ["vidrio", "hielo", "noche", "papel", "tema", "sticker", "contorno", "recorte"];
 
 export const estiloDe = (body?: { blockStyle?: string | null } | null): EstiloBloque =>
   ESTILOS_BLOQUE.includes(body?.blockStyle as EstiloBloque) ? (body!.blockStyle as EstiloBloque) : "vidrio";
@@ -47,6 +47,10 @@ type Piel = {
   reflejo: boolean; hoja: string;
   // Color aproximado del fondo (para revisar el contraste del texto de Notas).
   base: string;
+  // Cinta adhesiva bajo las etiquetas de grupo (Recorte).
+  cinta?: string;
+  // Redondeo de la cápsula de los botones de confirmar (sin valor = cápsula).
+  botonesRadio?: number;
 };
 
 const pielDe = (estilo: EstiloBloque, tema: string): Piel | null => {
@@ -107,6 +111,19 @@ const pielDe = (estilo: EstiloBloque, tema: string): Piel | null => {
         botonFondo: "#FFFFFF", botonTinta: TINTA_OSCURA, botonBorde: "none", avatarBorde: "2px solid #FFFFFF",
         reflejo: false, hoja: "rgba(20,16,44,0.72)", base: "#3A3550",
       };
+    case "recorte": {
+      // Recortes de papel pegados con cinta: papel crema, esquinas casi rectas,
+      // sombra de papel encima de la foto, botones del color del tema y cinta
+      // adhesiva bajo las etiquetas de grupo (--etiqueta-cinta).
+      const claro = contraste(tema, TINTA_OSCURA) > contraste(tema, "#FFFFFF");
+      return {
+        fondo: "#F4F1E8", blur: "none", borde: "none",
+        sombra: "0 1px 1px rgba(0,0,0,0.30), 0 4px 8px rgba(0,0,0,0.28), 0 16px 32px rgba(0,0,0,0.38)", radio: 4, botonesRadio: 4,
+        tinta: "#1E1B18", suave: "#E8E3D6", linea: "rgba(30,27,24,0.16)", relieve: "#FBF9F4",
+        botonFondo: tema, botonTinta: claro ? TINTA_OSCURA : "#FFFFFF", botonBorde: "none", avatarBorde: "3px solid #F4F1E8",
+        reflejo: false, hoja: "#F4F1E8", base: "#F4F1E8", cinta: "rgba(232,224,196,0.88)",
+      };
+    }
     default:
       return null;
   }
@@ -146,6 +163,10 @@ export const variablesDeEstilo = (estilo: EstiloBloque, colorTema?: string | nul
     "--boton-sombra-texto": "none",
     // Texto sobre la foto (etiquetas de grupo): sombra para que se lea.
     "--etiqueta-sombra": "0 0 12px rgba(0,0,0,0.35)",
+    // Recorte: cinta adhesiva bajo la etiqueta de grupo.
+    "--etiqueta-cinta": p.cinta ?? "transparent",
+    // Cápsula de Asistiré / No asistiré: redondeo propio (Recorte = rectángulo).
+    "--botones-radio": p.botonesRadio != null ? `${p.botonesRadio}px` : "999px",
   } as React.CSSProperties;
 };
 
