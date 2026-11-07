@@ -229,7 +229,17 @@
 }
 
 /* iPad vertical: el panel queda en ~340px */
+/* Con canción, el reproductor ocupa la esquina de arriba a la izquierda
+   (song-player.module.css .inline): un título pegado arriba no queda debajo. */
+.aside_con_cancion .aside_content {
+    padding-top: 80px;
+}
+
 @media (max-width: 1023px) {
+    .aside_con_cancion .aside_content {
+        padding-top: 76px;
+    }
+
     .aside_content {
         padding: 32px 24px;
     }

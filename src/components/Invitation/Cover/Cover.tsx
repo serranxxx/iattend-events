@@ -266,7 +266,7 @@ export const Cover = forwardRef<HTMLDivElement, CoverProps>(function Cover(
 
   if (variant === "aside") {
     return (
-      <div ref={ref} className={styles.aside_cover} style={{ background: generals?.colors.primary ?? "#FFFFFF" }}>
+      <div ref={ref} className={`${styles.aside_cover} ${topSlot ? styles.aside_con_cancion : ""}`} style={{ background: generals?.colors.primary ?? "#FFFFFF" }}>
         {mediaItems.length > 0 && (
           <div className={styles.aside_media} style={{ transform: `scale(${cover?.image.zoom ?? 1})` }}>
             {renderSlides()}

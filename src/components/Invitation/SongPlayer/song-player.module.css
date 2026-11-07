@@ -141,12 +141,11 @@
   opacity: 0;
 }
 
-/* Layout web: dentro del panel de la portada, alineado a la izquierda */
+/* Layout web: arriba a la izquierda del panel de la portada, igual que en
+   celular. Crece hacia la derecha al reproducir. */
 .inline {
-  position: relative;
-  top: auto;
-  left: auto;
+  position: absolute;
+  top: 24px;
+  left: 24px;
   right: auto;
-  align-self: flex-start;
-  flex-shrink: 0;
 }
