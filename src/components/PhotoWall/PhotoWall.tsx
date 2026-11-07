@@ -7,7 +7,7 @@ import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import { QRCodeSVG } from "qrcode.react";
 import { NewInvitation } from "@/types/new_invitation";
-import { PhotoWallBento } from "./PhotoWallBento";
+import { CuadroDeVideo, PhotoWallBento, esVideo } from "./PhotoWallBento";
 import styles from "./photo-wall.module.css";
 
 const API_URL = process.env.NEXT_PUBLIC_IATTEND_API_URL;
@@ -388,7 +388,9 @@ export function PhotoWall({ eventId, eventTitle, onClose, onOpenCamera, shareCom
               key={src}
               className={`${styles.coverImg} ${i === coverIdx ? styles.coverImgActive : ""}`}
             >
-              <Image src={src} alt="" fill sizes="100vw" style={{ objectFit: "cover" }} unoptimized />
+              {esVideo(src)
+                ? <CuadroDeVideo src={src} />
+                : <Image src={src} alt="" fill sizes="100vw" style={{ objectFit: "cover" }} unoptimized />}
             </div>
           ))}
           {coverImages.length > 1 && (
@@ -411,7 +413,7 @@ export function PhotoWall({ eventId, eventTitle, onClose, onOpenCamera, shareCom
           <ArrowLeft size={14} />
         </button>
         <div className={styles.topBarActions}>
-          {photos.length > 0 && (
+          {!loading && (
             <button
               className={styles.navBtn}
               onClick={openBento}
@@ -542,6 +544,7 @@ export function PhotoWall({ eventId, eventTitle, onClose, onOpenCamera, shareCom
           titleText={titleText}
           titleFace={titleFace}
           participantCount={participantCount}
+          portada={coverImages[0]}
           onClose={closeBento}
         />
       )}

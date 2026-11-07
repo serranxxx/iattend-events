@@ -234,3 +234,32 @@
     animation: bento_fade 0.4s ease both;
   }
 }
+
+/* Sin fotos todavía: la portada del evento de fondo (un cuadro si es video). */
+.vacio {
+  position: relative;
+  overflow: hidden;
+  border-radius: 18px;
+}
+
+.vacioFondo {
+  position: absolute;
+  inset: 0;
+  filter: brightness(0.45);
+}
+
+.vacioFondo img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.vacioTexto {
+  position: relative;
+  z-index: 1;
+  max-width: 420px;
+  color: #fff;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+}

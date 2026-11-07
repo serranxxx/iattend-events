@@ -11,11 +11,31 @@ export interface BentoPhoto {
   public_url: string;
 }
 
+export const esVideo = (url: string) => /\.(mp4|webm|mov|m4v)(\?|#|$)/i.test(url);
+
+// Portada en video: un cuadro fijo, no el video corriendo. iOS no pinta el
+// primer cuadro de un <video> en pausa hasta que hay interacción, así que se
+// deja arrancar en silencio y se pausa en cuanto hay imagen.
+export function CuadroDeVideo({ src }: { src: string }) {
+  return (
+    <video
+      src={`${src}#t=0.5`}
+      muted
+      playsInline
+      autoPlay
+      preload="auto"
+      onLoadedData={(e) => e.currentTarget.pause()}
+      style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+    />
+  );
+}
+
 interface PhotoWallBentoProps {
   photos: BentoPhoto[]; // la más nueva primero (como las guarda PhotoWall)
   titleText?: string;
   titleFace?: string;
   participantCount: number;
+  portada?: string; // fondo cuando todavía no hay fotos (imagen o video)
   onClose: () => void;
 }
 
@@ -66,7 +86,7 @@ const precargar = (url: string) =>
 
 type Casilla = { id: string; prev: string | null };
 
-export function PhotoWallBento({ photos, titleText, titleFace, participantCount, onClose }: PhotoWallBentoProps) {
+export function PhotoWallBento({ photos, titleText, titleFace, participantCount, portada, onClose }: PhotoWallBentoProps) {
   const [montado, setMontado] = useState(false);
   const [vertical, setVertical] = useState(false);
   const [casillas, setCasillas] = useState<Casilla[]>([]);
@@ -312,7 +332,17 @@ export function PhotoWallBento({ photos, titleText, titleFace, participantCount,
           })}
         </div>
       ) : (
-        <div className={styles.vacio}>Las fotos aparecerán aquí en cuanto los invitados empiecen a compartir</div>
+        <div className={styles.vacio}>
+          {portada && (
+            <div className={styles.vacioFondo} aria-hidden>
+              {esVideo(portada)
+                ? <CuadroDeVideo src={portada} />
+                // eslint-disable-next-line @next/next/no-img-element
+                : <img src={portada} alt="" />}
+            </div>
+          )}
+          <span className={styles.vacioTexto}>Las fotos aparecerán aquí en cuanto los invitados empiecen a compartir</span>
+        </div>
       )}
 
       <div className={styles.header}>
