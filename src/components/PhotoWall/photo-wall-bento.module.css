@@ -1,0 +1,236 @@
+/* ── Photo Wall a pantalla completa: mosaico bento en vivo ── */
+
+.root {
+  position: fixed;
+  inset: 0;
+  z-index: 10050;
+  background: #000;
+  padding: 10px;
+  padding-top: max(10px, env(safe-area-inset-top));
+  padding-bottom: max(10px, env(safe-area-inset-bottom));
+  animation: bento_in 0.45s ease both;
+}
+
+.sinControles {
+  cursor: none;
+}
+
+@keyframes bento_in {
+  from { opacity: 0; transform: scale(0.98); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.grid {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  gap: 10px;
+}
+
+.tile {
+  position: relative;
+  overflow: hidden;
+  border-radius: 18px;
+  background: #111;
+  min-width: 0;
+  min-height: 0;
+  transition: box-shadow 0.6s ease;
+}
+
+.tileNueva {
+  box-shadow: 0 0 0 3px #fff, 0 0 40px rgba(255, 255, 255, 0.35);
+}
+
+/* Foto: entra con fundido y luego se mueve lento (Ken Burns). */
+.img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform-origin: var(--kb-x, 50%) var(--kb-y, 50%);
+  user-select: none;
+}
+
+.imgActual {
+  z-index: 1;
+  animation:
+    bento_fade 1.1s ease both,
+    bento_kenburns var(--kb-dur, 16s) ease-in-out 0s infinite alternate;
+}
+
+.imgAnterior {
+  z-index: 0;
+  animation: bento_kenburns var(--kb-dur, 16s) ease-in-out 0s infinite alternate;
+}
+
+.tileNueva .imgActual {
+  animation:
+    bento_pop 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) both,
+    bento_kenburns var(--kb-dur, 16s) ease-in-out 0.9s infinite alternate;
+}
+
+@keyframes bento_fade {
+  from { opacity: 0; transform: scale(1.12); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes bento_pop {
+  from { opacity: 0; transform: scale(0.85); filter: brightness(1.8); }
+  to   { opacity: 1; transform: scale(1); filter: brightness(1); }
+}
+
+@keyframes bento_kenburns {
+  from { transform: scale(1); }
+  to   { transform: scale(1.12); }
+}
+
+.caption {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 28px 14px 12px;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.55), transparent);
+  animation: bento_caption 1.1s ease both;
+  pointer-events: none;
+}
+
+@keyframes bento_caption {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.captionName {
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+
+.badgeNueva {
+  flex-shrink: 0;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: #fff;
+  color: #000;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+/* ── Encabezado flotante ─────────────────────────────────── */
+
+.header {
+  position: absolute;
+  top: max(22px, calc(env(safe-area-inset-top) + 12px));
+  left: 22px;
+  right: 22px;
+  z-index: 5;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  pointer-events: none;
+  transition: opacity 0.5s ease;
+}
+
+.sinControles .closeBtn {
+  opacity: 0;
+}
+
+.headerInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 16px;
+  border-radius: 18px;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  max-width: min(520px, 70vw);
+}
+
+.title {
+  color: #fff;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.liveDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ff3b30;
+  animation: bento_live 1.6s ease-in-out infinite;
+}
+
+@keyframes bento_live {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(255, 59, 48, 0.6); }
+  50%      { opacity: 0.6; box-shadow: 0 0 0 6px rgba(255, 59, 48, 0); }
+}
+
+.closeBtn {
+  pointer-events: auto;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: opacity 0.5s ease;
+}
+
+.vacio {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 18px;
+}
+
+@media (max-width: 768px) {
+  .root { padding: 6px; }
+  .grid { gap: 6px; }
+  .tile { border-radius: 12px; }
+  .title { font-size: 17px; }
+  .header { left: 14px; right: 14px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .imgActual,
+  .imgAnterior,
+  .tileNueva .imgActual {
+    animation: bento_fade 0.4s ease both;
+  }
+}

@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Camera, Heart, Share, X, Play, ChevronLeft } from "lucide-react";
+import { ArrowLeft, Camera, Heart, Share, X, Play, ChevronLeft, Maximize2 } from "lucide-react";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import { QRCodeSVG } from "qrcode.react";
 import { NewInvitation } from "@/types/new_invitation";
+import { PhotoWallBento } from "./PhotoWallBento";
 import styles from "./photo-wall.module.css";
 
 const API_URL = process.env.NEXT_PUBLIC_IATTEND_API_URL;
@@ -60,6 +61,9 @@ export function PhotoWall({ eventId, eventTitle, onClose, onOpenCamera, shareCom
   const [heartBurst, setHeartBurst] = useState<string | null>(null);
   const [likersSheet, setLikersSheet] = useState<{ photoId: string; names: string[] } | null>(null);
   const [coverIdx, setCoverIdx] = useState(0);
+
+  // Mosaico bento a pantalla completa (proyector / vista web)
+  const [bentoOpen, setBentoOpen] = useState(false);
 
   // Full-screen photo modal
   const [selectedPhoto, setSelectedPhoto] = useState<EventPhoto | null>(null);
@@ -314,6 +318,21 @@ export function PhotoWall({ eventId, eventTitle, onClose, onOpenCamera, shareCom
     setLikersSheet({ photoId, names });
   };
 
+  // La pantalla completa del navegador se pide aquí, dentro del clic (gesto del
+  // usuario); en iPhone no existe para páginas y el mosaico llena la ventana.
+  const openBento = () => {
+    setBentoOpen(true);
+    const el = document.documentElement;
+    if (!document.fullscreenElement && el.requestFullscreen) {
+      el.requestFullscreen().catch(() => {});
+    }
+  };
+
+  const closeBento = useCallback(() => {
+    setBentoOpen(false);
+    if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
+  }, []);
+
   const companionUrl = (password: string) => {
     if (typeof window === 'undefined') return '';
     if (invitation?.generals?.event?.label && invitation?.generals?.event?.name) {
@@ -392,6 +411,16 @@ export function PhotoWall({ eventId, eventTitle, onClose, onOpenCamera, shareCom
           <ArrowLeft size={14} />
         </button>
         <div className={styles.topBarActions}>
+          {photos.length > 0 && (
+            <button
+              className={styles.navBtn}
+              onClick={openBento}
+              aria-label="Pantalla completa"
+              title="Pantalla completa"
+            >
+              <Maximize2 size={14} />
+            </button>
+          )}
           {photos.length > 0 && (
             <button
               className={styles.navBtn}
@@ -506,6 +535,16 @@ export function PhotoWall({ eventId, eventTitle, onClose, onOpenCamera, shareCom
           )}
         </div>
       </div>
+
+      {bentoOpen && (
+        <PhotoWallBento
+          photos={photos}
+          titleText={titleText}
+          titleFace={titleFace}
+          participantCount={participantCount}
+          onClose={closeBento}
+        />
+      )}
 
       {/* Full-screen photo modal */}
       {selectedPhoto && (
