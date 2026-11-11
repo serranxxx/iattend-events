@@ -107,6 +107,12 @@ const formalDe = (id: string, tema?: string | null) => {
   return lista[hashDe(id, 3) % lista.length];
 };
 
+// Color base de las iniciales: el que el organizador eligió con el slider del
+// editor (body.attendeesColor) o, sin él, el del tema. Gemela: colorAvatares
+// de iattend-vite/src/modules/SideEvents/datosAsistentes.js.
+export const colorAvatares = (body?: { attendeesColor?: string | null; color?: string | null } | null) =>
+  /^#[0-9a-f]{6}$/i.test(body?.attendeesColor ?? "") ? (body?.attendeesColor as string) : body?.color ?? undefined;
+
 // `tema`: color del tema del Pop (body.color), para el modo iniciales.
 export const fondoDe = (a: { id: string; perfil: number | null }, modo: ModoAvatar = "emoji", tema?: string | null) => {
   if (modo === "initials") { const [claro, oscuro] = formalDe(a.id, tema); return `linear-gradient(to bottom, ${claro}, ${oscuro})`; }

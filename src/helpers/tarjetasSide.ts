@@ -13,19 +13,22 @@ import type { SideEventBody } from "@/types/side_event";
   Asistentes y Clima guardan su "oculto" en showAttendees / hideWeather.
 */
 
-export type TarjetaSide = "registration" | "attendees" | "itinerary" | "map" | "notes" | "weather";
+export type TarjetaSide = "registration" | "attendees" | "itinerary" | "map" | "notes" | "weather" | "sponsors";
 
 // Registro (formulario) sigue en la lista por su "oculto", pero ya no va en
 // el scroll: llega como aviso al confirmar (handoff "Pop Layout" 3a).
-export const ORDEN_TARJETAS: TarjetaSide[] = ["registration", "itinerary", "map", "notes", "attendees", "weather"];
+// Patrocinadores (body.sponsors, helpers/patrocinadores.ts): en el scroll solo
+// con el acomodo Tarjeta o Banda; con Portada van en la primera pantalla.
+export const ORDEN_TARJETAS: TarjetaSide[] = ["registration", "itinerary", "map", "notes", "attendees", "weather", "sponsors"];
 
-const SOLO_POP = new Set<TarjetaSide>(["registration", "attendees", "itinerary"]);
+const SOLO_POP = new Set<TarjetaSide>(["registration", "attendees", "itinerary", "sponsors"]);
 const aplica = (key: TarjetaSide, esPop: boolean) => esPop || !SOLO_POP.has(key);
 
 const ocultaDe = (body: SideEventBody | undefined, key: TarjetaSide) => {
   if (key === "registration") return !body?.form?.enabled;
   if (key === "attendees") return !body?.showAttendees;
   if (key === "weather") return Boolean(body?.hideWeather);
+  if (key === "sponsors") return body?.sponsors?.enabled === false;
   return Boolean((body?.cards ?? []).find((c) => c.key === key)?.hidden);
 };
 
@@ -40,11 +43,11 @@ export const tarjetasDe = (body: SideEventBody | undefined, esPop: boolean) => {
 // Grupos de la página (handoff "Pop Layout" 3a), cada uno con su etiqueta
 // centrada. Recibe las llaves que de verdad se pintan, en orden; el grupo sale
 // donde aparece su primera tarjeta. Gemela: agruparTarjetas en iattend-vite.
-export type GrupoTarjetas = "info" | "lugar" | "gente";
+export type GrupoTarjetas = "info" | "lugar" | "gente" | "marcas";
 export const GRUPO_DE_TARJETA: Partial<Record<TarjetaSide, GrupoTarjetas>> = {
-  itinerary: "info", notes: "info", map: "lugar", weather: "lugar", attendees: "gente",
+  itinerary: "info", notes: "info", map: "lugar", weather: "lugar", attendees: "gente", sponsors: "marcas",
 };
-export const ETIQUETA_DE_GRUPO: Record<GrupoTarjetas, string> = { info: "INFORMACIÓN", lugar: "UBICACIÓN", gente: "ASISTENTES" };
+export const ETIQUETA_DE_GRUPO: Record<GrupoTarjetas, string> = { info: "INFORMACIÓN", lugar: "UBICACIÓN", gente: "ASISTENTES", marcas: "PATROCINADORES" };
 
 export const agruparTarjetas = (keys: TarjetaSide[]) => {
   const grupos: { id: GrupoTarjetas; keys: TarjetaSide[] }[] = [];
@@ -56,6 +59,27 @@ export const agruparTarjetas = (keys: TarjetaSide[]) => {
     grupo.keys.push(key);
   }
   return grupos;
+};
+
+// Posición del bloque del título (título, fecha y lugar) en la primera
+// pantalla, 3 × 3 como la portada de la invitación. body.titlePosition =
+// { x: left|center|right, y: top|center|bottom }; sin él, abajo al centro.
+// Gemela: iattend-vite/src/modules/SideEvents/tarjetasSide.js.
+export type PosicionX = "left" | "center" | "right";
+export type PosicionY = "top" | "center" | "bottom";
+const POS_X: PosicionX[] = ["left", "center", "right"];
+const POS_Y: PosicionY[] = ["top", "center", "bottom"];
+export const posicionTitulo = (body?: SideEventBody | null) => {
+  const p = (body?.titlePosition ?? {}) as { x?: string | null; y?: string | null };
+  return {
+    x: (POS_X.includes(p.x as PosicionX) ? p.x : "center") as PosicionX,
+    y: (POS_Y.includes(p.y as PosicionY) ? p.y : "bottom") as PosicionY,
+  };
+};
+const FLEX: Record<string, string> = { left: "flex-start", top: "flex-start", center: "center", right: "flex-end", bottom: "flex-end" };
+export const variablesPosicionTitulo = (body?: SideEventBody | null) => {
+  const { x, y } = posicionTitulo(body);
+  return { "--titulo-x": FLEX[x], "--titulo-y": FLEX[y], "--titulo-alinear": x } as React.CSSProperties;
 };
 
 export const portadaOculta = (body: SideEventBody | undefined, key: "title" | "date" | "place") =>

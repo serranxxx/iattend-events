@@ -82,6 +82,8 @@ export type SideEventBody = {
   // Avatares de Asistentes: "emoji" (por omisión, colores alegres; el
   // invitado puede cambiar el suyo) o "initials" (iniciales, colores sobrios).
   attendeesStyle?: "emoji" | "initials" | null;
+  // Color base de los avatares con iniciales (slider del editor); sin él, el del tema.
+  attendeesColor?: string | null;
   // Chat de asistentes (solo con Asistentes visible): prendido y mensaje
   // fijado del organizador. Ver iattend--backend router/sideEventChat.js.
   chat?: { enabled?: boolean | null; pinned?: { text: string; updated_at?: string } | null } | null;
@@ -92,6 +94,8 @@ export type SideEventBody = {
   // helpers/tarjetasSide.ts) y textos ocultos de la portada.
   cards?: { key: string; hidden?: boolean | null }[] | null;
   coverHidden?: { title?: boolean | null; date?: boolean | null; place?: boolean | null } | null;
+  // Posición del título, fecha y lugar en la primera pantalla (3 × 3); sin él, abajo al centro.
+  titlePosition?: { x?: "left" | "center" | "right" | null; y?: "top" | "center" | "bottom" | null } | null;
   // Estilo del texto de Notas (barra de texto del editor, como el título).
   // Estilo de bloques de un Pop (panel Diseño, helpers/estilosBloque.ts). Sin él, "vidrio".
   blockStyle?: "vidrio" | "hielo" | "noche" | "papel" | "tema" | "sticker" | "contorno" | null;
@@ -100,6 +104,19 @@ export type SideEventBody = {
     opacity?: number | null; color?: string | null; italic?: boolean | null; underline?: boolean | null;
     strike?: boolean | null; transform?: "none" | "uppercase" | "lowercase" | null; letterSpacing?: number | null;
     align?: "left" | "center" | "right" | null;
+  } | null;
+  // Patrocinadores de un Pop (helpers/patrocinadores.ts; editor: panel
+  // Patrocinadores de iattend-vite). Sin logos no se pinta nada.
+  // v2 (categorías); `mono` y `tier` son de la v1 y se leen convertidos.
+  sponsors?: {
+    enabled?: boolean | null;
+    layout?: "portada" | "tarjeta" | "banda" | null;
+    speed?: number | null;
+    label?: string | null;
+    defaultCat?: string | null;
+    cats?: { id: string; name?: string | null; size?: "l" | "m" | "s" | null; color?: boolean | null }[] | null;
+    mono?: boolean | null;
+    items?: { id: string; url: string; name?: string | null; cat?: string | null; tier?: "p" | "s" | "a" | null; w?: number | null; h?: number | null }[] | null;
   } | null;
   // Nombre del lugar (ej. "Salón Jardín"), opcional. Cuando existe, se
   // muestra en vez de la dirección debajo de la fecha en SideEvent.tsx.

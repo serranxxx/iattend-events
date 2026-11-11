@@ -449,6 +449,25 @@
   box-sizing: border-box;
 }
 
+/* Título: va solo en un bloque que ocupa el alto libre arriba de la fecha y
+   se acomoda en la cuadrícula 3 × 3 (body.titlePosition → --titulo-x / -y /
+   -alinear, helpers/tarjetasSide.ts). Arriba deja lugar a la canción y al
+   aviso del formulario. Igual que la pieza del editor (SideCanvas .bloqueTitulo). */
+.bloque_titulo {
+  width: 100%;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: var(--titulo-y, flex-end);
+  align-items: var(--titulo-x, center);
+  padding-top: 72px;
+  box-sizing: border-box;
+}
+
+.bloque_titulo .titulo_portada {
+  text-align: var(--titulo-alinear, center);
+}
+
 /* Ya confirmado: la portada llena la pantalla y solo asoma la punta (36 px)
    del avatar de la tarjeta del invitado (12 de gap + 40 de su margen − 40
    del avatar). */
@@ -622,6 +641,23 @@
     padding-bottom: 0;
     margin-bottom: 0;
     max-width: 600px;
+  }
+
+  .pop .bloque_titulo {
+    flex: none;
+    padding-top: 0;
+  }
+
+  /* Título arriba o al centro (body.titlePosition): su bloque va del 12% al
+     54% de la pantalla y la fecha y el lugar siguen donde siempre. */
+  .pop .primera_pantalla:is([data-titulo-y="top"], [data-titulo-y="center"]) {
+    padding-top: 12vh;
+    padding-top: 12dvh;
+  }
+
+  .pop .primera_pantalla:is([data-titulo-y="top"], [data-titulo-y="center"]) .bloque_titulo {
+    height: 42vh;
+    height: 42dvh;
   }
 
   /* El tamaño que eligió el organizador, escalado como la pieza (hasta 76). */

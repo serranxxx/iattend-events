@@ -1,0 +1,173 @@
+/* Patrocinadores de un Pop (Patrocinadores.tsx, Cinta.tsx), handoff
+   "Patrocinadores en un Pop" §3. Gemela en el editor: iattend-vite
+   modules/SideEvents/Patrocinadores/Patrocinadores.module.css. */
+
+/* Relleno de .info_cont: 24 px en celular, 0 desde 768 (side-event.module.css).
+   La cinta y la banda salen de él para ir de orilla a orilla. */
+.portada,
+.banda {
+  --orilla: 24px;
+  width: calc(100% + 2 * var(--orilla));
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: #FFFFFF;
+  font-family: Poppins, sans-serif;
+  pointer-events: auto;
+}
+
+@media (min-width: 768px) {
+  .portada,
+  .banda {
+    --orilla: 0px;
+    max-width: 600px;
+  }
+}
+
+.logo {
+  display: block;
+  flex: none;
+  object-fit: contain;
+  user-select: none;
+  -webkit-user-drag: none;
+  pointer-events: none;
+}
+
+/* ── Cinta (§3.1) ── */
+.cinta {
+  width: 100%;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 10%, #000 90%, transparent);
+  mask-image: linear-gradient(to right, transparent, #000 10%, #000 90%, transparent);
+}
+
+.cinta[data-arrastrable] {
+  cursor: grab;
+  touch-action: pan-y;
+}
+
+.cinta[data-arrastrable]:active {
+  cursor: grabbing;
+}
+
+.pista {
+  display: flex;
+  align-items: center;
+  width: max-content;
+  will-change: transform;
+}
+
+.paso_cinta {
+  display: flex;
+  align-items: center;
+  flex: none;
+}
+
+.punto {
+  width: 4px;
+  height: 4px;
+  flex: none;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.fila {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── En la portada (§3.2) ── */
+.portada {
+  margin: 6px calc(-1 * var(--orilla)) 10px;
+  padding: 16px 0 18px;
+  gap: 12px;
+}
+
+.portada_etiqueta {
+  padding: 0 24px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-align: center;
+  opacity: 0.85;
+  text-shadow: 0 0 12px rgba(0, 0, 0, 0.35);
+}
+
+/* ── Tarjeta por niveles (§3.3): el vidrio es el de las demás tarjetas ── */
+.tarjeta {
+  width: 100%;
+  max-width: 450px;
+  box-sizing: border-box;
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  overflow: hidden;
+  color: var(--bloque-tinta, #FFFFFF);
+  font-family: Poppins, sans-serif;
+  pointer-events: auto;
+}
+
+.nivel {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.nivel + .nivel {
+  padding-top: 18px;
+  border-top: 1px solid var(--bloque-linea, rgba(255, 255, 255, 0.22));
+}
+
+.nivel_titulo {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.2px;
+  text-align: center;
+  opacity: 0.8;
+}
+
+.filas {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+/* ── Banda en movimiento (§3.4): sin vidrio, de orilla a orilla ── */
+.banda {
+  margin: 0 calc(-1 * var(--orilla));
+  padding: 8px 0 4px;
+  gap: 18px;
+}
+
+.banda_principal {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 0 24px;
+}
+
+.banda_segunda {
+  margin-top: 6px;
+}
+
+.banda_cinta {
+  width: 100%;
+  padding: 18px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.22);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.22);
+}
+
+.banda_pie {
+  font-size: 12px;
+  opacity: 0.7;
+}

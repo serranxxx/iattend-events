@@ -19,9 +19,11 @@ import { fontExtras } from "@/components/Invitation/fontExtras";
 import ClimaVidrio from "./ClimaVidrio";
 import Asistentes from "./Asistentes/Asistentes";
 import SelectorAvatar, { type AvatarElegido } from "./Asistentes/SelectorAvatar";
-import { avatarAlAzar, cargarAsistentes, contenidoDe, emojiDe, fondoDe, inicialesDe, modoAvatar, rellenarConEjemplo, perfilDe, type ListaAsistentes } from "./Asistentes/datosAsistentes";
+import { avatarAlAzar, cargarAsistentes, colorAvatares, contenidoDe, emojiDe, fondoDe, inicialesDe, modoAvatar, rellenarConEjemplo, perfilDe, type ListaAsistentes } from "./Asistentes/datosAsistentes";
 import { estiloDe, tintaDeNotas, variablesDeEstilo } from "@/helpers/estilosBloque";
-import { agruparTarjetas, estiloNotas, ETIQUETA_DE_GRUPO, portadaOculta, tarjetasDe, type GrupoTarjetas } from "@/helpers/tarjetasSide";
+import { agruparTarjetas, estiloNotas, ETIQUETA_DE_GRUPO, portadaOculta, posicionTitulo, tarjetasDe, variablesPosicionTitulo, type GrupoTarjetas } from "@/helpers/tarjetasSide";
+import { hayPatrocinadores, patrocinadoresDe, porCategoria } from "@/helpers/patrocinadores";
+import { BandaPatrocinadores, PortadaPatrocinadores, TarjetaPatrocinadores } from "./Patrocinadores/Patrocinadores";
 import ChatPop from "./Chat/ChatPop";
 import RegistroCard from "./Registro/RegistroCard";
 import { formPublicado, formVisible } from "./Registro/datosRegistro";
@@ -836,7 +838,7 @@ export default function SideEvents({ info, password, preview, registroToken }: i
       {mostrarAsistentes && guestInfo.state === "confirmado" ? (() => {
         const a = { id: String(guestInfo.id ?? ""), emoji: guestInfo.emoji ?? null, perfil: guestInfo.profile ?? null, iniciales: inicialesDe(guestInfo.name) };
         const contenido = (
-          <span style={{ background: fondoDe(a, modo, info?.body.color), fontSize: modo === "initials" ? "26px" : "34px" }}>
+          <span style={{ background: fondoDe(a, modo, colorAvatares(info?.body)), fontSize: modo === "initials" ? "26px" : "34px" }}>
             {contenidoDe(a, modo)}
           </span>
         );
@@ -1029,6 +1031,7 @@ export default function SideEvents({ info, password, preview, registroToken }: i
           asistentes={listaAsistentes?.asistentes ?? []}
           vars={varsEstilo}
           colorTema={info?.body.color}
+          colorAvatares={colorAvatares(info?.body)}
           // Vista previa: el fijado sale de lo que se está editando (sin guardar).
           chat={preview ? { ...chat, fijado: info?.body?.chat?.pinned?.text ? { text: info.body.chat.pinned.text } : null } : chat}
         />
@@ -1321,8 +1324,12 @@ export default function SideEvents({ info, password, preview, registroToken }: i
                 scroll todo esto y lo demás (itinerario, cómo llegar, notas…)
                 sube encima de la portada fija. El editor (iattend-vite,
                 SideCanvas) acomoda la pieza igual. */}
-            <div className={`${styles.primera_pantalla} ${!confirmStep && !registro && !cambiandoRespuesta && (guestInfo?.state === "confirmado" || registroToken) ? styles.primera_confirmado : ""}`}>
-              {/* Título, fecha y lugar se pueden ocultar desde Capas (coverHidden). */}
+            <div data-titulo-y={posicionTitulo(info?.body).y} className={`${styles.primera_pantalla} ${!confirmStep && !registro && !cambiandoRespuesta && (guestInfo?.state === "confirmado" || registroToken) ? styles.primera_confirmado : ""}`}>
+              {/* Título, fecha y lugar se pueden ocultar desde Capas (coverHidden).
+                  El título va solo en un bloque que ocupa el alto libre y se
+                  acomoda en una cuadrícula 3 × 3 (body.titlePosition); la fecha
+                  y el lugar se quedan abajo, como siempre. */}
+              <div className={styles.bloque_titulo} style={variablesPosicionTitulo(info?.body)}>
               {!portadaOculta(info?.body, "title") && <span
                 className={styles.titulo_portada}
                 style={{
@@ -1333,7 +1340,6 @@ export default function SideEvents({ info, password, preview, registroToken }: i
                   fontSize: `${info?.body.title.size}px`,
                   lineHeight: info?.body.title.line_height,
                   opacity: info?.body.title.opacity,
-                  textAlign: "center",
                   color: info?.body.title.color || "#FFF",
                   textShadow: sombraDeTexto(info?.body.title.shadow) ?? "0px 0px 18px rgba(0, 0, 0, 0.35)",
                   // Cursiva, subrayado, tachado, mayúsculas y espaciado: la misma
@@ -1349,6 +1355,7 @@ export default function SideEvents({ info, password, preview, registroToken }: i
               >
                 {info?.name}
               </span>}
+              </div>
 
               <div
                 className={styles.col}
@@ -1376,6 +1383,11 @@ export default function SideEvents({ info, password, preview, registroToken }: i
                   </>
                 )}
               </div>
+              {/* Patrocinadores en la portada (Pop, body.sponsors): la cinta
+                  entre el lugar y los botones (handoff "Patrocinadores" §3.2). */}
+              {esPop && info?.body && patrocinadoresDe(info.body).layout === "portada" && hayPatrocinadores(info.body) && (
+                <PortadaPatrocinadores body={info.body} />
+              )}
               <AnimatePresence>
                 {dedicatoriaArriba && tarjetaInvitado}
               </AnimatePresence>
@@ -1629,7 +1641,10 @@ export default function SideEvents({ info, password, preview, registroToken }: i
                 map: direccionCompleta(body),
                 weather: Boolean(clima),
                 attendees: mostrarAsistentes && Boolean(listaAsistentes),
+                // Patrocinadores: en el scroll solo con Tarjeta o Banda (Portada va arriba).
+                sponsors: esPop && hayPatrocinadores(body) && patrocinadoresDe(body).layout !== "portada",
               };
+              const acomodoPatrocinadores = patrocinadoresDe(body).layout;
               const grupos = agruparTarjetas(tarjetasDe(body, !info?.invitation_id).filter((c) => !c.hidden && hay[c.key]).map((c) => c.key));
               // Dibujos hechos encima de una tarjeta en el editor (`tarjeta`):
               // la tarjeta va en una envoltura del mismo tamaño y ellos encima,
@@ -1656,10 +1671,13 @@ export default function SideEvents({ info, password, preview, registroToken }: i
                       solo si hay pronóstico que enseñar. */}
                   {id === "lugar" && !keys.includes("map") ? (
                     clima && <ClimaVidrio {...clima} antes={etiqueta(id)} />
-                  ) : etiqueta(id)}
+                  ) : id === "marcas" && acomodoPatrocinadores === "banda" ? null : etiqueta(id)}
                   {keys.map((key) => conDibujos(key, (
                     <React.Fragment key={key}>
                       {key === "itinerary" && <ItinerarioWidget body={body} sinTitulo />}
+                      {key === "sponsors" && (acomodoPatrocinadores === "banda"
+                        ? <BandaPatrocinadores body={body} scroller={() => paginaRef.current} />
+                        : <TarjetaPatrocinadores body={body} vidrio={styles.tarjeta} />)}
                       {key === "notes" && (
                         <div className={styles.mapa_container} style={{ padding: "20px" }}>
                           <span
@@ -1684,6 +1702,7 @@ export default function SideEvents({ info, password, preview, registroToken }: i
                         <Asistentes
                           lista={listaAsistentes}
                           colorTema={body.color}
+                          colorAvatares={colorAvatares(body)}
                           modo={modo}
                           sinTitulo
                           pie={chatActivo ? (
@@ -1720,6 +1739,7 @@ export default function SideEvents({ info, password, preview, registroToken }: i
                 notes: 90 + 30 * Math.max(1, String(body.extras ?? "").split("\n").length + Math.floor(String(body.extras ?? "").length / 60)),
                 map: grupos.some((g) => g.keys.includes("map") && g.keys.includes("weather")) ? 520 : 400,
                 attendees: 260 + (chatActivo ? 80 : 0),
+                sponsors: acomodoPatrocinadores === "banda" ? 240 : 80 + 80 * porCategoria(patrocinadoresDe(body)).length,
               };
               const altos = [0, 0];
               const izquierda: React.ReactNode[] = [];

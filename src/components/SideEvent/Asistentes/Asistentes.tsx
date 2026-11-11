@@ -51,7 +51,9 @@ export function AvatarAsistente(props: { a: Asistente; size?: number; modo?: Mod
 // `pie`: lo que va al fondo de la tarjeta, de orilla a orilla (la fila del chat).
 // `sinTitulo`: bajo la etiqueta ASISTENTES de la página (handoff "Pop
 // Layout" 3a) la cabecera solo lleva el chip.
-export default function Asistentes({ lista, colorTema, modo = "emoji", pie, sinTitulo }: { lista: ListaAsistentes; colorTema?: string; modo?: ModoAvatar; pie?: React.ReactNode; sinTitulo?: boolean }) {
+// `colorAvatares`: base de las iniciales (colorAvatares); sin él, colorTema.
+export default function Asistentes({ lista, colorTema, colorAvatares, modo = "emoji", pie, sinTitulo }: { lista: ListaAsistentes; colorTema?: string; colorAvatares?: string; modo?: ModoAvatar; pie?: React.ReactNode; sinTitulo?: boolean }) {
+  const tonoAvatares = colorAvatares ?? colorTema;
   const list = lista.asistentes;
   const n = Math.max(lista.total, list.length);
   const areaRef = useRef<HTMLDivElement>(null);
@@ -239,7 +241,7 @@ export default function Asistentes({ lista, colorTema, modo = "emoji", pie, sinT
                   transitionDelay: `${delay}ms`,
                 }}
               >
-                <Avatar a={p} brillo={p.id === newId} modo={modo} tema={colorTema} />
+                <Avatar a={p} brillo={p.id === newId} modo={modo} tema={tonoAvatares} />
               </div>
             );
           })}
@@ -283,7 +285,7 @@ export default function Asistentes({ lista, colorTema, modo = "emoji", pie, sinT
                 </button>
                 {u.miembros.map((m) => (
                   <div key={m.id} className={styles.detalle_fila}>
-                    <Avatar a={m} size={30} modo={modo} tema={colorTema} />
+                    <Avatar a={m} size={30} modo={modo} tema={tonoAvatares} />
                     <span className={styles.detalle_nombre}>{m.nombre || "Acompañante"}</span>
                   </div>
                 ))}
@@ -310,7 +312,7 @@ export default function Asistentes({ lista, colorTema, modo = "emoji", pie, sinT
       <div className={styles.collapse} style={{ gridTemplateRows: toastOn ? "1fr" : "0fr" }}>
         <div>
           <div className={styles.toast} style={{ opacity: toastOn ? 1 : 0, transform: `translateY(${toastOn ? 0 : 8}px)` }}>
-            {toast && <Avatar a={toast} size={22} modo={modo} tema={colorTema} />}
+            {toast && <Avatar a={toast} size={22} modo={modo} tema={tonoAvatares} />}
             <span>
               <b>{toast?.nombre || "Alguien"}</b>
               {toast && titularDe(toast) ? ` confirmó con ${titularDe(toast)!.nombre}` : " acaba de confirmar"}

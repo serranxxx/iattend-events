@@ -68,9 +68,12 @@ type Props = {
   vars?: React.CSSProperties;
   // Color del tema: con iniciales, los tonos de cada quien salen de él.
   colorTema?: string | null;
+  // Base de las iniciales (colorAvatares); sin él, colorTema.
+  colorAvatares?: string | null;
 };
 
-export default function ChatPop({ open, onClose, modo, preview, confirmados, asistentes, chat, vars, colorTema }: Props) {
+export default function ChatPop({ open, onClose, modo, preview, confirmados, asistentes, chat, vars, colorTema, colorAvatares }: Props) {
+  const tonoAvatares = colorAvatares ?? colorTema;
   const listRef = useRef<HTMLDivElement>(null);
   const capaRef = useRef<HTMLDivElement>(null);
   const hojaRef = useRef<HTMLDivElement>(null);
@@ -222,7 +225,7 @@ export default function ChatPop({ open, onClose, modo, preview, confirmados, asi
               </span>
             </div>
             <div className={styles.recent}>
-              {recientes.map((u) => <span key={u.id} className={styles.av_ring}><AvatarAsistente a={u} size={28} modo={modo} tema={colorTema} /></span>)}
+              {recientes.map((u) => <span key={u.id} className={styles.av_ring}><AvatarAsistente a={u} size={28} modo={modo} tema={tonoAvatares} /></span>)}
             </div>
           </div>
           )}
@@ -304,10 +307,10 @@ export default function ChatPop({ open, onClose, modo, preview, confirmados, asi
                 <div key={m.id} className={styles.msg} style={estilo}>
                   <div className={styles.other_row}>
                     <span className={styles.group_av}>
-                      <AvatarAsistente a={u} size={32} modo={modo} tema={colorTema} />
+                      <AvatarAsistente a={u} size={32} modo={modo} tema={tonoAvatares} />
                       {minis.length > 0 && (
                         <span className={styles.minis}>
-                          {minis.map((c) => <span key={c.id} className={styles.av_ring}><AvatarAsistente a={c} size={18} modo={modo} tema={colorTema} /></span>)}
+                          {minis.map((c) => <span key={c.id} className={styles.av_ring}><AvatarAsistente a={c} size={18} modo={modo} tema={tonoAvatares} /></span>)}
                         </span>
                       )}
                     </span>
@@ -316,7 +319,7 @@ export default function ChatPop({ open, onClose, modo, preview, confirmados, asi
                         <b>{u.nombre}</b>
                         {con && <span className={styles.with}>{con}</span>}
                       </div>
-                      <div className={styles.bubble} style={{ background: darker(oscuroDe(u, modo, colorTema), 0.72) ?? "#2B221C" }}>{m.text}</div>
+                      <div className={styles.bubble} style={{ background: darker(oscuroDe(u, modo, tonoAvatares), 0.72) ?? "#2B221C" }}>{m.text}</div>
                       {fila}
                     </div>
                   </div>
