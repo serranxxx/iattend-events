@@ -1,5 +1,8 @@
 "use client";
 
+import TarjetaAcceso from "./Layout/TarjetaAcceso";
+import acceso from "./Layout/acceso.module.css";
+import { esOnline, textosPlataforma } from "@/helpers/acceso";
 import { SideEvent } from "@/types/side_event";
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import styles from "./side-event.module.css";
@@ -40,7 +43,7 @@ import { qrPaseSide } from "@/helpers/paseSide";
 import TarjetaLugar, { direccionCompleta } from "./Layout/TarjetaLugar";
 import layout from "./Layout/layout.module.css";
 import { useAnchoPop } from "./Layout/useAnchoPop";
-import { ClipboardList, MessageCircle } from "lucide-react";
+import { ClipboardList, MessageCircle, Video } from "lucide-react";
 import { ajusteDe, CAMBIO_CARRUSEL_MS, cubrir, desenfoqueDe, estiloAjuste, esVideo, mediaDePortada, variablesDesenfoque } from "@/helpers/fotosPortada";
 
 // Lienzo de los PNG de un Pop: la pieza del editor (iattend-vite, SideCanvas,
@@ -1370,7 +1373,9 @@ export default function SideEvents({ info, password, preview, registroToken }: i
                 {!portadaOculta(info?.body, "date") && lineasDeFechas(info?.body, { state: info?.body.address?.state, timezone: info?.body.timezone }).map((linea) => (
                   <span key={linea}>{linea}</span>
                 ))}
-                {portadaOculta(info?.body, "place") ? null : info?.body.place_name ? (
+                {portadaOculta(info?.body, "place") ? null : info?.body && esOnline(info.body) ? (
+                  <span className={acceso.linea_online}><Video size={14} aria-hidden />{textosPlataforma(info.body.online?.platform).portada}</span>
+                ) : info?.body.place_name ? (
                   <span>{info.body.place_name}</span>
                 ) : (
                   <>
@@ -1638,7 +1643,7 @@ export default function SideEvents({ info, password, preview, registroToken }: i
               const hay: Record<string, boolean> = {
                 itinerary: itinerarioPorDia(body).length > 0,
                 notes: Boolean(body.extras),
-                map: direccionCompleta(body),
+                map: esOnline(body) ? Boolean(body.online?.platform) : direccionCompleta(body),
                 weather: Boolean(clima),
                 attendees: mostrarAsistentes && Boolean(listaAsistentes),
                 // Patrocinadores: en el scroll solo con Tarjeta o Banda (Portada va arriba).
@@ -1661,7 +1666,7 @@ export default function SideEvents({ info, password, preview, registroToken }: i
                   </div>
                 );
               };
-              const etiqueta = (g: GrupoTarjetas) => <span className={layout.etiqueta}>{ETIQUETA_DE_GRUPO[g]}</span>;
+              const etiqueta = (g: GrupoTarjetas) => <span className={layout.etiqueta}>{g === "lugar" && esOnline(body) ? "ACCESO" : ETIQUETA_DE_GRUPO[g]}</span>;
               // Cada grupo en su envoltura (display: contents en celular y
               // tableta). En escritorio, mosaico de dos columnas: los grupos
               // impares a la izquierda y los pares a la derecha, sin huecos.
@@ -1697,7 +1702,17 @@ export default function SideEvents({ info, password, preview, registroToken }: i
                         </div>
                       )}
                       {/* Lugar: mapa y, si no está oculto, la fila del clima. */}
-                      {key === "map" && <TarjetaLugar body={body} clima={keys.includes("weather") ? clima : null} />}
+                      {key === "map" && (esOnline(body) ? (
+                        <TarjetaAcceso
+                          body={body}
+                          clave={claveApi}
+                          codigo={codigoChat}
+                          confirmado={Boolean(yaConfirmo)}
+                          preview={preview}
+                          accesoPreview={info?.acceso}
+                          onConfirmar={() => paginaRef.current?.scrollTo({ top: 0, behavior: "smooth" })}
+                        />
+                      ) : <TarjetaLugar body={body} clima={keys.includes("weather") ? clima : null} />)}
                       {key === "attendees" && listaAsistentes && (
                         <Asistentes
                           lista={listaAsistentes}

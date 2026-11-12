@@ -121,6 +121,11 @@ export type SideEventBody = {
   // Nombre del lugar (ej. "Salón Jardín"), opcional. Cuando existe, se
   // muestra en vez de la dirección debajo de la fecha en SideEvent.tsx.
   place_name?: string | null;
+  // Pop en línea (helpers/acceso.ts): modo y lo público del acceso. Lo
+  // privado (enlace, códigos, material) va en la columna `acceso`.
+  modo?: "presencial" | "online";
+  online?: { platform?: string | null; onlyConfirmed?: boolean; material?: number } | null;
+  zonaOnline?: string | null;
 };
 
 export type SideEvent = {
@@ -128,6 +133,8 @@ export type SideEvent = {
   // número sigue abriendo (solo eventos de antes del código). Ver
   // app/side-event/[side_event_id]/page.tsx.
   public_code?: string | null;
+  // Solo en "Ver en vivo" del editor (la página pública no la recibe).
+  acceso?: unknown;
   legacy_link_enabled?: boolean;
   // Solo vista previa del editor ("Ver en vivo"): confirmados reales que ya
   // tiene el editor, para no enseñar el ejemplo si el Pop ya tiene asistentes.

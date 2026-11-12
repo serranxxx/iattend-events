@@ -1,4 +1,5 @@
 import type React from "react";
+import { esOnline } from "@/helpers/acceso";
 import type { SideEventBody } from "@/types/side_event";
 
 /*
@@ -37,7 +38,8 @@ export const tarjetasDe = (body: SideEventBody | undefined, esPop: boolean) => {
     .map((c) => c.key as TarjetaSide)
     .filter((k) => ORDEN_TARJETAS.includes(k));
   const orden = [...new Set([...guardadas, ...ORDEN_TARJETAS])];
-  return orden.filter((k) => aplica(k, esPop)).map((key) => ({ key, hidden: ocultaDe(body, key) }));
+  // En línea (helpers/acceso.ts): Lugar se vuelve Acceso y el clima no aplica.
+  return orden.filter((k) => aplica(k, esPop) && !(k === "weather" && esOnline(body))).map((key) => ({ key, hidden: ocultaDe(body, key) }));
 };
 
 // Grupos de la página (handoff "Pop Layout" 3a), cada uno con su etiqueta
