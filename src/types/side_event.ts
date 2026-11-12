@@ -79,6 +79,8 @@ export type SideEventBody = {
   // Solo Pop: cuadro "Asistentes" con quienes confirmaron (y el selector de
   // emoji / color al confirmar). Opcional, apagado por omisión.
   showAttendees?: boolean | null;
+  // Pop público: "Permitir acompañantes" (sin valor = sí).
+  allowCompanions?: boolean | null;
   // Avatares de Asistentes: "emoji" (por omisión, colores alegres; el
   // invitado puede cambiar el suyo) o "initials" (iniciales, colores sobrios).
   attendeesStyle?: "emoji" | "initials" | null;

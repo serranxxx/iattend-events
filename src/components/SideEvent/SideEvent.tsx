@@ -1565,7 +1565,8 @@ export default function SideEvents({ info, password, preview, registroToken }: i
                           />
                         </div>
                       ))}
-                      {regAcompanantes.length < 10 && (
+                      {/* "Permitir acompañantes" del editor (body.allowCompanions, true sin valor). */}
+                      {info?.body?.allowCompanions !== false && regAcompanantes.length < 10 && (
                         <Button
                           type="text"
                           onClick={() => setRegAcompanantes((prev) => [...prev, ""])}
