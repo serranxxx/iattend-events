@@ -524,14 +524,16 @@
 
 .fundido_inferior {
   position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   /* El último 30% de la portada se funde con el color del fondo de la página:
      así no se ve el borde de abajo de los PNG ni del video, ni la orilla de
-     la pantalla bajo la barra de Safari. */
-  height: 30%;
-  background-image: linear-gradient(to bottom, transparent, color-mix(in srgb, var(--fondo-pagina) 70%, transparent) 60%, var(--fondo-pagina));
+     la pantalla bajo la barra de Safari. Al bajar, el fundido sube
+     (--fundido 0 → 1, lo escribe SideEvent.tsx con el scroll): las tarjetas
+     quedan sobre el color de la página y no sobre la foto. */
+  background-image: linear-gradient(to bottom,
+      transparent calc(70% - 60% * var(--fundido, 0)),
+      color-mix(in srgb, var(--fondo-pagina) 70%, transparent) calc(88% - 43% * var(--fundido, 0)),
+      var(--fondo-pagina) calc(100% - 25% * var(--fundido, 0)));
   pointer-events: none;
 }
 

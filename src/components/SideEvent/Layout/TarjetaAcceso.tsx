@@ -112,7 +112,7 @@ export default function TarjetaAcceso({ body, clave, codigo, confirmado, preview
       <div className={styles.cabecera}>
         <span className={styles.mosaico}><LogoPlataforma platform={platform} /></span>
         <span className={styles.textos}>
-          <span className={styles.titulo}>{txt.titulo}</span>
+          <span className={styles.titulo} data-una={!/\s/.test(txt.titulo) || undefined}>{txt.titulo}</span>
           <span className={styles.subtitulo}>{subtitulo}</span>
           {cuandoReunion && !bloqueada && <span className={styles.cuando}>{cuandoReunion}</span>}
         </span>

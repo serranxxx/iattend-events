@@ -114,7 +114,7 @@ export type SideEventBody = {
     speed?: number | null;
     label?: string | null;
     defaultCat?: string | null;
-    cats?: { id: string; name?: string | null; size?: "l" | "m" | "s" | null; color?: boolean | null }[] | null;
+    cats?: { id: string; name?: string | null; size?: "l" | "m" | "s" | null; color?: boolean | null; banda?: "fija" | "cinta" | null }[] | null;
     mono?: boolean | null;
     items?: { id: string; url: string; name?: string | null; cat?: string | null; tier?: "p" | "s" | "a" | null; w?: number | null; h?: number | null }[] | null;
   } | null;

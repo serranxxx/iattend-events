@@ -14,7 +14,7 @@ import type { SideEventBody } from "@/types/side_event";
 
 export type Acomodo = "portada" | "tarjeta" | "banda";
 export type TamanoCat = "l" | "m" | "s";
-export type CategoriaPatrocinio = { id: string; name: string; size: TamanoCat; color: boolean };
+export type CategoriaPatrocinio = { id: string; name: string; size: TamanoCat; color: boolean; banda?: "fija" | "cinta" | null };
 export type Patrocinador = { id: string; url: string; name?: string | null; cat: string; w?: number | null; h?: number | null };
 export type LogoMedido = Patrocinador & { ancho: number; alto: number; adaptar: boolean };
 export type Medida = { area: number; maxH: number; maxW: number };
@@ -49,11 +49,21 @@ const CAT_INICIAL = "patrocinadores";
 type Crudo = NonNullable<SideEventBody["sponsors"]> & { mono?: boolean | null };
 type ItemCrudo = { id: string; url: string; name?: string | null; cat?: string | null; tier?: string | null; w?: number | null; h?: number | null };
 
+// Banda: qué categorías van fijas arriba y cuáles corren en la cinta. Cada
+// categoría puede elegirlo (`banda: 'fija' | 'cinta'`); sin elegir, la
+// primera va fija si hay varias y las demás corren (con una sola, corre).
+export const enBanda = (cat: CategoriaPatrocinio | undefined, indice: number, total: number): "fija" | "cinta" =>
+  cat?.banda ?? (total > 1 && indice === 0 ? "fija" : "cinta");
+export const repartoBanda = <G extends { cat: CategoriaPatrocinio }>(grupos: G[]) => ({
+  fijas: grupos.filter((g, i) => enBanda(g.cat, i, grupos.length) === "fija"),
+  enCinta: grupos.filter((g, i) => enBanda(g.cat, i, grupos.length) === "cinta"),
+});
+
 export const normalizarPatrocinadores = (raw?: Crudo | null) => {
   const s = (raw ?? {}) as Crudo;
   const items = ((Array.isArray(s.items) ? s.items : []) as ItemCrudo[]).filter((it) => it?.url);
   let cats: CategoriaPatrocinio[] = Array.isArray(s.cats)
-    ? s.cats.filter((c) => c?.id).map((c) => ({ id: c.id, name: c.name ?? "", size: TAMANOS_CAT.includes(c.size as TamanoCat) ? (c.size as TamanoCat) : "m", color: Boolean(c.color) }))
+    ? s.cats.filter((c) => c?.id).map((c) => ({ id: c.id, name: c.name ?? "", size: TAMANOS_CAT.includes(c.size as TamanoCat) ? (c.size as TamanoCat) : "m", color: Boolean(c.color), banda: c.banda === "fija" || c.banda === "cinta" ? c.banda : null }))
     : [];
   let defaultCat = s.defaultCat ?? "";
   if (!cats.length) {

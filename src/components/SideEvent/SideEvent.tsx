@@ -172,6 +172,7 @@ export default function SideEvents({ info, password, preview, registroToken }: i
   // La página hace scroll dentro de este contenedor (de la pantalla visible
   // exacta), no en la ventana: así en iOS 26 Safari nada sube detrás de la
   // barra de estado; se corta justo donde empieza.
+  const fundidoRef = useRef<HTMLDivElement | null>(null);
   const paginaRef = useRef<HTMLDivElement>(null);
   const botonesRef = useRef<HTMLDivElement>(null);
   // Lienzo de los PNG (px dentro de la capa): la pieza del editor escalada
@@ -777,6 +778,8 @@ export default function SideEvents({ info, password, preview, registroToken }: i
     }
     const aplicar = () => {
       const avance = Math.min(1, Math.max(0, pagina.scrollTop / (pagina.clientHeight * 0.6)));
+      // El fundido de abajo de la portada sube con el scroll (solo su variable).
+      fundidoRef.current?.style.setProperty("--fundido", avance.toFixed(3));
       const escala = Math.round((1 + 0.5 * avance) * 1000) / 1000;
       if (escala === ultima) return;
       ultima = escala;
@@ -1301,6 +1304,7 @@ export default function SideEvents({ info, password, preview, registroToken }: i
             se funde con ese mismo color en vez de cortarse en seco. */}
         <div
           aria-hidden
+          ref={fundidoRef}
           className={styles.fundido_inferior}
           style={{ "--fondo-pagina": colorFondoPagina ?? "#000000" } as React.CSSProperties}
         />

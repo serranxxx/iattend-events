@@ -2,7 +2,7 @@
 
 import React from "react";
 import type { SideEventBody } from "@/types/side_event";
-import { acomodar, ANCHO_FILA, CINTA, etiquetaCategoria, GAP, logosDe, MEDIDA_PORTADA, patrocinadoresDe, porCategoria, type LogoMedido, type Medida } from "@/helpers/patrocinadores";
+import { acomodar, ANCHO_FILA, CINTA, etiquetaCategoria, GAP, logosDe, MEDIDA_PORTADA, patrocinadoresDe, porCategoria, type LogoMedido, type Medida, repartoBanda } from "@/helpers/patrocinadores";
 import { estiloDe, luminancia, variablesDeEstilo } from "@/helpers/estilosBloque";
 import { Cinta, Logo } from "./Cinta";
 import styles from "./patrocinadores.module.css";
@@ -71,28 +71,29 @@ export const TarjetaPatrocinadores = ({ body, vidrio }: { body: SideEventBody; v
 
 export const BandaPatrocinadores = ({ body, scroller }: { body: SideEventBody; scroller?: () => HTMLElement | null | undefined }) => {
   const s = patrocinadoresDe(body);
-  const grupos = porCategoria(s);
-  const [primera, ...resto] = grupos;
-  const varias = grupos.length > 1;
-  const enCinta = varias ? resto : grupos;
+  // Fijas arriba y las demás en la cinta; cada categoría lo elige (repartoBanda).
+  const { fijas, enCinta } = repartoBanda(porCategoria(s));
   const marcas = enCinta.reduce((n, g) => n + g.items.length, 0);
   const etiquetaCinta = enCinta.map((g) => etiquetaCategoria(g.cat)).filter(Boolean).join(" · ");
   return (
     <div className={styles.banda}>
-      {varias && (
-        <>
-          {etiquetaCategoria(primera.cat) && <span className={styles.nivel_titulo}>{etiquetaCategoria(primera.cat)}</span>}
+      {fijas.map(({ cat, items }, i) => (
+        <div key={cat.id} className={styles.banda_fija_grupo} data-primera={i === 0 || undefined}>
+          {etiquetaCategoria(cat) && <span className={styles.nivel_titulo}>{etiquetaCategoria(cat)}</span>}
           <div className={styles.banda_principal}>
-            <Filas logos={logosDe(primera.items, primera.cat)} ancho={ANCHO_FILA.bandaFija} gap={GAP.bandaFija} />
+            <Filas logos={logosDe(items, cat)} ancho={ANCHO_FILA.bandaFija} gap={GAP.bandaFija} />
           </div>
-          {/* Sobre la cinta, los nombres de sus categorías (las que tengan). */}
-          {etiquetaCinta && <span className={`${styles.nivel_titulo} ${styles.banda_segunda}`}>{etiquetaCinta}</span>}
+        </div>
+      ))}
+      {enCinta.length > 0 && (
+        <>
+          {fijas.length > 0 && etiquetaCinta && <span className={`${styles.nivel_titulo} ${styles.banda_segunda}`}>{etiquetaCinta}</span>}
+          <div className={styles.banda_cinta}>
+            <Cinta logos={logosCinta(enCinta)} gap={GAP.cinta} sp={CINTA.banda.sp} k={CINTA.banda.k} speed={s.speed} puntos arrastrable scroller={scroller} />
+          </div>
+          {fijas.length > 0 && <span className={styles.banda_pie}>{marcas} {marcas === 1 ? "marca" : "marcas"} · arrastra la cinta</span>}
         </>
       )}
-      <div className={styles.banda_cinta}>
-        <Cinta logos={logosCinta(enCinta)} gap={GAP.cinta} sp={CINTA.banda.sp} k={CINTA.banda.k} speed={s.speed} puntos arrastrable scroller={scroller} />
-      </div>
-      {varias && <span className={styles.banda_pie}>{marcas} {marcas === 1 ? "marca" : "marcas"} · arrastra la cinta</span>}
     </div>
   );
 };
