@@ -23,7 +23,16 @@ interface LiaGuestProps {
   // Primer mensaje fijo de Lia (ya traducido), p. ej. "¡Hola, Ana! Soy Lia…".
   greeting: string;
   quickQuestionLabel: string;
+  // "Ver en vivo" del editor (sin invitación real): una conversación de
+  // ejemplo y respuestas de muestra, sin llamar a la API ni gastar créditos.
+  demo?: boolean;
 }
+
+const DEMO_INICIO: Message[] = [
+  { role: "user", content: "¿A qué hora empieza la ceremonia?" },
+  { role: "assistant", content: "La ceremonia empieza a las **5:00 PM**. Te recomiendo llegar unos 20 minutos antes para encontrar lugar. 😊" },
+];
+const DEMO_RESPUESTA = "Así te respondería Lia. En tu invitación publicada contesta con los datos reales de tu evento: horarios, lugar, dresscode, regalos y más.";
 
 // ── Markdown renderer ─────────────────────────────────────────
 
@@ -65,9 +74,9 @@ function renderMarkdown(text: string): React.ReactNode {
 
 // ─────────────────────────────────────────────────────────────
 
-export default function LiaGuest({ invitationID, guestName, ui, lang, greeting, quickQuestionLabel }: LiaGuestProps) {
+export default function LiaGuest({ invitationID, guestName, ui, lang, greeting, quickQuestionLabel, demo = false }: LiaGuestProps) {
   const prompts = ui?.liaGuest.prompts ?? [];
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<Message[]>(demo ? DEMO_INICIO : []);
   const [loading, setLoading] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
 
@@ -84,6 +93,20 @@ export default function LiaGuest({ invitationID, guestName, ui, lang, greeting, 
 
   const sendMessage = async (text: string) => {
     if (!text.trim() || loading) return;
+
+    if (demo) {
+      setMessages((prev) => [
+        ...prev,
+        { role: "user", content: text.trim() },
+        { role: "assistant", content: "", streaming: true },
+      ]);
+      setLoading(true);
+      setTimeout(() => {
+        setLastAssistant({ role: "assistant", content: DEMO_RESPUESTA });
+        setLoading(false);
+      }, 900);
+      return;
+    }
 
     const history = messages
       .filter((m) => !m.streaming && !m.error)

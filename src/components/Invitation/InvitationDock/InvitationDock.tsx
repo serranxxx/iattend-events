@@ -596,10 +596,13 @@ export default function InvitationDock({
                   colors={{ primary, secondary, accent }}
                 />
               )}
-              {isPhotos && invitationID && (
+              {/* "Ver en vivo" del editor (dev, sin invitación real): fotos y
+                  conversación de ejemplo en lugar de un panel vacío. */}
+              {isPhotos && (invitationID || dev) && (
                 <PhotoWall
                   embedded
-                  eventId={invitationID}
+                  demo={!invitationID}
+                  eventId={invitationID || "demo"}
                   invitation={invitation}
                   shareCompanions={shareCompanions}
                   onClose={toBar}
@@ -610,11 +613,12 @@ export default function InvitationDock({
                   }}
                 />
               )}
-              {liaMounted && invitationID && (
+              {liaMounted && (invitationID || dev) && (
                 // Se queda montado al cambiar de pestaña para no perder la conversación.
                 <div className={styles.panel_body} style={{ display: tool === "lia" ? "flex" : "none" }}>
                   <LiaGuest
-                    invitationID={invitationID}
+                    demo={!invitationID}
+                    invitationID={invitationID ?? ""}
                     guestName={guestInfo?.name ?? undefined}
                     ui={ui}
                     lang={lang}

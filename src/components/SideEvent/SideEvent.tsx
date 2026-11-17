@@ -53,6 +53,10 @@ import { ajusteDe, CAMBIO_CARRUSEL_MS, cubrir, desenfoqueDe, estiloAjuste, esVid
 // lienzoCover en iattend-vite/src/modules/SideEvents/stickersPopData.js.
 const PIEZA_ANCHO = 390;
 const PIEZA_ALTO = 700;
+// Dónde empiezan los botones de confirmar en la pantalla de un celular (716 de
+// 812 px: 16 abajo + 80 de alto). En iPad / Mac la pieza de los elementos se
+// mide con esto (ver medir), para que queden respecto a los botones igual.
+const BOTONES_EN_CELULAR = 0.88;
 // `sizes` de un PNG que ocupa w% del lienzo. El lienzo mide lo de la columna
 // (hasta 450 px) y en pantallas alargadas un poco más (cover): se pide con
 // 25% de holgura para que no salga borroso.
@@ -175,6 +179,9 @@ export default function SideEvents({ info, password, preview, registroToken }: i
   const fundidoRef = useRef<HTMLDivElement | null>(null);
   const paginaRef = useRef<HTMLDivElement>(null);
   const botonesRef = useRef<HTMLDivElement>(null);
+  // Primera pantalla (título, fecha, lugar y botones): en iPad / Mac la pieza
+  // de los elementos termina donde termina ella (ver medir).
+  const primeraRef = useRef<HTMLDivElement>(null);
   // Lienzo de los PNG (px dentro de la capa): la pieza del editor escalada
   // para cubrir la pantalla, ver lienzoCover.
   const [lienzoStickers, setLienzoStickers] = useState<{ left: number; top: number; width: number; height: number } | null>(null);
@@ -502,6 +509,27 @@ export default function SideEvents({ info, password, preview, registroToken }: i
   // ocupa toda la pantalla, sin zona segura: los botones flotan encima.
   useLayoutEffect(() => {
     const medir = () => {
+      // iPad / Mac: el texto y los botones empiezan al 54% de la pantalla, no
+      // al fondo como en el celular. Para que los elementos queden igual
+      // respecto a ellos, la pieza (357 × 631, arriba y centrada; x / y siguen
+      // en % de ella) mide lo que mediría la pantalla de un celular con los
+      // botones donde están: en el celular empiezan al 88% de la pantalla
+      // (BOTONES_EN_CELULAR). Sin botones (ya confirmó), termina 16 px bajo la
+      // primera pantalla, como el celular. En el celular no cambia nada.
+      const pagina = paginaRef.current;
+      const primera = primeraRef.current;
+      if (pagina) {
+        if (escena && primera) {
+          const botones = botonesRef.current;
+          const arribaDe = (el: HTMLElement) => el.getBoundingClientRect().top - pagina.getBoundingClientRect().top + pagina.scrollTop;
+          const alto = botones && botones.offsetParent
+            ? arribaDe(botones) / BOTONES_EN_CELULAR
+            : primera.offsetTop + primera.offsetHeight + 16;
+          pagina.style.setProperty("--escena-elementos", `${Math.round(Math.min(window.innerHeight, alto))}px`);
+        } else {
+          pagina.style.removeProperty("--escena-elementos");
+        }
+      }
       const capa = capaStickersRef.current;
       if (!capa) return;
       // Tamaño de layout (offset*), no getBoundingClientRect: ese incluye el
@@ -540,6 +568,7 @@ export default function SideEvents({ info, password, preview, registroToken }: i
     const ro = new ResizeObserver(medir);
     if (botonesRef.current?.parentElement) ro.observe(botonesRef.current.parentElement);
     if (capaStickersRef.current) ro.observe(capaStickersRef.current);
+    if (primeraRef.current) ro.observe(primeraRef.current);
     return () => {
       window.clearTimeout(t);
       window.removeEventListener("resize", medir);
@@ -757,12 +786,21 @@ export default function SideEvents({ info, password, preview, registroToken }: i
     if (escena) {
       const capas = [heroRef.current, escenaRef.current].filter((el): el is HTMLDivElement => Boolean(el));
       document.querySelectorAll<HTMLElement>("[data-zoom]").forEach((el) => { el.style.transform = ""; });
+      // Los elementos y los efectos (los [data-zoom] de la portada fija, no la
+      // foto) se acercan como en el celular (1 → 1.5 en el 60% de la
+      // pantalla): sin eso un elemento sin anclar parecía fijo.
+      const deEscena = () => Array.from(escenaRef.current?.querySelectorAll<HTMLElement>("[data-zoom]") ?? []);
       const reducir = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       const aplicarEscena = () => {
         const k = Math.min(1, Math.max(0, pagina.scrollTop / 520));
         const opacidad = String(Math.round((1 - 0.85 * k) * 1000) / 1000);
         const escala = reducir ? "" : `scale(${Math.round((1 + 0.04 * k) * 1000) / 1000})`;
         capas.forEach((el) => { el.style.opacity = opacidad; el.style.transform = escala; });
+        if (!reducir) {
+          const avance = Math.min(1, Math.max(0, pagina.scrollTop / (pagina.clientHeight * 0.6)));
+          const zoom = `scale(${Math.round((1 + 0.5 * avance) * 1000) / 1000})`;
+          deEscena().forEach((el) => { el.style.transform = zoom; });
+        }
       };
       const onScrollEscena = () => {
         cancelAnimationFrame(cuadro);
@@ -774,6 +812,7 @@ export default function SideEvents({ info, password, preview, registroToken }: i
         cancelAnimationFrame(cuadro);
         pagina.removeEventListener("scroll", onScrollEscena);
         capas.forEach((el) => { el.style.opacity = ""; el.style.transform = ""; });
+        deEscena().forEach((el) => { el.style.transform = ""; });
       };
     }
     const aplicar = () => {
@@ -1154,10 +1193,11 @@ export default function SideEvents({ info, password, preview, registroToken }: i
           />
         )}
       </HojaPop>
-      {/* Canción de un Pop: el mismo reproductor compacto del Save the Date
-          (disco arriba a la izquierda; gira mientras suena). */}
+      {/* Canción de un Pop / side event: el mismo reproductor de la invitación
+          (píldora con portada, nombre, artista y pausa mientras suena; disco
+          cuando está en pausa), arriba a la izquierda. */}
       {info?.body.song && (
-        <SongPlayer song={info.body.song} accent="#FFFFFF" secondary="#FFFFFF" dev={false} compact />
+        <SongPlayer song={info.body.song} accent="#FFFFFF" secondary="#FFFFFF" dev={false} />
       )}
       {/* Con video de fondo se apagan los desenfoques en vivo (con_video): se
           recalculaban en cada cuadro del video y lo trababan. */}
@@ -1266,7 +1306,7 @@ export default function SideEvents({ info, password, preview, registroToken }: i
                   pesaba ~1 MB; así ~100 KB). Van en la primera pantalla, con
                   prioridad. width/height solo dan la proporción inicial: el
                   alto real sale de la imagen (height: auto). */}
-              {pintarStickers((info?.body.stickers ?? []).filter((st) => !st.hidden && !enFoto(st) && !st.tarjeta && !st.fotoSrc))}
+              {pintarStickers((info?.body.stickers ?? []).filter((st) => !st.hidden && !st.fijo && !enFoto(st) && !st.tarjeta && !st.fotoSrc))}
             </div>
             {/* Dibujos anclados a la foto, en su recuadro. */}
             {marcoFoto && (
@@ -1326,12 +1366,28 @@ export default function SideEvents({ info, password, preview, registroToken }: i
               } as React.CSSProperties
             }
           >
+            {/* Elementos anclados a la página (`fijo`, el pin de la barra del
+                elemento en el editor): en la primera pantalla de esta columna,
+                así suben con el scroll como la fecha y el lugar, sin el zoom ni
+                el desvanecido de la portada; encima del texto y las tarjetas.
+                Misma columna y lienzo que la capa de la portada. */}
+            {(info?.body.stickers ?? []).some((st) => !st.hidden && st.fijo && st.kind !== "dibujo") && (
+              <div aria-hidden className={styles.capa_anclados}>
+                <div className={styles.columna_fija}>
+                  <div className={styles.stickers_capa}>
+                    <div className={styles.stickers_lienzo} style={lienzoStickers ?? { visibility: "hidden" }}>
+                      {pintarStickers((info?.body.stickers ?? []).filter((st) => !st.hidden && st.fijo && st.kind !== "dibujo"))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
             {/* Primera pantalla: título, fecha, lugar y botones de confirmar,
                 con los botones al fondo de la pantalla (16 px abajo). Al hacer
                 scroll todo esto y lo demás (itinerario, cómo llegar, notas…)
                 sube encima de la portada fija. El editor (iattend-vite,
                 SideCanvas) acomoda la pieza igual. */}
-            <div data-titulo-y={posicionTitulo(info?.body).y} className={`${styles.primera_pantalla} ${!confirmStep && !registro && !cambiandoRespuesta && (guestInfo?.state === "confirmado" || registroToken) ? styles.primera_confirmado : ""}`}>
+            <div ref={primeraRef} data-titulo-y={posicionTitulo(info?.body).y} className={`${styles.primera_pantalla} ${!confirmStep && !registro && !cambiandoRespuesta && (guestInfo?.state === "confirmado" || registroToken) ? styles.primera_confirmado : ""}`}>
               {/* Título, fecha y lugar se pueden ocultar desde Capas (coverHidden).
                   El título va solo en un bloque que ocupa el alto libre y se
                   acomoda en una cuadrícula 3 × 3 (body.titlePosition); la fecha

@@ -174,6 +174,28 @@
   z-index: 2;
 }
 
+/* Elementos anclados a la página (body.stickers[].fijo): la primera pantalla
+   de la columna (empieza arriba de la página); suben con el scroll, sin zoom,
+   encima del texto y las tarjetas. */
+.info_cont>.capa_anclados {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.capa_anclados .stickers_capa {
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  transform: none;
+}
+
 .col {
   display: flex;
   align-items: center;
@@ -583,9 +605,12 @@
      el video) cubre toda la ventana con sus mismas capas (desenfoque de
      abajo, sombra, velo, tinte y fundido). Sin ambiente ni recuadro.
    · Los elementos (PNG, textos, dibujos) van en la pieza del editor
-     (357 × 631) escalada al alto de la pantalla y centrada, sin recorte ni
-     recuadro visible; los dibujos anclados a la foto siguen a la foto.
-   · Al bajar la portada se desvanece y crece 4% (SideEvent.tsx).
+     (357 × 631), arriba y centrada, del alto que va de arriba de la pantalla
+     al final de la primera pantalla (título, fecha y botones; como el
+     celular, que termina bajo sus botones), sin recorte ni recuadro
+     visible; los dibujos anclados a la foto siguen a la foto.
+   · Al bajar la portada se desvanece y crece 4%; los elementos y los
+     efectos además se acercan como en el celular (SideEvent.tsx).
    · Título, fecha, lugar y botones desde el 54% de la pantalla; debajo las
      tarjetas (una columna de 600 px; en escritorio el mosaico de
      Layout/layout.module.css). */
@@ -612,18 +637,25 @@
     transform-origin: 50% 50%;
   }
 
+  /* La pieza de los elementos: arriba y centrada, del alto que mide
+     SideEvent.tsx (--escena-elementos: hasta el final de la primera pantalla,
+     así los elementos quedan respecto al texto y los botones como en el
+     celular); sin medir todavía, el alto de la escena. */
   .pop .columna_fija {
     position: absolute;
-    inset: 0;
-    margin: auto;
-    width: calc(var(--escena-alto) * 357 / 631);
-    height: var(--escena-alto);
+    top: 0;
+    left: 0;
+    right: 0;
+    margin: 0 auto;
+    width: calc(var(--escena-elementos, var(--escena-alto)) * 357 / 631);
+    height: var(--escena-elementos, var(--escena-alto));
     overflow: visible;
   }
 
   /* Sin recorte a los lados: los elementos (y el brillo del neón) siguen
      sobre la foto hasta la orilla de la ventana. */
-  .pop .portada_fija .stickers_capa {
+  .pop .portada_fija .stickers_capa,
+  .pop .capa_anclados .stickers_capa {
     overflow: visible;
   }
 

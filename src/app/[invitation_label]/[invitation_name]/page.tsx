@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Invitation from "@/components/Invitation/Invitation/Invitation";
+import InvitacionPdf from "@/components/InvitacionPdf/InvitacionPdf";
+import { esPdf, fuenteDePortada } from "@/helpers/pdfInvitacion";
 import { InvitationType, NewInvitation } from "@/types/new_invitation";
 import { createClient } from "@/lib/supabase/server";
 import { getPublicServerClient } from "@/lib/supabase/public-server";
@@ -60,7 +62,9 @@ export async function generateMetadata({ params }: { params: Promise<RouteParams
 
   const inv = data.data as NewInvitation;
 
-  const rawImage = data.url_image ?? inv?.cover?.image?.prod
+  // Invitación en PDF: la imagen del link es su primera página (url_image es
+  // la del diseño de I attend).
+  const rawImage = esPdf(inv) ? fuenteDePortada(inv) : data.url_image ?? inv?.cover?.image?.prod
   const url_image = typeof rawImage === "string" ? rawImage : undefined;
 
   const title = inv?.cover?.title?.text?.value ?? "Invitación";
@@ -153,8 +157,27 @@ export default async function InvitationDynamicPage({ params, searchParams }: Pa
     : invitation;
 
   const ui = await getTranslatedCopy("invitation_ui_v1", lang ?? "es", "es");
+
   const textures = await getTextures();
   const giftBrands = await getGiftBrands();
+
+  // Invitación en PDF (data.formato === 'pdf'): el PDF del organizador con los
+  // botones de I attend encima. Sin traducción (el PDF es una imagen).
+  if (esPdf(invitation)) {
+    return (
+      <InvitacionPdf
+        invitation={invitation}
+        invitationID={invitationID}
+        ui={ui}
+        type={type}
+        plan={plan}
+        phone_number={phone_number}
+        password={password}
+        lang={lang}
+        textures={textures}
+      />
+    );
+  }
 
   return (
     <Invitation

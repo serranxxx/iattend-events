@@ -20,7 +20,8 @@
    elementos respecto al título entre el editor y la invitación real. */
 .layer[data-layer-section="cover"] {
   bottom: auto;
-  height: 100dvh;
+  /* --alto-pantalla: la pieza completa del editor (Dibujar), Invitation `completa`. */
+  height: var(--alto-pantalla, 100dvh);
 }
 
 .layer[data-active] .clip {
@@ -500,4 +501,20 @@
 .layerOption[data-on] {
   background: #EFEAFF;
   color: #6D3CFA;
+}
+
+/* ── Trazos de la herramienta Dibujar (kind "dibujo") ──
+   Como en un Pop: fuera de Dibujar no se eligen ni se mueven (el clic los
+   atraviesa). Con la pluma de selección del editor (html[data-dibujo=
+   "seleccion"], HostClient) solo ellos responden. */
+.layer[data-edit] .item[data-kind="dibujo"] {
+  pointer-events: none;
+}
+
+:global(html[data-dibujo="seleccion"]) .layer[data-edit] .item[data-kind="dibujo"] {
+  pointer-events: auto;
+}
+
+:global(html[data-dibujo="seleccion"]) .layer[data-edit] .item:not([data-kind="dibujo"]) {
+  pointer-events: none;
 }

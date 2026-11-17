@@ -1,5 +1,8 @@
 "use client";
 import Invitation from "@/components/Invitation/Invitation/Invitation";
+import InvitacionPdf from "@/components/InvitacionPdf/InvitacionPdf";
+import { esPdf } from "@/helpers/pdfInvitacion";
+import { borrarEnSeccion, esBorrador, trazoNuevo, type Pincel } from "@/helpers/dibujoInvitacion";
 import uiES from "@/data/ui/invitation_ui_es";
 import { InvitationType, InvitationUIBundle, LayerItem, NewInvitation } from "@/types/new_invitation";
 import { Texture } from "@/lib/textures/cache";
@@ -95,6 +98,10 @@ export default function HostClient({ textures, giftBrands }: Props) {
   const [vistaConfirmada, setVistaConfirmada] = useState(false);
   // Plan de la invitación (solo "Ver en vivo" del editor; HOST_PROPS.plan).
   const [plan, setPlan] = useState<string | null>(null);
+  // Dibujar a pantalla completa (editor): la pieza a todo su largo; el valor
+  // es el alto de una pantalla en px (Invitation `completa`).
+  const [completa, setCompleta] = useState<number | null>(null);
+  const [dibujando, setDibujando] = useState<string | null>(null);
   const [selectedSection, setSelectedSection] = useState<string | null>(null);
   // El editor de escritorio muestra su barra de texto al elegir un texto: sin
   // las "T" de la pieza (textBar).
@@ -154,6 +161,43 @@ export default function HostClient({ textures, giftBrands }: Props) {
         // (html[data-edit-movil] en styles/modules.css).
         if (payload.editMovil) document.documentElement.dataset.editMovil = "";
         else delete document.documentElement.dataset.editMovil;
+        setCompleta(typeof payload.completa === "number" ? payload.completa : null);
+        // Herramienta Dibujar: "pincel" (el editor toma el puntero) o
+        // "seleccion" (solo los trazos responden; section-layer.module.css).
+        setDibujando(payload.dibujo ? String(payload.dibujo) : null);
+        if (payload.dibujo) document.documentElement.dataset.dibujo = String(payload.dibujo);
+        else delete document.documentElement.dataset.dibujo;
+      }
+      // Dibujar: un trazo terminado (puntos en px de este documento). Se ancla
+      // a la sección donde empieza; el borrador recorta los trazos que toca.
+      if (type === "HOST_DIBUJO_TRAZO" && Array.isArray(payload?.pts) && payload.pts.length && payload?.pincel) {
+        const pts = payload.pts as [number, number][];
+        const pincel = payload.pincel as Pincel;
+        const inv = invitationRef.current;
+        if (!inv) return;
+        const decor = inv.decorations ?? {};
+        const cambios: Record<string, LayerItem[]> = {};
+        let id: string | null = null;
+        let section: string | null = null;
+        if (esBorrador(pincel)) {
+          for (const [sec, items] of Object.entries(decor)) {
+            if (!items?.some((it) => it.kind === "dibujo")) continue;
+            const zona = zoneByName(sec);
+            if (!zona) continue;
+            const nueva = borrarEnSeccion(items, pts, layerBox(zona).getBoundingClientRect(), pincel);
+            if (nueva) cambios[sec] = nueva;
+          }
+          if (!Object.keys(cambios).length) return;
+        } else {
+          const zona = pts.map(([x, y]) => zoneAt(x, y)).find(Boolean) ?? null;
+          section = zona?.dataset.editZone ?? null;
+          if (!zona || !section) return;
+          const nuevo = trazoNuevo(pts, layerBox(zona).getBoundingClientRect(), pincel);
+          id = nuevo.id;
+          cambios[section] = [...(decor[section] ?? []), nuevo];
+        }
+        setInvitation((prev) => (prev ? { ...prev, decorations: { ...(prev.decorations ?? {}), ...cambios } } : prev));
+        window.parent?.postMessage({ type: "REMOTE_DIBUJO", payload: { cambios, tipo: esBorrador(pincel) ? "borrar" : "trazo", id, section } }, ev.origin);
       }
       // El organizador tocó el tablero del editor, fuera de la pieza: los
       // bloques elegidos (título, fecha…) se sueltan.
@@ -176,9 +220,10 @@ export default function HostClient({ textures, giftBrands }: Props) {
         if (type === "HOST_LAYER_DROP") zoneEl = zoneAt(payload.x, payload.y);
         else {
           const sel = selectedSectionRef.current === "generals" ? null : selectedSectionRef.current;
-          zoneEl = [payload.section, sel, visibleSectionRef.current, "cover"]
+          // "pdf": la invitación en PDF tiene una sola zona.
+          zoneEl = [payload.section, sel, visibleSectionRef.current, "cover", "pdf"]
             .map((name) => zoneByName(name))
-            .find((el) => inView(el)) ?? zoneByName("cover");
+            .find((el) => inView(el)) ?? zoneByName("cover") ?? zoneByName("pdf");
         }
         const section = zoneEl?.dataset.editZone;
         if (!zoneEl || !section) return;
@@ -410,6 +455,33 @@ export default function HostClient({ textures, giftBrands }: Props) {
     return () => ro.disconnect();
   }, [hostOrigin]);
 
+  // Invitación en PDF: la misma pieza que ve el invitado (editMode = tocar el
+  // PDF lo elige; "Ver en vivo" = botones inertes). Ver InvitacionPdf.tsx.
+  if (invitation && esPdf(invitation)) {
+    return (
+      <div ref={rootRef} style={{ width: '100%'}}>
+        <InvitacionPdf
+          invitation={invitation}
+          invitationID=""
+          ui={ui}
+          type={"open" as InvitationType}
+          plan={plan ?? "lite"}
+          phone_number={null}
+          lang={lang}
+          textures={textures}
+          textureOverride={textureOverride}
+          dev
+          editMode={editMode}
+          selectedSection={selectedSection}
+          onSelectSection={handleSelectSection}
+          onFieldChange={handleFieldChange}
+          vistaConfirmada={vistaConfirmada}
+          dibujando={dibujando}
+        />
+      </div>
+    );
+  }
+
   return invitation ? (
     <div ref={rootRef} style={{ width: '100%'}} className="scroll-invitation">
       <Invitation
@@ -435,6 +507,8 @@ export default function HostClient({ textures, giftBrands }: Props) {
         onFieldTool={handleFieldTool}
         onClearField={handleClearField}
         vistaConfirmada={vistaConfirmada}
+        completa={completa}
+        dibujando={dibujando}
         {...(plan ? { plan } : {})}
       />
     </div>

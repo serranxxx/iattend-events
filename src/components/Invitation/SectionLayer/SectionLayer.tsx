@@ -10,6 +10,8 @@ import { Separador } from "../Separator/Separator";
 import { iconsItinerary } from "@/helpers/icons";
 import styles from "./section-layer.module.css";
 import Vector from "../../Vector/Vector";
+import Dibujo from "../../SideEvent/Dibujo";
+import type { PopSticker } from "@/types/side_event";
 
 // Capa de elementos sueltos de una sección (stickers, íconos, textos y
 // líneas que el organizador pone desde Elementos / Stickers del editor de
@@ -64,7 +66,12 @@ const centrarEnScroll = (el?: HTMLElement | null) => {
   if (!el) return;
   let c = el.parentElement;
   while (c && !(c.scrollHeight > c.clientHeight && /(auto|scroll)/.test(getComputedStyle(c).overflowY))) c = c.parentElement;
-  if (!c) return;
+  // Sin contenedor propio (la invitación en PDF hace scroll con el documento).
+  if (!c) {
+    const r = el.getBoundingClientRect();
+    window.scrollTo({ top: Math.max(0, window.scrollY + r.top - window.innerHeight / 2 + r.height / 2), behavior: "smooth" });
+    return;
+  }
   const r = el.getBoundingClientRect();
   const cr = c.getBoundingClientRect();
   c.scrollTo({ top: Math.max(0, c.scrollTop + r.top - cr.top - c.clientHeight / 2 + r.height / 2), behavior: "smooth" });
@@ -396,6 +403,8 @@ export function SectionLayer({ section, items, editMode = false, accent, titleFo
   const renderContent = (it: LayerItem) => {
     const color = it.color || accent;
     if (it.kind === "sticker") return <img src={it.url} alt="" draggable={false} className={styles.img} />;
+    // Trazo de la herramienta Dibujar (el mismo SVG que en un Pop).
+    if (it.kind === "dibujo") return <Dibujo s={it as unknown as PopSticker} />;
     if (it.kind === "icon") {
       // SVG del catálogo del editor: pintado del color del elemento (mask) o
       // tal cual si no es de un solo color.

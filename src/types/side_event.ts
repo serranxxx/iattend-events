@@ -211,6 +211,8 @@ export interface PopSticker {
   radius?: number | null;
   flipX?: boolean | null;
   flipY?: boolean | null;
+  /** Anclado a la página: sube con el scroll como la fecha, sin el zoom de la portada, encima de las tarjetas. */
+  fijo?: boolean | null;
   x: number;
   y: number;
   w: number;

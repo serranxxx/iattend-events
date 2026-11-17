@@ -74,6 +74,16 @@ type invProps = {
   // Solo vista previa del editor (dev): "Ver en vivo" → Confirmado. Usa un
   // invitado de ejemplo ya confirmado (sin id ni código: no toca datos).
   vistaConfirmada?: boolean;
+  // Editor (Dibujar, a pantalla completa): la pieza entera a lo largo, sin
+  // scroll propio. Es el alto de una pantalla (px): la portada y su capa de
+  // elementos lo siguen midiendo (--alto-pantalla), aunque el iframe mida
+  // todo el largo de la invitación.
+  completa?: number | null;
+  // Editor → Dibujar: "pincel" | "seleccion". La pieza se pinta como la ve el
+  // invitado (sin controles de edición) y sus zonas siguen marcadas
+  // (data-edit-zone) para anclar los trazos; con la pluma de selección solo
+  // las capas de elementos quedan en edición (sus trazos se eligen y mueven).
+  dibujando?: string | null;
 };
 
 // Módulos con herramientas de fondo y separador sobre la pieza (modo edición).
@@ -103,14 +113,15 @@ const MODULE_NAME: Record<"es" | "en", Record<number, string>> = {
 
 // Invitado de ejemplo de "Ver en vivo" → Confirmado (sin id ni código: no
 // toca datos reales; refreshGuest y confirmar no encuentran nada que cambiar).
-const INVITADO_EJEMPLO = {
+export const INVITADO_EJEMPLO = {
   invitation_id: "", password: "", phone_number: "", name: "Invitado de ejemplo", tier: "A", tag: "",
   table: null, state: "confirmado", last_action: "confirmado", notes: "", meal: null, companion_id: null,
   ticket: true, has_companion: false, last_action_by: "guest", created_at: "", last_update_date: "",
   side: null, type: null, invitation_sent_at: null, reminder_count: 0, last_reminder_at: null, special_needs: null,
 } as unknown as GuestSubabasePayload;
 
-export default function Invitation({ password, invitationID, ui, lang, availableLanguages, invitation, loader, type, mongoID, dev, plan, phone_number, scrollToSection, scrollKey, onSectionChange, textures = [], textureOverride = null, giftBrands = [], editMode = false, textBar = false, selectedSection = null, onSelectSection, onFieldChange, onFieldTool, onClearField, vistaConfirmada = false }: invProps) {
+export default function Invitation({ password, invitationID, ui, lang, availableLanguages, invitation, loader, type, mongoID, dev, plan, phone_number, scrollToSection, scrollKey, onSectionChange, textures = [], textureOverride = null, giftBrands = [], editMode: editModeProp = false, textBar = false, selectedSection = null, onSelectSection, onFieldChange, onFieldTool, onClearField, vistaConfirmada = false, completa = null, dibujando = null }: invProps) {
+  const editMode = editModeProp && !dibujando;
   const coverRef = useRef<HTMLDivElement>(null);
   const greetingRef = useRef<HTMLDivElement>(null);
   const peopleRef = useRef<HTMLDivElement>(null);
@@ -332,7 +343,7 @@ export default function Invitation({ password, invitationID, ui, lang, available
     <SectionLayer
       section={section}
       items={invitation?.decorations?.[section] ?? []}
-      editMode={editMode}
+      editMode={editMode || dibujando === "seleccion"}
       accent={invitation?.generals?.colors?.accent ?? "#29262D"}
       titleFont={invitation?.generals?.fonts?.titles?.typeFace ?? invitation?.generals?.fonts?.body?.typeFace}
       bodyFont={invitation?.generals?.fonts?.body?.typeFace}
@@ -354,7 +365,7 @@ export default function Invitation({ password, invitationID, ui, lang, available
     // su padding (data-module-zone), no un gap del contenedor.
     if (!editMode) {
       return (
-        <div key={key} className={styles.layerHost} data-module-zone={section}>
+        <div key={key} className={styles.layerHost} data-module-zone={section} data-edit-zone={dibujando ? section : undefined}>
           {/* Antes del módulo: sus elementos "detrás" quedan bajo el contenido. */}
           {invitation?.decorations?.[section]?.length ? layerFor(section) : null}
           {node}
@@ -985,8 +996,10 @@ export default function Invitation({ password, invitationID, ui, lang, available
               // caja quedaba más alta que la pantalla y el final (footer) no
               // se alcanzaba.
               ...(dev ? { minHeight: "100dvh" } : {}),
+              // Pieza completa (Dibujar): todo el largo, una "pantalla" = completa px.
+              ...(completa ? { maxHeight: "none", minHeight: `${completa}px`, overflow: "visible", ["--alto-pantalla" as string]: `${completa}px` } : {}),
               position: "relative",
-            }}
+            } as React.CSSProperties}
           >
             {zone("cover", (
               <Cover ui={ui} lang={lang} ref={coverRef} dev={dev} invitation={invitation} height={"100vh"} validated={validated} bleed={!dev} editMode={editMode} textBar={textBar} onFieldChange={onFieldChange} onSelectField={(field) => (field ? onSelectSection?.("cover", field) : onClearField?.())} onFieldTool={onFieldTool} />

@@ -1,0 +1,237 @@
+.pagina {
+  min-height: 100dvh;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  width: 100%;
+}
+
+/* Celular: las páginas a todo el ancho, pegadas, como un solo documento. */
+.documento {
+  width: 100%;
+  max-width: 760px;
+  margin: 0 auto;
+  padding-bottom: calc(112px + env(safe-area-inset-bottom));
+  position: relative;
+  transition: filter 0.5s ease;
+}
+
+/* Caja de las páginas y de sus elementos sueltos (SectionLayer). Las
+   páginas van pegadas también en escritorio: si hubiera huecos fijos en px,
+   la altura dejaría de ser proporcional al ancho y los elementos (en % de
+   esta caja) se moverían respecto al PDF entre celular y escritorio. */
+.hojas {
+  position: relative;
+  width: 100%;
+}
+
+/* Lienzo del editor: tocar el PDF lo elige (la capa "PDF" de Capas). */
+.hojas[data-editable] {
+  cursor: pointer;
+}
+
+.hojas[data-editable]:hover,
+.hojas[data-drop-target] {
+  outline: 2px dashed rgba(139, 120, 230, 0.6);
+  outline-offset: -2px;
+}
+
+.hojas[data-elegido],
+.hojas[data-elegido]:hover {
+  outline: 2px solid #8b78e6;
+  outline-offset: -2px;
+}
+
+.pag {
+  /* Encima de los elementos "detrás" (z 0) y debajo de los de enfrente (z 50). */
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  height: auto;
+  background: #FFF;
+}
+
+.vacio {
+  min-height: 80dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  text-align: center;
+  font-size: 16px;
+}
+
+.vacioCaja {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 32px 24px;
+  border: 2px dashed;
+  border-radius: 24px;
+  font-size: 14px;
+}
+
+.vacioCaja b {
+  font-size: 16px;
+}
+
+/* Tableta y escritorio: columna centrada; cada página del PDF es una hoja
+   con su sombra (los tramos de una página larga van pegados). */
+@media (min-width: 800px) {
+  .documento {
+    padding-top: 32px;
+  }
+
+  .hojas {
+    box-shadow: 0 0 24px rgba(0, 0, 0, 0.12);
+    border-radius: 6px;
+  }
+}
+
+/* ── Invitación privada sin código ── */
+.bloqueo {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 40px;
+  box-sizing: border-box;
+  background: rgba(0, 0, 0, 0.28);
+  text-align: center;
+}
+
+.candado {
+  width: 80px;
+  height: 80px;
+  border-radius: 99px;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.15);
+}
+
+.bloqueoTitulo {
+  font-size: 24px;
+  font-weight: 800;
+  color: #FFF;
+  text-shadow: 0 0 12px rgba(0, 0, 0, 0.25);
+}
+
+.bloqueoTexto {
+  max-width: 340px;
+  font-size: 15px;
+  color: #FFF;
+  text-shadow: 0 0 8px rgba(0, 0, 0, 0.25);
+}
+
+.bloqueoForm {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 280px;
+}
+
+.bloqueoInput {
+  min-height: 56px;
+  border-radius: 99px !important;
+  border-width: 2px !important;
+  background: rgba(255, 255, 255, 0.15) !important;
+  color: #FFF !important;
+  font-size: 18px !important;
+  text-align: center;
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.2);
+}
+
+.bloqueoInput::placeholder {
+  color: rgba(255, 255, 255, 0.6);
+  font-style: italic;
+}
+
+.bloqueoBoton {
+  width: 100%;
+  height: 56px;
+  border: none;
+  border-radius: 99px;
+  background: #FFF;
+  color: #29262D;
+  font: inherit;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  cursor: pointer;
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.2);
+}
+
+/* ── "¡Hola, Ana!" al entrar ── */
+.saludo {
+  position: fixed;
+  top: calc(16px + env(safe-area-inset-top));
+  left: 50%;
+  z-index: 40;
+  display: flex;
+  padding: 10px 18px;
+  border-radius: 99px;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(12px);
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 15px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, -12px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+.saludo b {
+  color: #FFF;
+}
+
+.saludo[data-visible] {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+/* ── Hoja de confirmación ── */
+.hoja {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.hojaCabeza {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 16px 20px;
+  flex-shrink: 0;
+}
+
+.cerrar {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.hojaCuerpo {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 20px 20px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .documento,
+  .saludo {
+    transition: none;
+  }
+}

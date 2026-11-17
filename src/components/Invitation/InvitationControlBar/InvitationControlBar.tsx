@@ -20,6 +20,9 @@ type InvitationControlBarProps = {
   onOpenConfirm: () => void;
   // Layout web: dentro del panel de la portada en vez de fijo al viewport.
   anchored?: boolean;
+  // Fondo de la píldora ya confirmado. La invitación en PDF lo usa: sobre un
+  // PDF claro el vidrio solo con el texto `accent` no se leía.
+  pillBackground?: string;
 };
 
 // Barra de los planes Lite y paperless. El plan Pro usa InvitationDock.
@@ -37,6 +40,7 @@ export default function InvitationControlBar({
   hidden = false,
   onOpenConfirm,
   anchored = false,
+  pillBackground,
 }: InvitationControlBarProps) {
   if (hidden) return null;
   const isConfirmed = guestInfo?.state === 'confirmado' || guestInfo?.state === 'asistente';
@@ -67,7 +71,7 @@ export default function InvitationControlBar({
   if (showLite) {
     return (
       <div className={wrapperClass}>
-        <div className={styles.pill}>
+        <div className={styles.pill} style={pillBackground ? { background: pillBackground } : undefined}>
           <button
             className={styles.liaBtn}
             style={{ color: accent }}

@@ -10,6 +10,7 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { supportsAppleWallet, useWalletPass } from "./useWalletPass";
 import { WalletHelpSheet } from "./WalletHelpSheet";
+import { fuenteDePortada } from "@/helpers/pdfInvitacion";
 
 type TicketColors = {
   primary: string;
@@ -47,7 +48,7 @@ export function Ticket({ guest, invitation, ui, colors, onClose, id, variant = "
   const { primary, accent } = colors;
   const font = invitation.generals.fonts.body?.value ?? "Poppins";
   // Foto y título del pase (editor de vite → Pase digital) o los de la portada.
-  const coverImageSrc = toCoverImageUrl(invitation.wallet?.image) || toCoverImageUrl(invitation.cover.image.prod);
+  const coverImageSrc = toCoverImageUrl(invitation.wallet?.image) || toCoverImageUrl(fuenteDePortada(invitation) as Parameters<typeof toCoverImageUrl>[0]);
   const tituloPase = String(invitation.wallet?.title ?? "").trim() || invitation.cover.title.text.value;
   // Apple Wallet es opcional (el organizador lo apaga en Pase digital).
   const conWallet = invitation.wallet?.enabled !== false;
@@ -131,7 +132,8 @@ export function Ticket({ guest, invitation, ui, colors, onClose, id, variant = "
             errorLevel="H"
             color={accent}
             bgColor="transparent"
-            value={guest.id?.toString() ?? ""}
+            // El invitado de ejemplo de "Ver en vivo" no tiene id: un QR de muestra.
+            value={guest.id?.toString() || "iattend-ejemplo"}
           />
 
           <div className={styles.ticket_col} style={{ flex: 1, minWidth: 0 }}>

@@ -4,6 +4,8 @@ import { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Camera, Heart, Share, X, Play, ChevronLeft, Maximize2 } from "lucide-react";
 import Image from "next/image";
+import { fuenteDePortada } from "@/helpers/pdfInvitacion";
+import { fotosDemo, likesDemo } from "./fotosDemo";
 import { createClient } from "@/lib/supabase/client";
 import { QRCodeSVG } from "qrcode.react";
 import { NewInvitation } from "@/types/new_invitation";
@@ -42,6 +44,8 @@ interface PhotoWallProps {
   // pantalla completa. Los overlays (foto, historias, hojas) quedan dentro de
   // la tarjeta porque el contenedor del dock es su containing block.
   embedded?: boolean;
+  // "Ver en vivo" del editor: fotos de ejemplo, sin API ni tiempo real.
+  demo?: boolean;
 }
 
 const formatTime = (dateStr: string) => {
@@ -53,7 +57,7 @@ const formatTime = (dateStr: string) => {
   });
 };
 
-export function PhotoWall({ eventId, eventTitle, onClose, onOpenCamera, shareCompanions, invitation, embedded = false }: PhotoWallProps) {
+export function PhotoWall({ eventId, eventTitle, onClose, onOpenCamera, shareCompanions, invitation, embedded = false, demo = false }: PhotoWallProps) {
   const router = useRouter();
   const [photos, setPhotos] = useState<EventPhoto[]>([]);
   const [loading, setLoading] = useState(true);
@@ -85,7 +89,8 @@ export function PhotoWall({ eventId, eventTitle, onClose, onOpenCamera, shareCom
   const supabase = createClient();
 
   const coverImages: string[] = useMemo(() => {
-    const raw = invitation?.cover?.image?.prod;
+    // Invitación en PDF: su primera página (fuenteDePortada).
+    const raw = fuenteDePortada(invitation) as string | string[] | null | undefined;
     if (!raw) return [];
     if (Array.isArray(raw)) return (raw as string[]).filter(Boolean);
     return [raw as string];
@@ -173,6 +178,12 @@ export function PhotoWall({ eventId, eventTitle, onClose, onOpenCamera, shareCom
 
   // Photos + likes + Supabase realtime
   useEffect(() => {
+    if (demo) {
+      setPhotos(fotosDemo());
+      setLikesMap(likesDemo());
+      setLoading(false);
+      return;
+    }
     const fetchPhotos = async () => {
       try {
         const res = await fetch(`${API_URL}/photos/${eventId}`);
@@ -224,7 +235,7 @@ export function PhotoWall({ eventId, eventTitle, onClose, onOpenCamera, shareCom
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [eventId]);
+  }, [eventId, demo]);
 
   // Stories auto-advance timer
   useEffect(() => {
@@ -291,6 +302,7 @@ export function PhotoWall({ eventId, eventTitle, onClose, onOpenCamera, shareCom
       return next;
     });
 
+    if (demo) return;
     try {
       const res = await fetch(`${API_URL}/photos/${photoId}/like`, {
         method: "POST",

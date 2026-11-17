@@ -401,7 +401,7 @@ export interface Generals {
 // editor de escritorio (iattend-vite, herramientas Elementos y Stickers).
 // Posición en % de la sección: x / y = centro, w = ancho. Ver
 // components/Invitation/SectionLayer/SectionLayer.tsx.
-export type LayerItemKind = "sticker" | "icon" | "text" | "line" | "separator" | "shape";
+export type LayerItemKind = "sticker" | "icon" | "text" | "line" | "separator" | "shape" | "dibujo";
 export interface LayerItem {
   id: string;
   kind: LayerItemKind;
@@ -434,6 +434,15 @@ export interface LayerItem {
   flipY?: boolean | null;
   radius?: number | null; // esquinas de cuadrado / rectángulo, px a 390 de ancho (999 = píldora)
   hidden?: boolean | null; // oculto con el ojo del panel Capas: guardado, sin pintarse
+  // Dibujo a mano (herramienta Dibujar, igual que en un Pop: SideEvent/Dibujo.tsx):
+  // puntos en unidades de su caja vbW × vbH (la sección mide 390 de ancho al
+  // dibujarlo), `erase` = lo que el borrador le quitó.
+  brush?: string | null;
+  size?: number | null;
+  points?: [number, number][] | null;
+  vbW?: number | null;
+  vbH?: number | null;
+  erase?: { points: [number, number][]; size: number }[] | null;
   x: number;
   y: number;
   w: number;
