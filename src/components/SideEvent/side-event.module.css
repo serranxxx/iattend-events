@@ -490,6 +490,20 @@
   text-align: var(--titulo-alinear, center);
 }
 
+/* Título + fecha + lugar se mueven juntos por la cuadrícula; la fecha y el
+   lugar se alinean como el título. Igual que SideCanvas .grupoTitulo. */
+.grupo_titulo {
+  display: flex;
+  flex-direction: column;
+  align-items: var(--titulo-x, center);
+  width: 100%;
+}
+
+.bloque_titulo .col {
+  align-items: var(--titulo-x, center);
+  text-align: var(--titulo-alinear, center);
+}
+
 /* Ya confirmado: la portada llena la pantalla y solo asoma la punta (36 px)
    del avatar de la tarjeta del invitado (12 de gap + 40 de su margen − 40
    del avatar). */
@@ -682,8 +696,8 @@
     padding-top: 0;
   }
 
-  /* Título arriba o al centro (body.titlePosition): su bloque va del 12% al
-     54% de la pantalla y la fecha y el lugar siguen donde siempre. */
+  /* Título arriba o al centro (body.titlePosition): su bloque (con la fecha
+     y el lugar) va del 12% al 54% de la pantalla. */
   .pop .primera_pantalla:is([data-titulo-y="top"], [data-titulo-y="center"]) {
     padding-top: 12vh;
     padding-top: 12dvh;

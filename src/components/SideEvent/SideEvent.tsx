@@ -415,20 +415,30 @@ export default function SideEvents({ info, password, preview, registroToken }: i
   // `recordado`: el código salió del localStorage de un evento público. Si ya
   // no existe (el organizador borró al invitado) se olvida sin avisar y queda
   // la invitación para registrarse otra vez.
-  const onMagicLogin = async (code: string, recordado = false) => {
+  // origen: "recordado" = el código guardado en este teléfono (si ya no
+  // sirve, se olvida en silencio); "link" = el ?password= de una invitación
+  // pública que el organizador le mandó (si no sirve, se registra como
+  // siempre, sin error). Devuelve si entró.
+  // Entró con el link que le mandó el organizador (pública): se le trata como
+  // invitado ("Invitación dirigida a"), no como registrado.
+  const [porLink, setPorLink] = useState(false);
+  const onMagicLogin = async (code: string, origen?: "recordado" | "link"): Promise<boolean> => {
     const r = await pedirInvitado(code);
-    if (r === undefined) return;
+    if (r === undefined) return false;
     if (!r) {
-      if (recordado) {
-        if (claveRegistro) window.localStorage.removeItem(claveRegistro);
-        return;
-      }
-      messageApi.error(`Código incorrecto`);
-      return;
+      if (origen === "recordado" && claveRegistro) window.localStorage.removeItem(claveRegistro);
+      if (!origen) messageApi.error(`Código incorrecto`);
+      return false;
     }
     setCompanions(r.acompanantes);
     setValidated(true);
     setGuestInfo(r.invitado);
+    // Pública: se recuerda en este teléfono, como quien se registra.
+    if (origen === "link") {
+      setPorLink(true);
+      if (claveRegistro) window.localStorage.setItem(claveRegistro, code);
+    }
+    return true;
   };
 
   const updateGuestStatus = async (state: string) => {
@@ -707,6 +717,7 @@ export default function SideEvents({ info, password, preview, registroToken }: i
     if (claveRegistro) window.localStorage.removeItem(claveRegistro);
     setGuestInfo(null);
     setCompanions([]);
+    setPorLink(false);
     setRegNombre("");
     setRegAcompanantes([]);
   };
@@ -850,7 +861,14 @@ export default function SideEvents({ info, password, preview, registroToken }: i
         setValidated(true);
         // Ya se había registrado desde este teléfono: se le muestra su respuesta.
         const guardado = claveRegistro ? window.localStorage.getItem(claveRegistro) : null;
-        if (guardado) onMagicLogin(guardado, true);
+        if (password) {
+          // El organizador lo dio de alta y le mandó su link (?password=): entra
+          // directo, sin registrarse; solo le toca confirmar. Si el código no
+          // sirve, queda el registro de siempre (o lo que guardó este teléfono).
+          onMagicLogin(password, "link").then((entro) => {
+            if (!entro && guardado && guardado !== password) onMagicLogin(guardado, "recordado");
+          });
+        } else if (guardado) onMagicLogin(guardado, "recordado");
         // setAnimation(true)
       } else {
         setValidated(false);
@@ -864,9 +882,9 @@ export default function SideEvents({ info, password, preview, registroToken }: i
   }, []);
 
 
-  // Privada y dirigida a alguien que aún no confirma: su dedicatoria va en la
+  // Privada (o pública con su link) y dirigida a alguien que aún no confirma: su dedicatoria va en la
   // primera pantalla, arriba de los botones de confirmar.
-  const dedicatoriaArriba = !esPublico && Boolean(guestInfo?.name) && guestInfo?.state !== "confirmado" && !confirmStep && !registro;
+  const dedicatoriaArriba = (!esPublico || porLink) && Boolean(guestInfo?.name) && guestInfo?.state !== "confirmado" && !confirmStep && !registro;
   // Tarjeta del invitado ("Invitación dirigida a" / "Registrado como").
   const tarjetaInvitado = guestInfo?.name ? (
     <motion.div
@@ -901,7 +919,7 @@ export default function SideEvents({ info, password, preview, registroToken }: i
         </span>
       )}
       <span className={styles.invitado_etiqueta}>
-        {esPublico ? "Registrado como" : "Invitación dirigida a"}
+        {esPublico && !porLink ? "Registrado como" : "Invitación dirigida a"}
       </span>
       <span className={styles.invitado_nombre}>{guestInfo.name}</span>
       {/* Su respuesta, en una píldora (también mientras la cambia). */}
@@ -1391,8 +1409,9 @@ export default function SideEvents({ info, password, preview, registroToken }: i
               {/* Título, fecha y lugar se pueden ocultar desde Capas (coverHidden).
                   El título va solo en un bloque que ocupa el alto libre y se
                   acomoda en una cuadrícula 3 × 3 (body.titlePosition); la fecha
-                  y el lugar se quedan abajo, como siempre. */}
+                  y el lugar van con él (.grupo_titulo). */}
               <div className={styles.bloque_titulo} style={variablesPosicionTitulo(info?.body)}>
+              <div className={styles.grupo_titulo}>
               {!portadaOculta(info?.body, "title") && <span
                 className={styles.titulo_portada}
                 style={{
@@ -1418,8 +1437,6 @@ export default function SideEvents({ info, password, preview, registroToken }: i
               >
                 {info?.name}
               </span>}
-              </div>
-
               <div
                 className={styles.col}
                 style={{
@@ -1448,6 +1465,9 @@ export default function SideEvents({ info, password, preview, registroToken }: i
                   </>
                 )}
               </div>
+              </div>
+              </div>
+
               {/* Patrocinadores en la portada (Pop, body.sponsors): la cinta
                   entre el lugar y los botones (handoff "Patrocinadores" §3.2). */}
               {esPop && info?.body && patrocinadoresDe(info.body).layout === "portada" && hayPatrocinadores(info.body) && (

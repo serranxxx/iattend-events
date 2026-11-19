@@ -401,11 +401,11 @@ export interface Generals {
 // editor de escritorio (iattend-vite, herramientas Elementos y Stickers).
 // Posición en % de la sección: x / y = centro, w = ancho. Ver
 // components/Invitation/SectionLayer/SectionLayer.tsx.
-export type LayerItemKind = "sticker" | "icon" | "text" | "line" | "separator" | "shape" | "dibujo";
+export type LayerItemKind = "sticker" | "icon" | "text" | "line" | "separator" | "shape" | "dibujo" | "boton";
 export interface LayerItem {
   id: string;
   kind: LayerItemKind;
-  url?: string; // sticker
+  url?: string; // sticker (imagen) o botón (a dónde lleva)
   icon?: string; // nombre del ícono de lucide, o "it:<n>" (ícono del itinerario)
   // ícono del catálogo del editor (editor_assets): URL del SVG; `tint` = se
   // pinta del color del elemento (mask). Sin `src` se usa `icon`.
@@ -434,6 +434,11 @@ export interface LayerItem {
   flipY?: boolean | null;
   radius?: number | null; // esquinas de cuadrado / rectángulo, px a 390 de ancho (999 = píldora)
   hidden?: boolean | null; // oculto con el ojo del panel Capas: guardado, sin pintarse
+  // Botón con link (invitación en PDF, herramienta Botones del editor): `text`
+  // es su texto, `url` a dónde lleva; `bg` fondo, `color` texto, `stroke` /
+  // `strokeWidth` borde y `variant` el estilo ("pildora" | "redondeado" |
+  // "recto" | "relieve" | "vidrio"). Reglas en helpers/botonesPdf.ts.
+  bg?: string | null;
   // Dibujo a mano (herramienta Dibujar, igual que en un Pop: SideEvent/Dibujo.tsx):
   // puntos en unidades de su caja vbW × vbH (la sección mide 390 de ancho al
   // dibujarlo), `erase` = lo que el borrador le quitó.

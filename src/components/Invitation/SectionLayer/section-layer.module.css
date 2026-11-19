@@ -518,3 +518,85 @@
 :global(html[data-dibujo="seleccion"]) .layer[data-edit] .item:not([data-kind="dibujo"]) {
   pointer-events: none;
 }
+
+
+/* ── Botón con link (invitación en PDF, kind "boton") ──
+   Colores en variables (--boton-fondo / -tinta / -borde / -grosor) y el
+   estilo en data-estilo. El invitado sí lo puede tocar (la capa no recibe
+   clics, el botón sí). */
+.item[data-kind="boton"] {
+  pointer-events: auto;
+}
+
+.boton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 0.78em 1.1em;
+  box-sizing: border-box;
+  border: var(--boton-grosor, 0px) solid var(--boton-borde, transparent);
+  border-radius: 999px;
+  background: var(--boton-fondo);
+  color: var(--boton-tinta);
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  text-align: center;
+  text-decoration: none;
+  box-shadow: 0 0.25em 0.8em rgba(0, 0, 0, 0.14);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.15s ease, filter 0.15s ease, box-shadow 0.15s ease;
+}
+
+.botonTexto {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.layer:not([data-edit]) .boton:not([data-sin-link]):hover {
+  filter: brightness(1.06);
+}
+
+.layer:not([data-edit]) .boton:not([data-sin-link]):active {
+  transform: scale(0.97);
+}
+
+.layer[data-edit] .boton,
+.boton[data-sin-link] {
+  cursor: inherit;
+}
+
+.boton[data-estilo="redondeado"] {
+  border-radius: 0.7em;
+}
+
+.boton[data-estilo="recto"] {
+  border-radius: 0;
+  box-shadow: none;
+}
+
+/* Relieve: la sombra dura de abajo del mismo color, más oscuro. */
+.boton[data-estilo="relieve"] {
+  border-radius: 0.7em;
+  box-shadow: 0 0.28em 0 color-mix(in srgb, var(--boton-fondo) 68%, #000000), 0 0.5em 1em rgba(0, 0, 0, 0.16);
+}
+
+.layer:not([data-edit]) .boton[data-estilo="relieve"]:not([data-sin-link]):active {
+  transform: translateY(0.2em);
+  box-shadow: 0 0.08em 0 color-mix(in srgb, var(--boton-fondo) 68%, #000000), 0 0.3em 0.6em rgba(0, 0, 0, 0.14);
+}
+
+/* Vidrio: el color del fondo translúcido sobre el PDF, desenfocado. */
+.boton[data-estilo="vidrio"] {
+  background: color-mix(in srgb, var(--boton-fondo) 38%, transparent);
+  -webkit-backdrop-filter: blur(12px) saturate(1.4);
+  backdrop-filter: blur(12px) saturate(1.4);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 0.4em 1.2em rgba(0, 0, 0, 0.14);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .boton { transition: none; }
+}

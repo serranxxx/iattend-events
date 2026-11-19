@@ -92,9 +92,14 @@ export default function SongPlayer({ song, accent = "#000000", dev = false, comp
 
     if (!dev) {
       audio.play()
-        .then(() => setPlaying(true))
+        .then(() => {
+          // Si la pestaña se ocultó mientras arrancaba, no sigue sonando.
+          if (document.hidden) { audio.pause(); return; }
+          setPlaying(true);
+        })
         .catch(() => {
           const onFirstTouch = () => {
+            if (document.hidden) return;
             audio.play().then(() => setPlaying(true)).catch(() => {});
           };
           document.addEventListener('touchstart', onFirstTouch, { once: true });
@@ -114,6 +119,24 @@ export default function SongPlayer({ song, accent = "#000000", dev = false, comp
       }, grace);
     };
   }, [previewUrl, song.id, dev]);
+
+  // Salir del navegador, cambiar de pestaña o bloquear el teléfono pausa la
+  // música (no vuelve sola: el invitado la reanuda con el botón).
+  useEffect(() => {
+    const pausar = () => {
+      const audio = audioRef.current;
+      if (!audio || audio.paused) return;
+      audio.pause();
+      setPlaying(false);
+    };
+    const alCambiarVisibilidad = () => { if (document.hidden) pausar(); };
+    document.addEventListener("visibilitychange", alCambiarVisibilidad);
+    window.addEventListener("pagehide", pausar);
+    return () => {
+      document.removeEventListener("visibilitychange", alCambiarVisibilidad);
+      window.removeEventListener("pagehide", pausar);
+    };
+  }, []);
 
   const toggleAudio = () => {
     if (!audioRef.current) return;

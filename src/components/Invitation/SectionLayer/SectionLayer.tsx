@@ -9,6 +9,7 @@ import type { Generals, LayerItem } from "@/types/new_invitation";
 import { Separador } from "../Separator/Separator";
 import { iconsItinerary } from "@/helpers/icons";
 import styles from "./section-layer.module.css";
+import { estiloBoton, LETRA_BOTON, linkDeBoton } from "@/helpers/botonesPdf";
 import Vector from "../../Vector/Vector";
 import Dibujo from "../../SideEvent/Dibujo";
 import type { PopSticker } from "@/types/side_event";
@@ -461,6 +462,34 @@ export function SectionLayer({ section, items, editMode = false, accent, titleFo
         <span className={styles.separator}>
           <Separador value={Number(it.variant) || 1} generals={{ colors: { accent: color } } as unknown as Generals} />
         </span>
+      );
+    }
+    // Botón con link (invitación en PDF). En el editor no navega: se elige y
+    // se mueve como cualquier elemento; el invitado lo toca y abre su link.
+    if (it.kind === "boton") {
+      const href = editMode ? null : linkDeBoton(it.url);
+      const externo = Boolean(href && /^https?:/i.test(href));
+      return (
+        <a
+          className={styles.boton}
+          data-estilo={estiloBoton(it)}
+          data-sin-link={!href || undefined}
+          href={href ?? undefined}
+          target={externo ? "_blank" : undefined}
+          rel={externo ? "noopener noreferrer" : undefined}
+          draggable={false}
+          onClick={editMode || !href ? (e) => e.preventDefault() : undefined}
+          style={{
+            "--boton-fondo": it.bg || accent,
+            "--boton-tinta": it.color || "#FFFFFF",
+            "--boton-borde": it.stroke || "transparent",
+            "--boton-grosor": `${(it.strokeWidth ?? 0) > 0 ? it.strokeWidth : 0}px`,
+            fontSize: `${it.w * LETRA_BOTON}cqw`,
+            fontFamily: it.font || bodyFont,
+          } as React.CSSProperties}
+        >
+          <span className={styles.botonTexto}>{it.text?.trim() || "Botón"}</span>
+        </a>
       );
     }
     if (it.kind === "line") return <span className={styles.line} style={{ borderTop: `${LINE_BORDER[it.variant ?? "solid"] ?? LINE_BORDER.solid} ${color}` }} />;
