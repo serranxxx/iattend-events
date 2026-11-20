@@ -100,7 +100,9 @@ export type SideEventBody = {
   titlePosition?: { x?: "left" | "center" | "right" | null; y?: "top" | "center" | "bottom" | null } | null;
   // Estilo del texto de Notas (barra de texto del editor, como el título).
   // Estilo de bloques de un Pop (panel Diseño, helpers/estilosBloque.ts). Sin él, "vidrio".
-  blockStyle?: "vidrio" | "hielo" | "noche" | "papel" | "tema" | "sticker" | "contorno" | null;
+  blockStyle?: "vidrio" | "hielo" | "noche" | "papel" | "tema" | "sticker" | "contorno" | "recorte" | null;
+  // Estilo Sticker: color con el que combina (#RRGGBB o "tema"); sin valor, el amarillo (helpers/estilosBloque.ts).
+  stickerColor?: string | null;
   notes_style?: {
     font?: string | null; size?: number | null; weight?: number | null; line_height?: number | null;
     opacity?: number | null; color?: string | null; italic?: boolean | null; underline?: boolean | null;
@@ -178,6 +180,7 @@ export interface PopSticker {
   // Dibujo a mano (herramienta Dibujar del editor, components/SideEvent/Dibujo.tsx):
   // pincel, grosor, puntos en su caja (vbW × vbH) y lo borrado.
   brush?: "pluma" | "marcador" | "resaltador" | "lapiz" | "neon" | null;
+  // Dibujo: grosor del pincel. Texto: tamaño de letra propio (px de la pieza de 390; helpers/textoElemento.ts).
   size?: number | null;
   points?: [number, number][] | null;
   vbW?: number | null;

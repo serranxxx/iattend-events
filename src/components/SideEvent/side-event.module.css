@@ -510,7 +510,10 @@
 .primera_confirmado {
   min-height: calc(100vh - 48px);
   min-height: calc(100dvh - 48px);
-  padding-bottom: 28px;
+  /* El título, la fecha y el lugar se quedan donde estaban con los botones
+     (16 de padding + 80 de la cápsula + 12 de gap = 108 desde abajo): al
+     confirmar no se mueven y los elementos de la portada siguen pegados a ellos. */
+  padding-bottom: calc(108px - 48px);
   margin-bottom: 0;
 }
 

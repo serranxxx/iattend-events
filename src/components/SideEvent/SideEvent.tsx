@@ -23,7 +23,7 @@ import ClimaVidrio from "./ClimaVidrio";
 import Asistentes from "./Asistentes/Asistentes";
 import SelectorAvatar, { type AvatarElegido } from "./Asistentes/SelectorAvatar";
 import { avatarAlAzar, cargarAsistentes, colorAvatares, contenidoDe, emojiDe, fondoDe, inicialesDe, modoAvatar, rellenarConEjemplo, perfilDe, type ListaAsistentes } from "./Asistentes/datosAsistentes";
-import { estiloDe, tintaDeNotas, variablesDeEstilo } from "@/helpers/estilosBloque";
+import { estiloDe, tintaDeNotas, variablesDeEstilo, acentoSticker } from "@/helpers/estilosBloque";
 import { agruparTarjetas, estiloNotas, ETIQUETA_DE_GRUPO, portadaOculta, posicionTitulo, tarjetasDe, variablesPosicionTitulo, type GrupoTarjetas } from "@/helpers/tarjetasSide";
 import { hayPatrocinadores, patrocinadoresDe, porCategoria } from "@/helpers/patrocinadores";
 import { BandaPatrocinadores, PortadaPatrocinadores, TarjetaPatrocinadores } from "./Patrocinadores/Patrocinadores";
@@ -126,8 +126,36 @@ const iniciales = (nombre?: string | null) =>
     .map((p) => p[0]?.toUpperCase() ?? "")
     .join("") || "?";
 
-const lienzoCover = (ancho: number, alto: number) => {
-  const escala = Math.max(ancho / PIEZA_ANCHO, alto / PIEZA_ALTO);
+// Lienzo de los elementos de la portada (390 × 700, como en el editor). En el
+// editor la pieza mide 357 × 631 y el lienzo la cubre: va a lo ancho y le
+// sobran ~5 px arriba y abajo. Aquí, en una pantalla más alta que la pieza
+// (casi todos los celulares), va a lo ancho y con su orilla de abajo donde la
+// tiene en la pieza: el título, la fecha y los botones (que miden en px, pegados
+// abajo) quedan respecto a los elementos como en el editor (en vertical, con la
+// escala del editor), y el espacio de más
+// queda arriba, sobre la foto. Antes se centraba y se escalaba por el alto: en
+// un iPhone (390 × 844) los elementos salían 34 % más grandes, recortados a los
+// lados y lejos del título. Más ancha que la pieza: cubre, centrado (como antes).
+const EDITOR_ANCHO = 357;
+const EDITOR_ALTO = 631;
+const ESCALA_EDITOR = Math.max(EDITOR_ANCHO / PIEZA_ANCHO, EDITOR_ALTO / PIEZA_ALTO);
+// Lo que sobra del lienzo bajo la pieza del editor (en px del lienzo).
+const SOBRA_ABAJO = (PIEZA_ALTO - EDITOR_ALTO / ESCALA_EDITOR) / 2;
+// `pieza` (iPad / Mac): la capa ya es la pieza escalada; el lienzo la cubre
+// parejo, como en el editor.
+const lienzoCover = (ancho: number, alto: number, pieza = false) => {
+  const escalaAncho = ancho / PIEZA_ANCHO;
+  // Alto que ocuparía la pieza del editor con este ancho.
+  const altoPieza = (EDITOR_ALTO / ESCALA_EDITOR) * escalaAncho;
+  if (!pieza && alto >= altoPieza) {
+    // A lo ancho del celular (los elementos llegan a las orillas), pero en
+    // vertical con la escala del editor (o menos, si el celular es más angosto
+    // que la pieza): la distancia de cada elemento al título y a los botones,
+    // que miden en px, es la misma que en el editor.
+    const escalaY = Math.min(escalaAncho, ESCALA_EDITOR);
+    return { left: 0, top: alto - (PIEZA_ALTO - SOBRA_ABAJO) * escalaY, width: ancho, height: PIEZA_ALTO * escalaY };
+  }
+  const escala = Math.max(escalaAncho, alto / PIEZA_ALTO);
   const width = PIEZA_ANCHO * escala;
   const height = PIEZA_ALTO * escala;
   return { left: (ancho - width) / 2, top: (alto - height) / 2, width, height };
@@ -169,7 +197,7 @@ export default function SideEvents({ info, password, preview, registroToken }: i
   // Estilo de bloques (body.blockStyle): variables de la piel de las
   // tarjetas, también para lo que se abre fuera de ellas (hojas, aviso).
   const estiloBloque = estiloDe(info?.body);
-  const varsEstilo = variablesDeEstilo(estiloBloque, info?.body?.color);
+  const varsEstilo = variablesDeEstilo(estiloBloque, info?.body?.color, acentoSticker(info?.body));
   const colorFondoPagina = darker(info?.body.color ?? "#000000", 0.8) ?? info?.body.color;
   // Capa de los PNG de un Pop (para medir su lienzo).
   const capaStickersRef = useRef<HTMLDivElement>(null);
@@ -493,15 +521,8 @@ export default function SideEvents({ info, password, preview, registroToken }: i
 
   // Confeti en explosión desde el botón (ConfetiExplosion).
   const onClick = useCallback(() => setConfeti(Date.now()), []);
-  // Al confirmar (cuando sale el confeti) se abre solo el boleto, después de
-  // la explosión. Al cerrarlo llega, si hay, el aviso del formulario.
-  useEffect(() => {
-    if (!confeti) return;
-    // Sin pase activo (Pase digital apagado) no se abre nada.
-    if (info?.body?.wallet?.enabled === false) return;
-    const t = window.setTimeout(() => setHoja((h) => h ?? "pase"), 1300);
-    return () => window.clearTimeout(t);
-  }, [confeti, info?.body?.wallet?.enabled]);
+  // Al confirmar el pase NO se abre solo: queda el botón "Ver mi pase" en la
+  // tarjeta del invitado, por si lo quiere ver.
   // Formulario obligatorio pendiente: se abre solo (después del confeti al
   // confirmar; casi al momento si ya había confirmado) en lugar del pase.
   useEffect(() => {
@@ -544,7 +565,7 @@ export default function SideEvents({ info, password, preview, registroToken }: i
       if (!capa) return;
       // Tamaño de layout (offset*), no getBoundingClientRect: ese incluye el
       // zoom del scroll y, medido a media página, descentraba los PNG.
-      setLienzoStickers(lienzoCover(capa.offsetWidth, capa.offsetHeight));
+      setLienzoStickers(lienzoCover(capa.offsetWidth, capa.offsetHeight, Boolean(escena)));
       // Recuadro de la foto dentro de la capa: la foto cubre la portada (todo
       // el ancho, centrada) y la capa es la columna centrada.
       const hero = heroRef.current;
@@ -1149,7 +1170,7 @@ export default function SideEvents({ info, password, preview, registroToken }: i
           onLlenar={() => setHoja("form")}
         />
       )}
-      {/* Boleto ("Ver mi pase"; se abre solo al confirmar): título del pase
+      {/* Boleto (se abre con "Ver mi pase", nunca solo): título del pase
           (body.wallet) o el del evento, y la imagen del link; Apple Wallet si el
           organizador lo ofrece. En la vista previa, un invitado de ejemplo. */}
       {info && (
@@ -1186,10 +1207,9 @@ export default function SideEvents({ info, password, preview, registroToken }: i
         // estado: el pendiente y el folio del pase.
         onClose={() => {
           if (hoja === "form" && !preview) estadoForm.recargar();
-          // Ya respondido el obligatorio: sigue el pase (como al confirmar).
-          const siguiente = hoja === "form" && abiertoPorObligatorio.current && paseActivo ? "pase" : null;
+          // Ya respondido el obligatorio: se cierra (el pase queda en "Ver mi pase").
           abiertoPorObligatorio.current = false;
-          setHoja(siguiente);
+          setHoja(null);
         }}
         obligatoria={hoja === "form" && formObligatorio}
         color={info?.body.color}

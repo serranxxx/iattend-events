@@ -23,6 +23,17 @@ export const estiloDe = (body?: { blockStyle?: string | null } | null): EstiloBl
 
 const TINTA_OSCURA = "#1F1B2E";
 
+// Estilo Sticker: el color con el que combina (círculos del itinerario y del
+// clima, botones, chips). body.stickerColor = un #RRGGBB, "tema" (el color del
+// tema) o nada (el amarillo de siempre). Gemela de vite.
+export const STICKER_AMARILLO = "#FFD25E";
+const HEX = /^#[0-9a-f]{6}$/i;
+export const acentoSticker = (body?: { stickerColor?: string | null; color?: string | null } | null) => {
+  const c = body?.stickerColor;
+  if (c === "tema") return HEX.test(body?.color ?? "") ? (body!.color as string) : STICKER_AMARILLO;
+  return HEX.test(c ?? "") ? (c as string) : STICKER_AMARILLO;
+};
+
 // Luminancia relativa (0 negro – 1 blanco) de un #RRGGBB.
 export const luminancia = (hex?: string | null) => {
   const m = /^#?([0-9a-f]{6})$/i.exec(String(hex ?? "").trim());
@@ -53,7 +64,7 @@ type Piel = {
   botonesRadio?: number;
 };
 
-const pielDe = (estilo: EstiloBloque, tema: string): Piel | null => {
+const pielDe = (estilo: EstiloBloque, tema: string, acento: string = STICKER_AMARILLO): Piel | null => {
   switch (estilo) {
     case "hielo":
       return {
@@ -95,14 +106,25 @@ const pielDe = (estilo: EstiloBloque, tema: string): Piel | null => {
         reflejo: false, hoja: tema, base: tema,
       };
     }
-    case "sticker":
+    case "sticker": {
+      // Con el amarillo de siempre, igual que antes. Con otro color: chips con
+      // un tinte claro de él; los círculos (ícono en tinta oscura) usan una
+      // versión clara si el color es oscuro.
+      const amarillo = acento.toUpperCase() === STICKER_AMARILLO;
+      const oscuro = luminancia(acento) < 0.3;
       return {
         fondo: "#FFFFFF", blur: "none", borde: "2px solid #1F1B2E",
         sombra: "5px 5px 0 #1F1B2E", radio: 22,
-        tinta: TINTA_OSCURA, suave: "#F1EDFA", linea: "rgba(31,27,46,0.22)", relieve: "#FFD25E",
-        botonFondo: "#FFD25E", botonTinta: TINTA_OSCURA, botonBorde: "2px solid #1F1B2E", avatarBorde: "3px solid #1F1B2E",
+        tinta: TINTA_OSCURA,
+        suave: amarillo ? "#F1EDFA" : `color-mix(in srgb, ${acento} 18%, #FFFFFF)`,
+        linea: "rgba(31,27,46,0.22)",
+        relieve: oscuro ? `color-mix(in srgb, ${acento} 35%, #FFFFFF)` : acento,
+        botonFondo: acento,
+        botonTinta: contraste(acento, TINTA_OSCURA) >= contraste(acento, "#FFFFFF") ? TINTA_OSCURA : "#FFFFFF",
+        botonBorde: "2px solid #1F1B2E", avatarBorde: "3px solid #1F1B2E",
         reflejo: false, hoja: "#FFFFFF", base: "#FFFFFF",
       };
+    }
     case "contorno":
       return {
         fondo: "rgba(20,16,44,0.16)", blur: "blur(6px)", borde: "1.5px solid rgba(255,255,255,0.85)",
@@ -131,8 +153,9 @@ const pielDe = (estilo: EstiloBloque, tema: string): Piel | null => {
 
 // Variables CSS del estilo, para el contenedor de las tarjetas y para lo que
 // se abre fuera de él (hojas, aviso). Vidrio: ninguna (rige el respaldo).
-export const variablesDeEstilo = (estilo: EstiloBloque, colorTema?: string | null): React.CSSProperties => {
-  const p = pielDe(estilo, colorTema || "#6E5BD0");
+// `acento`: el color del estilo Sticker (acentoSticker(body)).
+export const variablesDeEstilo = (estilo: EstiloBloque, colorTema?: string | null, acento?: string | null): React.CSSProperties => {
+  const p = pielDe(estilo, colorTema || "#6E5BD0", acento || STICKER_AMARILLO);
   if (!p) return {};
   return {
     "--bloque-fondo": p.fondo,

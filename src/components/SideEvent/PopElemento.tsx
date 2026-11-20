@@ -10,6 +10,7 @@ import { LAYER_ICONS } from "../Invitation/SectionLayer/SectionLayer";
 import Vector from "../Vector/Vector";
 import styles from "./pop-elemento.module.css";
 import Dibujo from "./Dibujo";
+import { estiloTexto } from "@/helpers/textoElemento";
 
 // Elemento de la portada de un Pop que no es imagen (`body.stickers[n].kind`):
 // ícono, forma, texto, línea o decoración. Mismo modelo y mismo dibujo que los
@@ -19,7 +20,6 @@ import Dibujo from "./Dibujo";
 // y escalan igual que una imagen. Sin color propio va en blanco.
 
 const DEFAULT_COLOR = "#FFFFFF";
-const TEXT_FACTOR: Record<string, number> = { title: 0.16, subtitle: 0.1, body: 0.06 };
 const LINE_BORDER: Record<string, string> = {
   solid: "1.5px solid",
   dashed: "1.5px dashed",
@@ -99,17 +99,9 @@ export default function PopElemento({ s, titleFont, bodyFont = "Poppins" }: { s:
     return <span className={styles.line} style={{ borderTop: `${LINE_BORDER[s.variant ?? "solid"] ?? LINE_BORDER.solid} ${color}` }} />;
   }
 
-  const variant = s.variant ?? "body";
+  // Su tamaño propio (o el que da su ancho) y lo de la barra de texto.
   return (
-    <span
-      className={styles.text}
-      style={{
-        color,
-        fontFamily: s.font || (variant === "title" ? titleFont : bodyFont),
-        fontWeight: variant === "title" ? 600 : variant === "subtitle" ? 500 : 400,
-        fontSize: `${s.w * (TEXT_FACTOR[variant] ?? 0.06)}cqw`,
-      }}
-    >
+    <span className={styles.text} style={estiloTexto(s, { titleFont, bodyFont, color })}>
       {s.text}
     </span>
   );
