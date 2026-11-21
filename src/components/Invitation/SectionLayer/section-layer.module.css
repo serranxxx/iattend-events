@@ -597,6 +597,44 @@
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 0.4em 1.2em rgba(0, 0, 0, 0.14);
 }
 
+/* Transparente: zona invisible con link (alto libre con `ar`). El invitado
+   no ve nada; editando se ve punteada con el ícono del link al centro. */
+.zonaLink {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  background: transparent;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.zonaLink[data-sin-link],
+.layer[data-edit] .zonaLink {
+  cursor: inherit;
+}
+
+/* Orilla lila punteada + línea blanca por dentro: se ve sobre PDF claro u oscuro. */
+.layer[data-edit] .zonaLink {
+  background: rgba(139, 120, 230, 0.18);
+  outline: 1.5px dashed #8b78e6;
+  outline-offset: -1.5px;
+  box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.55);
+  border-radius: 4px;
+}
+
+.zonaLinkIcono {
+  box-sizing: content-box;
+  width: 14px;
+  height: 14px;
+  max-width: 60%;
+  max-height: 60%;
+  padding: 4px;
+  border-radius: 99px;
+  background: #fff;
+  color: #8b78e6;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .boton { transition: none; }
 }

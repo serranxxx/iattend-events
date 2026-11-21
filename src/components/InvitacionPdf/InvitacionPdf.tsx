@@ -228,6 +228,10 @@ export default function InvitacionPdf({
               <img
                 key={p.url}
                 src={p.url}
+                // Celular: la de 1440 px; tableta / escritorio (el PDF va a
+                // todo el ancho): la HD, si la conversión la trae.
+                srcSet={p.hd ? `${p.url} ${p.w}w, ${p.hd.url} ${p.hd.w}w` : undefined}
+                sizes={p.hd ? "100vw" : undefined}
                 width={p.w}
                 height={p.h}
                 alt={i === 0 ? invitation?.cover?.title?.text?.value ?? "Invitación" : ""}

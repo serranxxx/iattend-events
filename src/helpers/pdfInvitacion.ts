@@ -10,7 +10,9 @@
 
 import type { NewInvitation } from "@/types/new_invitation";
 
-export type PaginaPdf = { url: string; w: number; h: number; pagina?: number };
+// `hd` = la misma franja en alta resolución (conversión 2, ~3072 px de ancho)
+// para tableta y escritorio; `url` es la del celular (1440 px).
+export type PaginaPdf = { url: string; w: number; h: number; pagina?: number; hd?: { url: string; w: number; h: number } };
 export type DatosPdf = {
   pages?: PaginaPdf[];
   paginas?: number;

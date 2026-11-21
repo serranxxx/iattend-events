@@ -3,13 +3,13 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   ArrowDown, ArrowUp, Bird, BringToFront, Cake, Camera, Church, CopyPlus, Ellipsis, Flower, Flower2, Gem, Heart,
-  Infinity as InfinityIcon, Leaf, Lock, LockOpen, Moon, Music, SendToBack, Sparkles, Star, Sun, Trash2, Wine,
+  Infinity as InfinityIcon, Leaf, Link2, Lock, LockOpen, Moon, Music, SendToBack, Sparkles, Star, Sun, Trash2, Wine,
 } from "lucide-react";
 import type { Generals, LayerItem } from "@/types/new_invitation";
 import { Separador } from "../Separator/Separator";
 import { iconsItinerary } from "@/helpers/icons";
 import styles from "./section-layer.module.css";
-import { estiloBoton, LETRA_BOTON, linkDeBoton } from "@/helpers/botonesPdf";
+import { AR_TRANSPARENTE, esTransparente, estiloBoton, LETRA_BOTON, linkDeBoton } from "@/helpers/botonesPdf";
 import Vector from "../../Vector/Vector";
 import Dibujo from "../../SideEvent/Dibujo";
 import type { PopSticker } from "@/types/side_event";
@@ -330,7 +330,7 @@ export function SectionLayer({ section, items, editMode = false, accent, titleFo
     const ux = { x: Math.cos(rad), y: Math.sin(rad) };   // eje del ancho
     const uy = { x: -Math.sin(rad), y: Math.cos(rad) };  // eje del alto
     const w0 = (it.w / 100) * rect.width;
-    const h0 = w0 * (it.ar ?? 1);
+    const h0 = w0 * (it.ar ?? (esTransparente(it) ? AR_TRANSPARENTE : 1));
     const horizontal = side === "e" || side === "w";
     const axis = horizontal ? ux : uy;
     const sign = side === "e" || side === "s" ? 1 : -1;
@@ -469,6 +469,25 @@ export function SectionLayer({ section, items, editMode = false, accent, titleFo
     if (it.kind === "boton") {
       const href = editMode ? null : linkDeBoton(it.url);
       const externo = Boolean(href && /^https?:/i.test(href));
+      // Transparente: solo la zona que se toca, sin texto ni color. Editando
+      // se ve punteada con el ícono del link; el invitado no ve nada.
+      if (esTransparente(it)) {
+        return (
+          <a
+            className={styles.zonaLink}
+            data-sin-link={!linkDeBoton(it.url) || undefined}
+            href={href ?? undefined}
+            target={externo ? "_blank" : undefined}
+            rel={externo ? "noopener noreferrer" : undefined}
+            aria-label={it.text?.trim() || href || "Link"}
+            draggable={false}
+            onClick={editMode || !href ? (e) => e.preventDefault() : undefined}
+            style={{ aspectRatio: `1 / ${it.ar ?? AR_TRANSPARENTE}` }}
+          >
+            {editMode && <Link2 className={styles.zonaLinkIcono} />}
+          </a>
+        );
+      }
       return (
         <a
           className={styles.boton}
@@ -571,7 +590,7 @@ export function SectionLayer({ section, items, editMode = false, accent, titleFo
               <span key={c} className={styles.handle} data-corner={c} onPointerDown={(e) => startResize(e, current)} />
             ))}
             {/* Formas: manijas en los lados para estirar sin mantener la proporción. */}
-            {!current.locked && current.kind === "shape" && (["e", "w", "n", "s"] as const).map((side) => (
+            {!current.locked && (current.kind === "shape" || esTransparente(current)) && (["e", "w", "n", "s"] as const).map((side) => (
               <span
                 key={side}
                 className={styles.sideHandle}

@@ -4,12 +4,13 @@
   width: 100%;
 }
 
-/* Celular: las páginas a todo el ancho, pegadas, como un solo documento. */
+/* En cualquier pantalla (celular, tableta, escritorio) las páginas van a
+   todo el ancho, pegadas, sin márgenes ni relleno: el PDF ocupa el 100 %.
+   El botón de confirmar (o el dock) flota sobre el final del PDF. */
 .documento {
   width: 100%;
-  max-width: 760px;
-  margin: 0 auto;
-  padding-bottom: calc(112px + env(safe-area-inset-bottom));
+  margin: 0;
+  padding: 0;
   position: relative;
   transition: filter 0.5s ease;
 }
@@ -73,19 +74,6 @@
 
 .vacioCaja b {
   font-size: 16px;
-}
-
-/* Tableta y escritorio: columna centrada; cada página del PDF es una hoja
-   con su sombra (los tramos de una página larga van pegados). */
-@media (min-width: 800px) {
-  .documento {
-    padding-top: 32px;
-  }
-
-  .hojas {
-    box-shadow: 0 0 24px rgba(0, 0, 0, 0.12);
-    border-radius: 6px;
-  }
 }
 
 /* ── Invitación privada sin código ── */
